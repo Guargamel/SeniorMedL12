@@ -1,145 +1,68 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Supplier;
 use Illuminate\Http\Request;
-use Yajra\DataTables\DataTables;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Validator;
+use App\Models\Supplier;
 
 class SupplierController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
-     */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
-        $title = 'suppliers';
-        if($request->ajax()){
-            $suppliers = Supplier::get();
-            return DataTables::of($suppliers)
-                ->addIndexColumn()
-                ->addColumn('action', function ($row) {
-                    $editbtn = '<a href="'.route("suppliers.edit", $row->id).'" class="editbtn"><button class="btn btn-info"><i class="fas fa-edit"></i></button></a>';
-                    $deletebtn = '<a data-id="'.$row->id.'" data-route="'.route('suppliers.destroy', $row->id).'" href="javascript:void(0)" id="deletebtn"><button class="btn btn-danger"><i class="fas fa-trash"></i></button></a>';
-                    if (!auth()->user()->hasPermissionTo('edit-supplier')) {
-                        $editbtn = '';
-                    }
-                    if (!auth()->user()->hasPermissionTo('destroy-supplier')) {
-                        $deletebtn = '';
-                    }
-                    $btn = $editbtn.' '.$deletebtn;
-                    return $btn;
-                })
-                ->rawColumns(['action'])
-                ->make(true);
+        $q = trim((string) $request->query('q', ''));
+
+        $query = Supplier::query()->orderByDesc('id');
+        if ($q !== '') {
+            $query->where('name', 'like', "%{$q}%")
+                  ->orWhere('email', 'like', "%{$q}%")
+                  ->orWhere('phone', 'like', "%{$q}%");
         }
-    
-        return view('admin.suppliers.index',compact(
-            'title'
-        ));
+
+        return response()->json(['data' => $query->paginate(20)]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
+    public function store(Request $request): JsonResponse
     {
-        $title = 'create supplier';
-        return view('admin.suppliers.create',compact(
-            'title'
-        ));
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        $this->validate($request,[
-            'name'=>'required|min:10|max:255',
-            'product'=>'required',
-            'email'=>'nullable|email|string',
-            'phone'=>'nullable|min:10|max:20',
-            'company'=>'nullable|max:200|required',
-            'address'=>'nullable|required|max:200',
-            'comment' =>'nullable|max:255',
+        $v = Validator::make($request->all(), [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'address' => ['nullable', 'string', 'max:500'],
         ]);
-        Supplier::create([
-            'name'=>$request->name,
-            'email'=>$request->email,
-            'phone'=>$request->phone,
-            'company'=>$request->company,
-            'address'=>$request->address,
-            'product'=>$request->product,
-            'comment'=>$request->comment,
-        ]);
-        $notification = notify("Supplier has been added");
-        return redirect()->route('suppliers.index')->with($notification);
+
+        if ($v->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $v->errors()], 422);
+        }
+
+        $supplier = Supplier::create($v->validated());
+
+        return response()->json(['message' => 'Supplier created', 'supplier' => $supplier], 201);
     }
 
-    
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \app\Models\Supplier $supplier
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Supplier $supplier)
+    public function update(Request $request, Supplier $supplier): JsonResponse
     {
-        $title = 'edit supplier';
-        return view('admin.suppliers.edit',compact(
-            'title','supplier'
-        ));
+        $v = Validator::make($request->all(), [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'address' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        if ($v->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $v->errors()], 422);
+        }
+
+        $supplier->update($v->validated());
+
+        return response()->json(['message' => 'Supplier updated', 'supplier' => $supplier]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \app\Models\Supplier $supplier
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, Supplier $supplier)
+    public function destroy(Supplier $supplier): JsonResponse
     {
-        $this->validate($request,[
-            'name'=>'required|min:10|max:255',
-            'product'=>'required',
-            'email'=>'nullable|email|string',
-            'phone'=>'nullable|min:10|max:20',
-            'company'=>'nullable|max:200|required',
-            'address'=>'nullable|required|max:200',
-            'comment' =>'nullable|max:255',
-        ]);
-        $supplier->update([
-            'name'=>$request->name,
-            'email'=>$request->email,
-            'phone'=>$request->phone,
-            'company'=>$request->company,
-            'address'=>$request->address,
-            'product'=>$request->product,
-            'comment'=>$request->comment,
-        ]);
-        $notification = notify("Supplier has been added");
-        return redirect()->route('suppliers.index')->with($notification);
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Request $request)
-    {
-        return Supplier::findOrFail($request->id)->delete();
+        $supplier->delete();
+        return response()->json(['message' => 'Supplier deleted']);
     }
 }

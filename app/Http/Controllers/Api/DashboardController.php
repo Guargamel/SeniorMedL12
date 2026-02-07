@@ -1,44 +1,64 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api;
 
-use App\Models\Sale;
-use App\Models\Category;
-use App\Models\Purchase;
-use App\Models\Supplier;
-use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    public function index(){
-        $title = 'dashboard';
-        $total_purchases = Purchase::where('expiry_date','!=',Carbon::now())->count();
-        $total_categories = Category::count();
-        $total_suppliers = Supplier::count();
-        $total_sales = Sale::count();
-        
-        $pieChart = app()->chartjs
-                ->name('pieChart')
-                ->type('pie')
-                ->size(['width' => 400, 'height' => 200])
-                ->labels(['Total Purchases', 'Total Suppliers','Total Sales'])
-                ->datasets([
-                    [
-                        'backgroundColor' => ['#FF6384', '#36A2EB','#7bb13c'],
-                        'hoverBackgroundColor' => ['#FF6384', '#36A2EB','#7bb13c'],
-                        'data' => [$total_purchases, $total_suppliers,$total_sales]
-                    ]
-                ])
-                ->options([]);
-        
-        $total_expired_products = Purchase::whereDate('expiry_date', '=', Carbon::now())->count();
-        $latest_sales = Sale::whereDate('created_at','=',Carbon::now())->get();
-        $today_sales = Sale::whereDate('created_at','=',Carbon::now())->sum('total_price');
-        return view('admin.dashboard',compact(
-            'title','pieChart','total_expired_products',
-            'latest_sales','today_sales','total_categories'
-        ));
+    public function index(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        // These queries assume you have these tables/models:
+        // - categories
+        // - products (or purchases) with expiry_date
+        // - users
+        // - sales with created_at + total_price
+        //
+        // If your schema differs, adjust the table/column names.
+
+        $today = now()->startOfDay();
+
+        $todaySales = DB::table('sales')
+            ->where('created_at', '>=', $today)
+            ->sum('total_price');
+
+        $totalCategories = DB::table('categories')->count();
+
+        $totalExpiredProducts = DB::table('purchases')
+            ->whereNotNull('expiry_date')
+            ->whereDate('expiry_date', '<', now()->toDateString())
+            ->count();
+
+        $totalUsers = DB::table('users')->count();
+
+        $recentSales = DB::table('sales')
+            ->orderByDesc('id')
+            ->limit(10)
+            ->get()
+            ->map(function ($row) {
+                return [
+                    'medicine' => $row->medicine ?? $row->product_name ?? $row->product ?? 'N/A',
+                    'quantity' => $row->quantity ?? 0,
+                    'total_price' => $row->total_price ?? 0,
+                    'date' => optional($row->created_at)->format('Y-m-d H:i:s') ?? (string) ($row->created_at ?? ''),
+                ];
+            });
+
+        return response()->json([
+            'stats' => [
+                'today_sales' => $todaySales,
+                'total_categories' => $totalCategories,
+                'total_expired_products' => $totalExpiredProducts,
+                'total_users' => $totalUsers,
+                'user_name' => $user?->name ?? '',
+                'currency' => '₱',
+            ],
+            'recent_sales' => $recentSales,
+        ]);
     }
 }

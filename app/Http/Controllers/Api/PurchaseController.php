@@ -1,202 +1,147 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api;
 
-use App\Models\Category;
-use App\Models\Purchase;
-use App\Models\Supplier;
-use Illuminate\Http\Request;
-use Yajra\DataTables\DataTables;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use QCod\AppSettings\Setting\AppSettings;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
+use App\Models\Purchase;
 
 class PurchaseController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
-     */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
-        $title = 'purchases';
-        if($request->ajax()){
-            $purchases = Purchase::get();
-            return DataTables::of($purchases)
-                ->addColumn('product',function($purchase){
-                    $image = '';
-                    if(!empty($purchase->image)){
-                        $image = '<span class="avatar avatar-sm mr-2">
-						<img class="avatar-img" src="'.asset("storage/purchases/".$purchase->image).'" alt="product">
-					    </span>';
-                    }                 
-                    return $purchase->product.' ' . $image;
-                })
-                ->addColumn('category',function($purchase){
-                    if(!empty($purchase->category)){
-                        return $purchase->category->name;
-                    }
-                })
-                ->addColumn('cost_price',function($purchase){
-                    return settings('app_currency','$'). ' '. $purchase->cost_price;
-                })
-                ->addColumn('supplier',function($purchase){
-                    return $purchase->supplier->name;
-                })
-                ->addColumn('expiry_date',function($purchase){
-                    return date_format(date_create($purchase->expiry_date),'d M, Y');
-                })
-                ->addColumn('action', function ($row) {
-                    $editbtn = '<a href="'.route("purchases.edit", $row->id).'" class="editbtn"><button class="btn btn-info"><i class="fas fa-edit"></i></button></a>';
-                    $deletebtn = '<a data-id="'.$row->id.'" data-route="'.route('purchases.destroy', $row->id).'" href="javascript:void(0)" id="deletebtn"><button class="btn btn-danger"><i class="fas fa-trash"></i></button></a>';
-                    if (!auth()->user()->hasPermissionTo('edit-purchase')) {
-                        $editbtn = '';
-                    }
-                    if (!auth()->user()->hasPermissionTo('destroy-purchase')) {
-                        $deletebtn = '';
-                    }
-                    $btn = $editbtn.' '.$deletebtn;
-                    return $btn;
-                })
-                ->rawColumns(['product','action'])
-                ->make(true);
+        $q = trim((string) $request->query('q', ''));
+
+        $query = Purchase::query()
+            ->with(['category', 'supplier'])
+            ->orderByDesc('id');
+
+        if ($q !== '') {
+            $query->where(function ($sub) use ($q) {
+                $sub->where('product', 'like', "%{$q}%")
+                    ->orWhereHas('category', fn($c) => $c->where('name', 'like', "%{$q}%"))
+                    ->orWhereHas('supplier', fn($s) => $s->where('name', 'like', "%{$q}%"));
+            });
         }
-        return view('admin.purchases.index',compact(
-            'title'
-        ));
+
+        return response()->json(['data' => $query->paginate(20)]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
+    public function store(Request $request): JsonResponse
     {
-        $title = 'create purchase';
-        $categories = Category::get();
-        $suppliers = Supplier::get();
-        return view('admin.purchases.create',compact(
-            'title','categories','suppliers'
-        ));
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        $this->validate($request,[
-            'product'=>'required|max:200',
-            'category'=>'required',
-            'cost_price'=>'required|min:1',
-            'quantity'=>'required|min:1',
-            'expiry_date'=>'required',
-            'supplier'=>'required',
-            'image'=>'file|image|mimes:jpg,jpeg,png,gif',
+        $v = Validator::make($request->all(), [
+            'product' => ['required', 'string', 'max:255'],
+            'category' => ['required', 'integer'],
+            'supplier' => ['required', 'integer'],
+            'cost_price' => ['required', 'numeric', 'min:0'],
+            'quantity' => ['required', 'integer', 'min:0'],
+            'expiry_date' => ['required', 'date'],
+            'image' => ['nullable', 'image', 'max:4096'],
         ]);
-        $imageName = null;
-        if($request->hasFile('image')){
-            $imageName = time().'.'.$request->image->extension();
-            $request->image->move(public_path('storage/purchases'), $imageName);
+
+        if ($v->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $v->errors()], 422);
         }
-        Purchase::create([
-            'product'=>$request->product,
-            'category_id'=>$request->category,
-            'supplier_id'=>$request->supplier,
-            'cost_price'=>$request->cost_price,
-            'quantity'=>$request->quantity,
-            'expiry_date'=>$request->expiry_date,
-            'image'=>$imageName,
-        ]);
-        $notifications = notify("Purchase has been added");
-        return redirect()->route('purchases.index')->with($notifications);
-    }
 
-    
+        $data = $v->validated();
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \app\Models\Purchase $purchase
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Purchase $purchase)
-    {
-        $title = 'edit purchase';
-        $categories = Category::get();
-        $suppliers = Supplier::get();
-        return view('admin.purchases.edit',compact(
-            'title','purchase','categories','suppliers'
-        ));
-    }
+        // Map SPA field names to DB columns if your schema uses *_id.
+        $payload = [
+            'product' => $data['product'],
+            'category_id' => $data['category'],
+            'supplier_id' => $data['supplier'],
+            'cost_price' => $data['cost_price'],
+            'quantity' => $data['quantity'],
+            'expiry_date' => $data['expiry_date'],
+        ];
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \app\Models\Purchase $purchase
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, Purchase $purchase)
-    {
-        $this->validate($request,[
-            'product'=>'required|max:200',
-            'category'=>'required',
-            'cost_price'=>'required|min:1',
-            'quantity'=>'required|min:1',
-            'expiry_date'=>'required',
-            'supplier'=>'required',
-            'image'=>'file|image|mimes:jpg,jpeg,png,gif',
-        ]);
-        $imageName = $purchase->image;
-        if($request->hasFile('image')){
-            $imageName = time().'.'.$request->image->extension();
-            $request->image->move(public_path('storage/purchases'), $imageName);
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('purchases', 'public');
+            $payload['image_path'] = $path;
         }
-        $purchase->update([
-            'product'=>$request->product,
-            'category_id'=>$request->category,
-            'supplier_id'=>$request->supplier,
-            'cost_price'=>$request->cost_price,
-            'quantity'=>$request->quantity,
-            'expiry_date'=>$request->expiry_date,
-            'image'=>$imageName,
-        ]);
-        $notifications = notify("Purchase has been updated");
-        return redirect()->route('purchases.index')->with($notifications);
+
+        $purchase = Purchase::create($payload);
+
+        return response()->json([
+            'message' => 'Purchase created',
+            'purchase' => $purchase->load(['category', 'supplier']),
+        ], 201);
     }
 
-    public function reports(){
-        $title ='purchase reports';
-        return view('admin.purchases.reports',compact('title'));
-    }
-
-    public function generateReport(Request $request){
-        $this->validate($request,[
-            'from_date' => 'required',
-            'to_date' => 'required'
-        ]);
-        $title = 'purchases reports';
-        $purchases = Purchase::whereBetween(DB::raw('DATE(created_at)'), array($request->from_date, $request->to_date))->get();
-        return view('admin.purchases.reports',compact(
-            'purchases','title'
-        ));
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Request $request)
+    public function update(Request $request, Purchase $purchase): JsonResponse
     {
-        return Purchase::findOrFail($request->id)->delete();
+        $v = Validator::make($request->all(), [
+            'product' => ['required', 'string', 'max:255'],
+            'category' => ['required', 'integer'],
+            'supplier' => ['required', 'integer'],
+            'cost_price' => ['required', 'numeric', 'min:0'],
+            'quantity' => ['required', 'integer', 'min:0'],
+            'expiry_date' => ['required', 'date'],
+            'image' => ['nullable', 'image', 'max:4096'],
+        ]);
+
+        if ($v->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $v->errors()], 422);
+        }
+
+        $data = $v->validated();
+
+        $payload = [
+            'product' => $data['product'],
+            'category_id' => $data['category'],
+            'supplier_id' => $data['supplier'],
+            'cost_price' => $data['cost_price'],
+            'quantity' => $data['quantity'],
+            'expiry_date' => $data['expiry_date'],
+        ];
+
+        if ($request->hasFile('image')) {
+            if ($purchase->image_path) {
+                Storage::disk('public')->delete($purchase->image_path);
+            }
+            $path = $request->file('image')->store('purchases', 'public');
+            $payload['image_path'] = $path;
+        }
+
+        $purchase->update($payload);
+
+        return response()->json([
+            'message' => 'Purchase updated',
+            'purchase' => $purchase->load(['category', 'supplier']),
+        ]);
+    }
+
+    public function destroy(Purchase $purchase): JsonResponse
+    {
+        if ($purchase->image_path) {
+            Storage::disk('public')->delete($purchase->image_path);
+        }
+        $purchase->delete();
+        return response()->json(['message' => 'Purchase deleted']);
+    }
+
+    public function report(Request $request): JsonResponse
+    {
+        $v = Validator::make($request->all(), [
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date'],
+        ]);
+        if ($v->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $v->errors()], 422);
+        }
+
+        $query = Purchase::query()->with(['category', 'supplier'])->orderByDesc('id');
+
+        if ($request->filled('from')) {
+            $query->whereDate('created_at', '>=', $request->input('from'));
+        }
+        if ($request->filled('to')) {
+            $query->whereDate('created_at', '<=', $request->input('to'));
+        }
+
+        return response()->json(['data' => $query->get()]);
     }
 }

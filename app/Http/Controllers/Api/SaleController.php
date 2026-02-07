@@ -1,246 +1,105 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api;
 
-use App\Models\Sale;
-use App\Models\Product;
-use App\Models\Purchase;
-use Illuminate\Http\Request;
-use App\Events\PurchaseOutStock;
-use Yajra\DataTables\DataTables;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Validator;
+use App\Models\Sale;
 
 class SaleController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
-     */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
-        $title = 'sales';
-        if($request->ajax()){
-            $sales = Sale::latest();
-            return DataTables::of($sales)
-                    ->addIndexColumn()
-                    ->addColumn('product',function($sale){
-                        $image = '';
-                        if(!empty($sale->product)){
-                            $image = null;
-                            if(!empty($sale->product->purchase->image)){
-                                $image = '<span class="avatar avatar-sm mr-2">
-                                <img class="avatar-img" src="'.asset("storage/purchases/".$sale->product->purchase->image).'" alt="image">
-                                </span>';
-                            }
-                            return $sale->product->purchase->product. ' ' . $image;
-                        }                 
-                    })
-                    ->addColumn('total_price',function($sale){                   
-                        return settings('app_currency','$').' '. $sale->total_price;
-                    })
-                    ->addColumn('date',function($row){
-                        return date_format(date_create($row->created_at),'d M, Y');
-                    })
-                    ->addColumn('action', function ($row) {
-                        $editbtn = '<a href="'.route("sales.edit", $row->id).'" class="editbtn"><button class="btn btn-info"><i class="fas fa-edit"></i></button></a>';
-                        $deletebtn = '<a data-id="'.$row->id.'" data-route="'.route('sales.destroy', $row->id).'" href="javascript:void(0)" id="deletebtn"><button class="btn btn-danger"><i class="fas fa-trash"></i></button></a>';
-                        if (!auth()->user()->hasPermissionTo('edit-sale')) {
-                            $editbtn = '';
-                        }
-                        if (!auth()->user()->hasPermissionTo('destroy-sale')) {
-                            $deletebtn = '';
-                        }
-                        $btn = $editbtn.' '.$deletebtn;
-                        return $btn;
-                    })
-                    ->rawColumns(['product','action'])
-                    ->make(true);
+        $q = trim((string) $request->query('q', ''));
 
+        $query = Sale::query()
+            ->with(['product'])
+            ->orderByDesc('id');
+
+        if ($q !== '') {
+            $query->whereHas('product', fn($p) => $p->where('description', 'like', "%{$q}%"));
         }
-        $products = Product::get();
-        return view('admin.sales.index',compact(
-            'title','products',
-        ));
+
+        return response()->json(['data' => $query->paginate(20)]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
+    public function store(Request $request): JsonResponse
     {
-        $title = 'create sales';
-        $products = Product::get();
-        return view('admin.sales.create',compact(
-            'title','products'
-        ));
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        $this->validate($request,[
-            'product'=>'required',
-            'quantity'=>'required|integer|min:1'
+        $v = Validator::make($request->all(), [
+            'product' => ['required', 'integer'], // product id
+            'quantity' => ['required', 'integer', 'min:1'],
+            'total_price' => ['required', 'numeric', 'min:0'],
+            'customer' => ['nullable', 'string', 'max:255'],
         ]);
-        $sold_product = Product::find($request->product);
-        
-        /**update quantity of
-            sold item from
-         purchases
-        **/
-        $purchased_item = Purchase::find($sold_product->purchase->id);
-        $new_quantity = ($purchased_item->quantity) - ($request->quantity);
-        $notification = '';
-        if (!($new_quantity < 0)){
 
-            $purchased_item->update([
-                'quantity'=>$new_quantity,
-            ]);
-
-            /**
-             * calcualting item's total price
-            **/
-            $total_price = ($request->quantity) * ($sold_product->price);
-            Sale::create([
-                'product_id'=>$request->product,
-                'quantity'=>$request->quantity,
-                'total_price'=>$total_price,
-            ]);
-
-            $notification = notify("Product has been sold");
-        } 
-        if($new_quantity <=1 && $new_quantity !=0){
-            // send notification 
-            $product = Purchase::where('quantity', '<=', 1)->first();
-            event(new PurchaseOutStock($product));
-            // end of notification 
-            $notification = notify("Product is running out of stock!!!");
-            
+        if ($v->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $v->errors()], 422);
         }
 
-        return redirect()->route('sales.index')->with($notification);
-    }
+        $data = $v->validated();
 
-    
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \app\Models\Sale $sale
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Sale $sale)
-    {
-        $title = 'edit sale';
-        $products = Product::get();
-        return view('admin.sales.edit',compact(
-            'title','sale','products'
-        ));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \app\Models\Sale $sale
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, Sale $sale)
-    {
-        $this->validate($request,[
-            'product'=>'required',
-            'quantity'=>'required|integer|min:1'
+        $sale = Sale::create([
+            'product_id' => $data['product'],
+            'quantity' => $data['quantity'],
+            'total_price' => $data['total_price'],
+            'customer' => $data['customer'] ?? null,
         ]);
-        $sold_product = Product::find($request->product);
-        /**
-         * update quantity of sold item from purchases
-        **/
-        $purchased_item = Purchase::find($sold_product->purchase->id);
-        if(!empty($request->quantity)){
-            $new_quantity = ($purchased_item->quantity) - ($request->quantity);
-        }
-        $new_quantity = $sale->quantity;
-        $notification = '';
-        if (!($new_quantity < 0)){
-            $purchased_item->update([
-                'quantity'=>$new_quantity,
-            ]);
 
-            /**
-             * calcualting item's total price
-            **/
-            if(!empty($request->quantity)){
-                $total_price = ($request->quantity) * ($sold_product->price);
-            }
-            $total_price = $sale->total_price;
-            $sale->update([
-                'product_id'=>$request->product,
-                'quantity'=>$request->quantity,
-                'total_price'=>$total_price,
-            ]);
-
-            $notification = notify("Product has been updated");
-        } 
-        if($new_quantity <=1 && $new_quantity !=0){
-            // send notification 
-            $product = Purchase::where('quantity', '<=', 1)->first();
-            event(new PurchaseOutStock($product));
-            // end of notification 
-            $notification = notify("Product is running out of stock!!!");
-            
-        }
-        return redirect()->route('sales.index')->with($notification);
+        return response()->json(['message' => 'Sale created', 'sale' => $sale->load('product')], 201);
     }
 
-    /**
-     * Generate sales reports index
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function reports(Request $request){
-        $title = 'sales reports';
-        return view('admin.sales.reports',compact(
-            'title'
-        ));
-    }
-
-    /**
-     * Generate sales report form post
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
-     */
-    public function generateReport(Request $request){
-        $this->validate($request,[
-            'from_date' => 'required',
-            'to_date' => 'required',
-        ]);
-        $title = 'sales reports';
-        $sales = Sale::whereBetween(DB::raw('DATE(created_at)'), array($request->from_date, $request->to_date))->get();
-        return view('admin.sales.reports',compact(
-            'sales','title'
-        ));
-    }
-
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Request $request)
+    public function update(Request $request, Sale $sale): JsonResponse
     {
-        return Sale::findOrFail($request->id)->delete();
+        $v = Validator::make($request->all(), [
+            'product' => ['required', 'integer'],
+            'quantity' => ['required', 'integer', 'min:1'],
+            'total_price' => ['required', 'numeric', 'min:0'],
+            'customer' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        if ($v->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $v->errors()], 422);
+        }
+
+        $data = $v->validated();
+
+        $sale->update([
+            'product_id' => $data['product'],
+            'quantity' => $data['quantity'],
+            'total_price' => $data['total_price'],
+            'customer' => $data['customer'] ?? null,
+        ]);
+
+        return response()->json(['message' => 'Sale updated', 'sale' => $sale->load('product')]);
+    }
+
+    public function destroy(Sale $sale): JsonResponse
+    {
+        $sale->delete();
+        return response()->json(['message' => 'Sale deleted']);
+    }
+
+    public function report(Request $request): JsonResponse
+    {
+        $v = Validator::make($request->all(), [
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date'],
+        ]);
+        if ($v->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $v->errors()], 422);
+        }
+
+        $query = Sale::query()->with('product')->orderByDesc('id');
+
+        if ($request->filled('from')) {
+            $query->whereDate('created_at', '>=', $request->input('from'));
+        }
+        if ($request->filled('to')) {
+            $query->whereDate('created_at', '<=', $request->input('to'));
+        }
+
+        return response()->json(['data' => $query->get()]);
     }
 }

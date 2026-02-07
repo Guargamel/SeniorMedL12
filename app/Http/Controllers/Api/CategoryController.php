@@ -1,97 +1,66 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
 use Illuminate\Http\Request;
-use Yajra\DataTables\DataTables;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Validator;
+use App\Models\Category;
 
 class CategoryController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
-     */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
-        $title = 'categories';
-        if($request->ajax()){
-            $categories = Category::get();
-            return DataTables::of($categories)
-                    ->addIndexColumn()
-                    ->addColumn('created_at',function($category){
-                        return date_format(date_create($category->created_at),"d M,Y");
-                    })
-                    ->addColumn('action',function ($row){
-                        $editbtn = '<a data-id="'.$row->id.'" data-name="'.$row->name.'" href="javascript:void(0)" class="editbtn"><button class="btn btn-info"><i class="fas fa-edit"></i></button></a>';
-                        $deletebtn = '<a data-id="'.$row->id.'" data-route="'.route('categories.destroy',$row->id).'" href="javascript:void(0)" id="deletebtn"><button class="btn btn-danger"><i class="fas fa-trash"></i></button></a>';
-                        if(!auth()->user()->hasPermissionTo('edit-category')){
-                            $editbtn = '';
-                        }
-                        if(!auth()->user()->hasPermissionTo('destroy-category')){
-                            $deletebtn = '';
-                        }
-                        $btn = $editbtn.' '.$deletebtn;
-                        return $btn;
-                    })
-                    ->rawColumns(['action'])
-                    ->make(true);
+        $q = trim((string) $request->query('q', ''));
+
+        $query = Category::query()->orderByDesc('id');
+        if ($q !== '') {
+            $query->where('name', 'like', "%{$q}%");
         }
-        return view('admin.products.categories',compact(
-            'title'
-        ));
-    }
 
-   
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        $this->validate($request,[
-            'name'=>'required|max:100',
+        return response()->json([
+            'data' => $query->paginate(20),
         ]);
-        Category::create($request->all());
-        $notification=array("Category has been added");
-        return back()->with($notification);
     }
 
-    
-
-    
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * 
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request)
+    public function store(Request $request): JsonResponse
     {
-        $this->validate($request,['name'=>'required|max:100']);
-        $category = Category::find($request->id);
+        $v = Validator::make($request->all(), [
+            'name' => ['required', 'string', 'max:255'],
+        ]);
+
+        if ($v->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $v->errors()], 422);
+        }
+
+        $cat = Category::create([
+            'name' => $request->input('name'),
+        ]);
+
+        return response()->json(['message' => 'Category created', 'category' => $cat], 201);
+    }
+
+    public function update(Request $request, Category $category): JsonResponse
+    {
+        $v = Validator::make($request->all(), [
+            'name' => ['required', 'string', 'max:255'],
+        ]);
+
+        if ($v->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $v->errors()], 422);
+        }
+
         $category->update([
-            'name'=>$request->name,
+            'name' => $request->input('name'),
         ]);
-        $notification = notify("Category has been updated");
-        return back()->with($notification);
+
+        return response()->json(['message' => 'Category updated', 'category' => $category]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Request $request)
+    public function destroy(Category $category): JsonResponse
     {
-        return Category::findOrFail($request->id)->delete();
+        $category->delete();
+        return response()->json(['message' => 'Category deleted']);
     }
 }

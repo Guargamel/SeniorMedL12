@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { apiFetch } from "../utils/api"; // adjust path
 
 /**
  * Blade: resources/views/admin/sales/create.blade.php
