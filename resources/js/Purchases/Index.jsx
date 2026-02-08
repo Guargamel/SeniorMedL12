@@ -1,7 +1,7 @@
 // resources/js/Purchases/Index.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { apiFetch } from "../utils/api";
+import { apiFetch, safeArray } from "../utils/api";
 
 export default function PurchasesIndex() {
     const navigate = useNavigate();
@@ -29,7 +29,7 @@ export default function PurchasesIndex() {
     const filtered = useMemo(() => {
         const s = q.trim().toLowerCase();
         if (!s) return items;
-        return items.filter((p) => {
+        return safeArray(items).filter((p) => {
             const product = (p.product || "").toLowerCase();
             const category = (p.category?.name || p.category_name || p.category || "").toLowerCase();
             const supplier = (p.supplier?.name || p.supplier_name || p.supplier || "").toLowerCase();
