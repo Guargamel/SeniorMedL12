@@ -22,14 +22,14 @@ export default function Header({
                 </Link>
             </div>
 
-            <a href="javascript:void(0);" id="toggle_btn">
+            <button type="button" id="toggle_btn" className="btn btn-link p-0">
                 <i className="fe fe-text-align-left" />
-            </a>
+            </button>
 
             {/* Mobile Menu Toggle */}
-            <a className="mobile_btn" id="mobile_btn">
+            <button type="button" className="mobile_btn" id="mobile_btn">
                 <i className="fa fa-bars" />
-            </a>
+            </button>
 
             {/* Header Right Menu */}
             <ul className="nav user-menu">

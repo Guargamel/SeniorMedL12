@@ -1,11 +1,21 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { fetchCurrentUser } from "../utils/auth";
 
 const Login = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const from = location.state?.from || "/dashboard";
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState(null);
+
+    useEffect(() => {
+        // If already authenticated (session cookie still valid), skip login page
+        fetchCurrentUser().then(() => navigate(from, { replace: true })).catch(() => {});
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
 
     const getCookie = (name) => {
         const value = `; ${document.cookie}`;
@@ -14,34 +24,34 @@ const Login = () => {
         return null;
     };
 
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:8000`;
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
 
         try {
-            // 1) Get CSRF cookie
-            await fetch("/sanctum/csrf-cookie", {
+            // ✅ Step 5: get CSRF cookie from Laravel server (8000)
+            await fetch(`${API_BASE}/sanctum/csrf-cookie`, {
                 method: "GET",
                 credentials: "include",
-                headers: { "Accept": "application/json" },
+                headers: { Accept: "application/json" },
             });
 
-            // 2) Read XSRF-TOKEN cookie and send it as X-XSRF-TOKEN
-            const xsrfToken = getCookie("XSRF-TOKEN");
-            const response = await fetch("/login", {
+            // ✅ Now login (cookies will be sent + XSRF cookie exists)
+            const response = await fetch(`${API_BASE}/login`, {
                 method: "POST",
                 credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
-                    "Accept": "application/json",
+                    Accept: "application/json",
                     "X-Requested-With": "XMLHttpRequest",
-                    "X-XSRF-TOKEN": xsrfToken ? decodeURIComponent(xsrfToken) : "",
                 },
                 body: JSON.stringify({ email, password }),
             });
 
             if (response.ok) {
-                navigate("/dashboard");
+                navigate(from, { replace: true });
                 return;
             }
 
@@ -52,6 +62,7 @@ const Login = () => {
             setError("Something went wrong");
         }
     };
+
 
     return (
         <div className="login-wrapper">

@@ -100,7 +100,7 @@ export default function RolesCreate() {
                                                 setSelected(Array.from(e.target.selectedOptions).map((o) => o.value))
                                             }
                                         >
-                                            {permissions.map((p) => {
+                                            {(Array.isArray(permissions)?permissions:[]).map((p) => {
                                                 const name = typeof p === "string" ? p : p.name;
                                                 return (
                                                     <option key={p.id ?? name} value={name}>

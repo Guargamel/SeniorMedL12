@@ -90,7 +90,7 @@ export default function SalesCreate() {
                                                 onChange={(e) => setProductId(e.target.value)}
                                             >
                                                 <option value="">Select Product</option>
-                                                {products.map((p) => (
+                                                {(Array.isArray(products)?products:[]).map((p) => (
                                                     <option key={p.id} value={p.id}>
                                                         {p.label ?? p.name ?? p.product ?? `Product #${p.id}`}
                                                     </option>

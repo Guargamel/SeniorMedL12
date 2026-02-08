@@ -1,6 +1,8 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\CategoryController;
@@ -16,36 +18,59 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\BackupController;
 
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+| All routes below require Sanctum auth (session/cookie auth for SPA).
+*/
+
 Route::middleware('auth:sanctum')->group(function () {
 
-    // auth / profile
+    // ---- Auth / Profile ----
+    // Primary "who am I" endpoint for your app
     Route::get('/me', [ProfileController::class, 'me']);
-    Route::post('/profile', [ProfileController::class, 'update']);          // supports multipart (avatar)
+
+    // Compatibility alias (so frontend checks like /api/user work)
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+
+    Route::post('/profile', [ProfileController::class, 'update']); // multipart (avatar)
     Route::put('/profile/password', [ProfileController::class, 'updatePassword']);
 
-    // dashboard
+    // API logout (recommended; avoids /logout web-route confusion)
+    Route::post('/logout', function (Request $request) {
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return response()->json(['message' => 'Logged out']);
+    });
+
+    // ---- Dashboard ----
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
-    // categories
+    // ---- Categories ----
     Route::get('/categories', [CategoryController::class, 'index']);
     Route::post('/categories', [CategoryController::class, 'store']);
     Route::put('/categories/{category}', [CategoryController::class, 'update']);
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
 
-    // suppliers
+    // ---- Suppliers ----
     Route::get('/suppliers', [SupplierController::class, 'index']);
     Route::post('/suppliers', [SupplierController::class, 'store']);
     Route::put('/suppliers/{supplier}', [SupplierController::class, 'update']);
     Route::delete('/suppliers/{supplier}', [SupplierController::class, 'destroy']);
 
-    // purchases
+    // ---- Purchases ----
     Route::get('/purchases', [PurchaseController::class, 'index']);
     Route::post('/purchases', [PurchaseController::class, 'store']); // multipart (image)
     Route::post('/purchases/report', [PurchaseController::class, 'report']);
     Route::put('/purchases/{purchase}', [PurchaseController::class, 'update']); // multipart (image)
     Route::delete('/purchases/{purchase}', [PurchaseController::class, 'destroy']);
 
-    // products
+    // ---- Products ----
     Route::get('/products', [ProductController::class, 'index']);
     Route::post('/products', [ProductController::class, 'store']);
     Route::put('/products/{product}', [ProductController::class, 'update']);
@@ -53,14 +78,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/products/expired', [ProductController::class, 'expired']);
     Route::get('/products/outstock', [ProductController::class, 'outstock']);
 
-    // sales
+    // ---- Sales ----
     Route::get('/sales', [SaleController::class, 'index']);
     Route::post('/sales', [SaleController::class, 'store']);
     Route::post('/sales/report', [SaleController::class, 'report']);
+    Route::get('/sales/form-options', [SaleController::class, 'formOptions']);
     Route::put('/sales/{sale}', [SaleController::class, 'update']);
     Route::delete('/sales/{sale}', [SaleController::class, 'destroy']);
 
-    // roles & permissions
+    // ---- Roles & Permissions ----
     Route::get('/roles', [RoleController::class, 'index']);
     Route::post('/roles', [RoleController::class, 'store']);
     Route::get('/roles/{role}', [RoleController::class, 'show']);
@@ -69,23 +95,32 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/permissions', [PermissionController::class, 'index']);
 
-    // users
+    // ---- Users ----
     Route::get('/users', [UserController::class, 'index']);
     Route::post('/users', [UserController::class, 'store']);
     Route::get('/users/{user}', [UserController::class, 'show']);
     Route::put('/users/{user}', [UserController::class, 'update']);
     Route::delete('/users/{user}', [UserController::class, 'destroy']);
 
-    // notifications
+    // ---- Notifications ----
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
 
-    // settings
+    // ---- Settings ----
     Route::get('/settings', [SettingController::class, 'index']);
     Route::post('/settings', [SettingController::class, 'update']);
 
-    // backups
+    // ---- Backups ----
     Route::get('/backups', [BackupController::class, 'index']);
     Route::post('/backups/run', [BackupController::class, 'run']);
+
+    // ✅ API logout (so you don't depend on web /logout)
+    Route::post('/logout', function (Request $request) {
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return response()->json(['message' => 'Logged out']);
+    });
 });

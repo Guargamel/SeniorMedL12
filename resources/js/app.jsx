@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 // Layouts
 import PlainLayout from "./Layouts/PlainLayout.jsx";
-import AppLayout from "./Layouts/Layout.jsx";
+import RequireAuthLayout from "./Layouts/RequireAuthLayout.jsx";
 
 // Auth
 import Login from "./Auth/Login.jsx";
@@ -65,7 +65,7 @@ import Permissions from "./Roles/Permissions.jsx";
 const container = document.getElementById("app");
 
 createRoot(container).render(
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
 
             {/* PUBLIC ROUTES */}
@@ -75,7 +75,7 @@ createRoot(container).render(
             </Route>
 
             {/* PROTECTED APP ROUTES */}
-            <Route element={<AppLayout />}>
+            <Route element={<RequireAuthLayout />}>
 
                 {/* Dashboard */}
                 <Route path="/dashboard" element={<Dashboard />} />

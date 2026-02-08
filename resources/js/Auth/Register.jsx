@@ -1,13 +1,22 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { fetchCurrentUser } from "../utils/auth";
 
 const Register = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const from = location.state?.from || "/dashboard";
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [passwordConfirm, setPasswordConfirm] = useState("");
     const [error, setError] = useState(null);
+
+    useEffect(() => {
+        fetchCurrentUser().then(() => navigate(from, { replace: true })).catch(() => {});
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -19,14 +28,21 @@ const Register = () => {
         }
 
         try {
-            const response = await fetch("/register", {
+            const API_BASE = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:8000`;
+
+            await fetch(`${API_BASE}/sanctum/csrf-cookie`, { credentials: "include" });
+
+            const response = await fetch(`${API_BASE}/register`, {
                 method: "POST",
+                credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+                    Accept: "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
                 },
                 body: JSON.stringify({ name, email, password, password_confirmation: passwordConfirm }),
             });
+
 
             const data = await response.json();
 

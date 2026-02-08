@@ -126,7 +126,7 @@ export default function PurchasesCreate() {
                         <div className="form-group">
                           <label>Category <span className="text-danger">*</span></label>
                           <select className="form-control" name="category" value={form.category} onChange={onChange} required>
-                            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            {(Array.isArray(categories)?categories:[]).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                           </select>
                         </div>
                       </div>
@@ -135,7 +135,7 @@ export default function PurchasesCreate() {
                         <div className="form-group">
                           <label>Supplier <span className="text-danger">*</span></label>
                           <select className="form-control" name="supplier" value={form.supplier} onChange={onChange} required>
-                            {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                            {(Array.isArray(suppliers)?suppliers:[]).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                           </select>
                         </div>
                       </div>

@@ -92,7 +92,7 @@ export default function ProductsEdit() {
                         <div className="form-group">
                           <label>Product <span className="text-danger">*</span></label>
                           <select className="form-control" name="product" value={form.product} onChange={onChange} required>
-                            {purchases.map((p) => (
+                            {(Array.isArray(purchases)?purchases:[]).map((p) => (
                               <option key={p.id} value={p.id}>{p.product}</option>
                             ))}
                           </select>

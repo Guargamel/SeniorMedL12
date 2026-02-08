@@ -179,7 +179,7 @@ const Profile = () => {
                                                         <label>Role</label>
                                                         <select className="form-control" name="role" value={profileForm.role} onChange={onProfileChange}>
                                                             <option value="">(unchanged)</option>
-                                                            {roles.map((r) => (
+                                                            {(Array.isArray(roles)?roles:[]).map((r) => (
                                                                 <option key={r.id || r.name} value={r.name}>{r.name}</option>
                                                             ))}
                                                         </select>
