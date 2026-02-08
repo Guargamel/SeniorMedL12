@@ -6,11 +6,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
+use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+
+    /**
+     * Spatie permission uses the guard name to match roles/permissions.
+     * Your SQL dump uses guard_name = 'web'.
+     */
+    protected string $guard_name = 'web';
 
     /**
      * The attributes that are mass assignable.
@@ -23,6 +32,18 @@ class User extends Authenticatable
         'avatar',
         'password',
     ];
+
+    /**
+     * Expose a convenient URL for the frontend.
+     */
+    protected $appends = ['avatar_url'];
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (empty($this->avatar)) return null;
+        // stored in /storage/... via public disk
+        return Storage::disk('public')->url($this->avatar);
+    }
 
     /**
      * The attributes that should be hidden for serialization.

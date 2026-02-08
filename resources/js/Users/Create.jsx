@@ -21,8 +21,8 @@ const UsersCreate = () => {
             try {
                 // expected: { roles: [{name:...}] } OR [{name:...}]
                 const data = await apiFetch("/api/roles");
-                const list = Array.isArray(data) ? data : (data.roles || data.data || []);
-                setRoles(list);
+                const list = normalizeList(res, ["roles"]);
+            setRoles(list);
                 if (list[0]?.name) setForm((f) => ({ ...f, role: f.role || list[0].name }));
             } catch {
                 // roles optional; keep empty
@@ -103,9 +103,9 @@ const UsersCreate = () => {
                                             <div className="form-group">
                                                 <label>Role</label>
                                                 <select name="role" className="form-control" value={form.role} onChange={onChange}>
-                                                    {roles.length === 0 ? (
+                                                    {safeArray(roles).length === 0 ? (
                                                         <option value="">(No roles loaded)</option>
-                                                    ) : roles.map((r) => (
+                                                    ) : safeArray(roles).map((r) => (
                                                         <option key={r.id || r.name} value={r.name}>{r.name}</option>
                                                     ))}
                                                 </select>

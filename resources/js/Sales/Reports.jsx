@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { apiFetch } from "../utils/api"; // adjust path
+import { apiFetch, normalizeList, safeArray } from "../utils/api"; // adjust path
 
 /**
  * Blade: resources/views/admin/sales/reports.blade.php
@@ -88,7 +88,7 @@ export default function SalesReports() {
                                         ) : rows.length === 0 ? (
                                             <tr><td colSpan={4}>No report data yet. Click “Generate Report in Purchase Report”.</td></tr>
                                         ) : (
-                                            rows.map((r) => (
+                                            safeArray(rows).map((r) => (
                                                 <tr key={r.id ?? `${r.product}-${r.date}-${r.quantity}`}>
                                                     <td>
                                                         {r.product}

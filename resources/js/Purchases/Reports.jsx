@@ -1,7 +1,7 @@
 // resources/js/Purchases/Reports.jsx
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { apiFetch } from "../utils/api";
+import { apiFetch, normalizeList, safeArray } from "../utils/api";
 import Modal from "../components/Modal";
 
 export default function PurchasesReport() {
@@ -77,9 +77,9 @@ export default function PurchasesReport() {
                       </tr>
                     </thead>
                     <tbody>
-                      {rows.length === 0 ? (
+                      {safeArray(rows).length === 0 ? (
                         <tr><td colSpan={6} className="text-center text-muted">No report data yet</td></tr>
-                      ) : rows.map((p) => (
+                      ) : safeArray(rows).map((p) => (
                         <tr key={p.id || `${p.product}-${p.expiry_date}-${p.quantity}`}>
                           <td>{p.product}</td>
                           <td>{p.category?.name || p.category_name || "-"}</td>

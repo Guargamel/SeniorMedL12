@@ -1,6 +1,7 @@
 // resources/js/Pages/Users/Profile.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { apiFetch, normalizeList, safeArray } from "../utils/api";
 
 const Profile = () => {
     const [user, setUser] = useState(null);
@@ -41,8 +42,7 @@ const Profile = () => {
         (async () => {
             try {
                 const data = await apiFetch("/api/roles");
-                const list = Array.isArray(data) ? data : (data.roles || data.data || []);
-                setRoles(list);
+                setRoles(normalizeList(data, ["roles"]));
             } catch {
                 // ignore
             }

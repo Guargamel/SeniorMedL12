@@ -135,9 +135,9 @@ const UsersEdit = () => {
                                                 <div className="form-group">
                                                     <label>Role</label>
                                                     <select name="role" className="form-control" value={form.role} onChange={onChange}>
-                                                        {roles.length === 0 ? (
+                                                        {safeArray(roles).length === 0 ? (
                                                             <option value={form.role}>{form.role || "(No roles loaded)"}</option>
-                                                        ) : roles.map((r) => (
+                                                        ) : safeArray(roles).map((r) => (
                                                             <option key={r.id || r.name} value={r.name}>{r.name}</option>
                                                         ))}
                                                     </select>

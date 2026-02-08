@@ -1,7 +1,7 @@
 // resources/js/Products/Expired.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { apiFetch } from "../utils/api";
+import { apiFetch, normalizeList, safeArray } from "../utils/api";
 
 export default function ExpiredProducts() {
   const navigate = useNavigate();
@@ -15,8 +15,8 @@ export default function ExpiredProducts() {
     setLoading(true);
     try {
       const res = await apiFetch("/api/products/expired");
-      const list = Array.isArray(res) ? res : (res.data || res.products || []);
-      setItems(list);
+      const list = normalizeList(res, ["products"]);
+            setItems(list);
     } catch (e) {
       setErr(e.message || "Failed to load expired products");
     } finally {
@@ -28,8 +28,8 @@ export default function ExpiredProducts() {
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    if (!s) return items;
-    return items.filter((p) => ((p.product || p.name || "").toLowerCase().includes(s)));
+    if (!s) return safeArray(items);
+    return safeArray(items).filter((p) => ((p.product || p.name || "").toLowerCase().includes(s)));
   }, [items, q]);
 
   return (
@@ -74,9 +74,9 @@ export default function ExpiredProducts() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filtered.length === 0 ? (
+                      {safeArray(filtered).length === 0 ? (
                         <tr><td colSpan={7} className="text-center text-muted">No expired products</td></tr>
-                      ) : filtered.map((p) => (
+                      ) : safeArray(filtered).map((p) => (
                         <tr key={p.id}>
                           <td>{p.product || p.name || "-"}</td>
                           <td>{p.category || p.category_name || "-"}</td>

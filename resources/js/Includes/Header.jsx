@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { safeArray } from "../utils/api";
 
 export default function Header({
     appLogo,
@@ -63,7 +64,7 @@ export default function Header({
 
                         <div className="noti-content">
                             <ul className="notification-list">
-                                {notifications.map((n, idx) => (
+                                {safeArray(notifications).map((n, idx) => (
                                     <li key={idx} className="notification-message">
                                         <a
                                             href="#"

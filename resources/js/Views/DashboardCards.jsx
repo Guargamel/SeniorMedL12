@@ -150,7 +150,7 @@ export default function DashboardCards() {
                                                 </td>
                                             </tr>
                                         ) : (
-                                            recentSales.map((sale, index) => (
+                                            safeArray(recentSales).map((sale, index) => (
                                                 <tr key={index}>
                                                     <td>{sale.medicine}</td>
                                                     <td>{sale.quantity}</td>
@@ -169,4 +169,3 @@ export default function DashboardCards() {
         </>
     );
 }
-

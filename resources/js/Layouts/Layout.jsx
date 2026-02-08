@@ -3,6 +3,7 @@ import React from "react";
 import { Outlet } from "react-router-dom";
 import Header from "../Includes/Header.jsx";
 import Sidebar from "../Includes/Sidebar.jsx";
+import { safeArray } from "../utils/api";
 
 const defaultPermissions = {
     viewCategory: true,
@@ -57,7 +58,7 @@ export default function Layout({
                         </div>
                     )}
 
-                    {errors.map((error, idx) => (
+                    {safeArray(errors).map((error, idx) => (
                         <div key={idx} className="alert alert-danger">
                             {error}
                         </div>

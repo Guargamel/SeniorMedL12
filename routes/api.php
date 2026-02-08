@@ -86,41 +86,36 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/sales/{sale}', [SaleController::class, 'update']);
     Route::delete('/sales/{sale}', [SaleController::class, 'destroy']);
 
-    // ---- Roles & Permissions ----
-    Route::get('/roles', [RoleController::class, 'index']);
-    Route::post('/roles', [RoleController::class, 'store']);
-    Route::get('/roles/{role}', [RoleController::class, 'show']);
-    Route::put('/roles/{role}', [RoleController::class, 'update']);
-    Route::delete('/roles/{role}', [RoleController::class, 'destroy']);
+    // ---- Admin-only: Roles / Permissions / Users ----
+    Route::middleware('role:super-admin')->group(function () {
+        // Roles & permissions
+        Route::get('/roles', [RoleController::class, 'index']);
+        Route::post('/roles', [RoleController::class, 'store']);
+        Route::get('/roles/{role}', [RoleController::class, 'show']);
+        Route::put('/roles/{role}', [RoleController::class, 'update']);
+        Route::delete('/roles/{role}', [RoleController::class, 'destroy']);
 
-    Route::get('/permissions', [PermissionController::class, 'index']);
+        Route::get('/permissions', [PermissionController::class, 'index']);
 
-    // ---- Users ----
-    Route::get('/users', [UserController::class, 'index']);
-    Route::post('/users', [UserController::class, 'store']);
-    Route::get('/users/{user}', [UserController::class, 'show']);
-    Route::put('/users/{user}', [UserController::class, 'update']);
-    Route::delete('/users/{user}', [UserController::class, 'destroy']);
+        // Users
+        Route::get('/users', [UserController::class, 'index']);
+        Route::post('/users', [UserController::class, 'store']);
+        Route::get('/users/{user}', [UserController::class, 'show']);
+        Route::put('/users/{user}', [UserController::class, 'update']);
+        Route::delete('/users/{user}', [UserController::class, 'destroy']);
+
+        // Settings & backups
+        Route::get('/settings', [SettingController::class, 'index']);
+        Route::post('/settings', [SettingController::class, 'update']);
+        Route::get('/backups', [BackupController::class, 'index']);
+        Route::post('/backups/run', [BackupController::class, 'run']);
+    });
 
     // ---- Notifications ----
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
 
-    // ---- Settings ----
-    Route::get('/settings', [SettingController::class, 'index']);
-    Route::post('/settings', [SettingController::class, 'update']);
-
-    // ---- Backups ----
-    Route::get('/backups', [BackupController::class, 'index']);
-    Route::post('/backups/run', [BackupController::class, 'run']);
-
     // ✅ API logout (so you don't depend on web /logout)
-    Route::post('/logout', function (Request $request) {
-        Auth::guard('web')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return response()->json(['message' => 'Logged out']);
-    });
+    // (keep exactly one logout route)
 });

@@ -13,7 +13,13 @@ class RoleController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $roles = Role::query()->withCount('users')->orderBy('name')->get();
+        // Avoid withCount('users') here: it can throw if the role/user linkage isn't ready yet.
+        $roles = Role::query()
+            ->with('permissions:id,name')
+            ->select(['id', 'name', 'guard_name', 'created_at', 'updated_at'])
+            ->orderBy('name')
+            ->get();
+
         return response()->json(['data' => $roles]);
     }
 

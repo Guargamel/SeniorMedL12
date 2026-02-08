@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { apiFetch } from "../utils/api"; // adjust path
+import { apiFetch, normalizeList, safeArray } from "../utils/api"; // adjust path
 
 /**
  * Blade: resources/views/admin/sales/index.blade.php
@@ -90,7 +90,7 @@ export default function SalesIndex({ permissions = {} }) {
                                         ) : rows.length === 0 ? (
                                             <tr><td colSpan={5}>No sales found.</td></tr>
                                         ) : (
-                                            rows.map((r) => (
+                                            safeArray(rows).map((r) => (
                                                 <tr key={r.id}>
                                                     <td>{r.product}</td>
                                                     <td>{r.quantity}</td>

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { apiFetch } from "../utils/api"; // adjust path
+import { apiFetch, normalizeList, safeArray } from "../utils/api"; // adjust path
 
 /**
  * React version of roles/index.blade.php
@@ -20,7 +20,7 @@ export default function RolesIndex() {
         try {
             const data = await apiFetch("/api/roles");
             // Support both array and {data:[...]} payloads
-            setRows(Array.isArray(data) ? data : (data?.data || []));
+            setRows(normalizeList(data, ["roles"]));
         } catch (e) {
             console.error(e);
             setError(e.message || "Failed to load roles");
@@ -65,7 +65,7 @@ export default function RolesIndex() {
             );
         }
 
-        return rows.map((r) => (
+        return safeArray(rows).map((r) => (
             <tr key={r.id}>
                 <td>{r.name}</td>
                 <td>

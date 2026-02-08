@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Modal from "./Modal";
-import { apiFetch } from "../utils/api"; // adjust path
+import { apiFetch, normalizeList, safeArray } from "../utils/api"; // adjust path
 
 /**
  * React version of roles/permissions.blade.php
@@ -30,7 +30,7 @@ export default function Permissions() {
         setError("");
         try {
             const data = await apiFetch("/api/permissions");
-            setRows(Array.isArray(data) ? data : (data?.data || []));
+            setRows(normalizeList(data, ["permissions"]));
         } catch (e) {
             console.error(e);
             setError(e.message || "Failed to load permissions");
@@ -122,7 +122,7 @@ export default function Permissions() {
             );
         }
 
-        return rows.map((r) => (
+        return safeArray(rows).map((r) => (
             <tr key={r.id}>
                 <td>{r.name}</td>
                 <td>{r.created_at ? String(r.created_at).replace("T", " ").slice(0, 19) : ""}</td>

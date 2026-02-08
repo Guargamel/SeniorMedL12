@@ -1,6 +1,6 @@
-// resources/js/Pages/Users/Index.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { apiFetch, safeArray, normalizeList } from "@/utils/api";
 
 const UsersIndex = () => {
     const [rows, setRows] = useState([]);
@@ -77,9 +77,9 @@ const UsersIndex = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {rows.length === 0 ? (
+                                            {safeArray(rows).length === 0 ? (
                                                 <tr><td colSpan={6} className="text-center text-muted">No users found</td></tr>
-                                            ) : rows.map((u) => (
+                                            ) : safeArray(rows).map((u) => (
                                                 <tr key={u.id}>
                                                     <td>{u.name}</td>
                                                     <td>{u.email}</td>

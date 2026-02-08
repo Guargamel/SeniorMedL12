@@ -1,7 +1,7 @@
 // resources/js/Products/Categories.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { apiFetch } from "../utils/api";
+import { apiFetch, normalizeList, safeArray } from "../utils/api";
 import Modal from "../components/Modal";
 
 export default function Categories() {
@@ -22,14 +22,7 @@ export default function Categories() {
         try {
             const res = await apiFetch("/api/categories");
 
-            // Normalize common API shapes into an array
-            const list =
-                Array.isArray(res) ? res :
-                    Array.isArray(res?.data) ? res.data :
-                        Array.isArray(res?.data?.data) ? res.data.data :     // nested paginator/wrapper
-                            Array.isArray(res?.categories) ? res.categories :
-                                Array.isArray(res?.categories?.data) ? res.categories.data :
-                                    [];
+            const list = normalizeList(res, ["categories"]);
 
             setItems(list);
         } catch (e) {
@@ -45,8 +38,8 @@ export default function Categories() {
 
     const filtered = useMemo(() => {
         const s = q.trim().toLowerCase();
-        if (!s) return items;
-        return items.filter((c) => (c.name || "").toLowerCase().includes(s));
+        if (!s) return safeArray(items);
+        return safeArray(items).filter((c) => (c.name || "").toLowerCase().includes(s));
     }, [items, q]);
 
     const pageHeader = (
@@ -133,9 +126,9 @@ export default function Categories() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {filtered.length === 0 ? (
+                                            {safeArray(filtered).length === 0 ? (
                                                 <tr><td colSpan={3} className="text-center text-muted">No categories</td></tr>
-                                            ) : filtered.map((c) => (
+                                            ) : safeArray(filtered).map((c) => (
                                                 <tr key={c.id}>
                                                     <td>{c.name}</td>
                                                     <td>{c.created_at || "-"}</td>

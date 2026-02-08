@@ -13,6 +13,7 @@ class ProfileController extends Controller
 {
     public function me(Request $request): JsonResponse
     {
+        // Frontend expects either {user:{...}} or user directly; we keep {user:...}
         return response()->json(['user' => $request->user()?->load('roles')]);
     }
 
@@ -24,7 +25,7 @@ class ProfileController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'avatar' => ['nullable', 'image', 'max:4096'],
-            // role change is optional; keep it if your app allows updating own role
+            // role change is only allowed for admins; ignored otherwise
             'role' => ['nullable', 'string'],
         ]);
 
@@ -36,18 +37,18 @@ class ProfileController extends Controller
         $user->email = $request->input('email');
 
         if ($request->hasFile('avatar')) {
-            // delete old avatar if you store path
-            if (!empty($user->avatar_path)) {
-                Storage::disk('public')->delete($user->avatar_path);
+            // delete old avatar
+            if (!empty($user->avatar)) {
+                Storage::disk('public')->delete($user->avatar);
             }
             $path = $request->file('avatar')->store('avatars', 'public');
-            $user->avatar_path = $path;
+            $user->avatar = $path;
         }
 
         $user->save();
 
-        // Optional: assign role if provided and you want this behavior
-        if ($request->filled('role') && method_exists($user, 'syncRoles')) {
+        // Only allow role switching if the current user is a super-admin
+        if ($request->filled('role') && method_exists($user, 'syncRoles') && $user->hasRole('super-admin')) {
             $user->syncRoles([$request->input('role')]);
         }
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { apiFetch } from "../utils/api"; // adjust if your apiFetch path differs
+import { apiFetch, normalizeList, safeArray } from "../utils/api"; // adjust if your apiFetch path differs
 
 export default function SuppliersIndex() {
     const navigate = useNavigate();
@@ -18,7 +18,7 @@ export default function SuppliersIndex() {
         try {
             // expected: array OR {data: []} OR {suppliers: []}
             const res = await apiFetch("/api/suppliers");
-            const list = Array.isArray(res) ? res : (res.data || res.suppliers || []);
+            const list = normalizeList(res, ["suppliers"]);
             setSuppliers(list);
         } catch (e) {
             setErr(e.message || "Failed to load suppliers");
@@ -101,7 +101,7 @@ export default function SuppliersIndex() {
                                                     </td>
                                                 </tr>
                                             ) : (
-                                                suppliers.map((s) => (
+                                                safeArray(suppliers).map((s) => (
                                                     <tr key={s.id}>
                                                         <td>{s.product || ""}</td>
                                                         <td>{s.name || ""}</td>
