@@ -123,7 +123,7 @@ createRoot(container).render(
                 <Route path="/permissions" element={<Permissions />} />
 
                 {/* DEFAULT */}
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/" element={<Navigate to="/login" replace />} />
 
                 {/* 404 */}
                 <Route path="*" element={<div className="p-4">Page not found</div>} />
