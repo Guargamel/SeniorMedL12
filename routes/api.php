@@ -36,7 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
 
-    Route::post('/profile', [ProfileController::class, 'update']); // multipart (avatar)
+    Route::put('/profile', [ProfileController::class, 'update']); // multipart (avatar)
     Route::put('/profile/password', [ProfileController::class, 'updatePassword']);
 
     // API logout (recommended; avoids /logout web-route confusion)

@@ -1,7 +1,7 @@
 // resources/js/Products/Index.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { apiFetch } from "../utils/api";
+import { apiFetch, safeArray } from "../utils/api";
 
 export default function ProductsIndex() {
     const navigate = useNavigate();
@@ -30,7 +30,7 @@ export default function ProductsIndex() {
     const filtered = useMemo(() => {
         const s = q.trim().toLowerCase();
         if (!s) return items;
-        return items.filter((p) => {
+        return safeArray(items).filter((p) => {
             const name = (p.product || p.name || "").toLowerCase();
             const cat = (p.category || p.category_name || "").toLowerCase();
             return name.includes(s) || cat.includes(s);
@@ -96,7 +96,7 @@ export default function ProductsIndex() {
                                         <tbody>
                                             {filtered.length === 0 ? (
                                                 <tr><td colSpan={7} className="text-center text-muted">No products found</td></tr>
-                                            ) : (Array.isArray(filtered) ? filtered : []).map((p) => (
+                                            ) : (safeArray(filtered)).map((p) => (
                                                 <tr key={p.id}>
                                                     <td>{p.product || p.name || "-"}</td>
                                                     <td>{p.category || p.category_name || "-"}</td>
