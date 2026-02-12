@@ -13,7 +13,16 @@ const Register = () => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        fetchCurrentUser().then(() => navigate(from, { replace: true })).catch(() => {});
+        let alive = true;
+        (async () => {
+            const u = await fetchCurrentUser();
+            if (!alive) return;
+            // Only redirect away from register if already logged in
+            if (u) navigate(from, { replace: true });
+        })();
+        return () => {
+            alive = false;
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 

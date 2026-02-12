@@ -1,84 +1,82 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { fetchCurrentUser } from "../utils/auth";
+import { fetchCurrentUser, login as apiLogin } from "../utils/auth";
 
-const Login = () => {
+/**
+ * Public login page.
+ * - Stays accessible (NOT protected)
+ * - Only navigates to /dashboard after session is confirmed via /api/user
+ */
+export default function Login() {
     const navigate = useNavigate();
     const location = useLocation();
     const from = location.state?.from || "/dashboard";
+
+    const [checking, setChecking] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState(null);
+    const [error, setError] = useState("");
 
+    // If already logged in, skip login page
     useEffect(() => {
-        // If already authenticated (session cookie still valid), skip login page
-        fetchCurrentUser().then(() => navigate(from, { replace: true })).catch(() => {});
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        let alive = true;
+        (async () => {
+            try {
+                const u = await fetchCurrentUser();
+                if (!alive) return;
+                if (u) {
+                    navigate("/dashboard", { replace: true });
+                    return;
+                }
+            } finally {
+                if (alive) setChecking(false);
+            }
+        })();
 
-
-    const getCookie = (name) => {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(";").shift();
-        return null;
-    };
-
-    const API_BASE = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:8000`;
+        return () => {
+            alive = false;
+        };
+    }, [navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(null);
+        setError("");
+        setSubmitting(true);
 
         try {
-            // ✅ Step 5: get CSRF cookie from Laravel server (8000)
-            await fetch(`${API_BASE}/sanctum/csrf-cookie`, {
-                method: "GET",
-                credentials: "include",
-                headers: { Accept: "application/json" },
-            });
-
-            // ✅ Now login (cookies will be sent + XSRF cookie exists)
-            const response = await fetch(`${API_BASE}/login`, {
-                method: "POST",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                    "X-Requested-With": "XMLHttpRequest",
-                },
-                body: JSON.stringify({ email, password }),
-            });
-
-            if (response.ok) {
-                navigate(from, { replace: true });
+            const u = await apiLogin({ email, password });
+            if (!u) {
+                setError("Login failed: still unauthorized after login.");
                 return;
             }
-
-            const data = await response.json().catch(() => ({}));
-            setError(data.message || "Login failed");
+            navigate(from, { replace: true });
         } catch (err) {
-            console.error(err);
-            setError("Something went wrong");
+            setError(err?.message || "Login failed");
+        } finally {
+            setSubmitting(false);
         }
     };
 
+    if (checking) return <div className="p-4">Loading...</div>;
 
     return (
-        <div className="login-wrapper">
-            <h1>Medicine System</h1>
-            <p className="account-subtitle">Login Panel</p>
+        <div>
+            <h1>Medicine Monitoring System</h1>
+            <p className="account-subtitle">Login</p>
 
-            {error && <div className="alert alert-danger">{error}</div>}
+            {error ? <div className="alert alert-danger">{error}</div> : null}
 
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
                     <input
                         className="form-control"
-                        type="text"
+                        type="email"
                         placeholder="Email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        autoComplete="username"
+                        required
                     />
                 </div>
 
@@ -89,25 +87,21 @@ const Login = () => {
                         placeholder="Password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        autoComplete="current-password"
+                        required
                     />
                 </div>
 
-                <div className="form-group">
-                    <button className="btn btn-success btn-block" type="submit">
-                        Login
+                <div className="form-group mb-0">
+                    <button className="btn btn-danger btn-block" type="submit" disabled={submitting}>
+                        {submitting ? "Signing in..." : "Login"}
                     </button>
                 </div>
             </form>
 
-            <div className="text-center forgotpass">
-                <Link to="/password/request">Forgot Password?</Link>
-            </div>
-
             <div className="text-center dont-have">
-                Don’t have an account? <Link to="/register">Register</Link>
+                Don't have an account? <Link to="/register">Register</Link>
             </div>
         </div>
     );
-};
-
-export default Login;
+}

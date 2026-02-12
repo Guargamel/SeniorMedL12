@@ -3,9 +3,7 @@ const API_BASE =
     `${window.location.protocol}//${window.location.hostname}:8000`;
 
 function getXsrfToken() {
-    const row = document.cookie
-        .split("; ")
-        .find((r) => r.startsWith("XSRF-TOKEN="));
+    const row = document.cookie.split("; ").find((r) => r.startsWith("XSRF-TOKEN="));
     if (!row) return "";
     return decodeURIComponent(row.split("=")[1] || "");
 }
@@ -46,12 +44,14 @@ export function normalizeList(payload, keys = []) {
     return [];
 }
 
+
 export async function apiFetch(path, options = {}) {
     const url = path.startsWith("http") ? path : `${API_BASE}${path}`;
     const method = (options.method || "GET").toUpperCase();
 
     const headers = {
         Accept: "application/json",
+        "X-Requested-With": "XMLHttpRequest",
         ...(options.headers || {}),
     };
 
@@ -60,7 +60,7 @@ export async function apiFetch(path, options = {}) {
         headers["Content-Type"] = "application/json";
     }
 
-    // Add CSRF + XSRF header for state-changing requests
+    // CSRF for state-changing requests
     if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
         await ensureCsrfCookie();
         const xsrf = getXsrfToken();
@@ -74,7 +74,6 @@ export async function apiFetch(path, options = {}) {
         credentials: "include",
     });
 
-    // No content
     if (res.status === 204) return null;
 
     const contentType = res.headers.get("content-type") || "";
@@ -84,7 +83,6 @@ export async function apiFetch(path, options = {}) {
         if (contentType.includes("application/json")) {
             data = await res.json();
         } else {
-            // HTML or plain text (common for 500/503)
             const text = await res.text();
             data = { message: text?.slice(0, 300) || "Non-JSON response" };
         }
@@ -93,7 +91,6 @@ export async function apiFetch(path, options = {}) {
     }
 
     if (!res.ok) {
-        // Always throw a normal Error with a string message
         const msg =
             (data && typeof data === "object" && typeof data.message === "string" && data.message) ||
             `Request failed (${res.status})`;

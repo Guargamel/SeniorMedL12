@@ -115,7 +115,4 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
-
-    // ✅ API logout (so you don't depend on web /logout)
-    // (keep exactly one logout route)
 });
