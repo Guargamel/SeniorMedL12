@@ -1779,6 +1779,10 @@ button.bg-danger:hover {
     height: 60px;
 }
 
+.header .dropdown-menu {
+    z-index: 1050;
+}
+
 .user-menu.nav>li>a:hover,
 .user-menu.nav>li>a:focus {
     background-color: rgba(0, 0, 0, 0.2);
@@ -5591,4 +5595,47 @@ table.table-inbox tbody tr.checked {
     .page-header .breadcrumb {
         display: none;
     }
+}
+
+/* -----------------------------
+   React fixes for header menus
+------------------------------ */
+
+/* Make the right menu layout stable (floats can break in React layouts) */
+.header .user-menu.nav {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    float: none;
+    height: 60px;
+}
+
+/* Anchor dropdowns correctly */
+.header .user-menu.nav>li {
+    position: relative;
+}
+
+/* Ensure dropdowns align to the right edge */
+.header .user-menu.nav>li .dropdown-menu {
+    right: 0;
+    left: auto;
+    top: 100%;
+}
+
+/* Show dropdown when React adds .show */
+.header .dropdown-menu.show {
+    display: block;
+}
+
+/* Ensure the dropdown renders above modals/backdrops */
+.header,
+.header .dropdown-menu {
+    z-index: 3000 !important;
+}
+
+/* Prevent clipping if any wrapper has overflow hidden */
+.header,
+.header .nav,
+.header .user-menu {
+    overflow: visible !important;
 }
