@@ -77,9 +77,13 @@ export default function StaffIndex() {
                                             <Link className="btn btn-sm btn-outline-primary" to={`/users/${u.id}/edit`}>
                                                 Edit
                                             </Link>{" "}
-                                            <Link className="btn btn-sm btn-outline-secondary" to={`/users/${u.id}/profile`}>
-                                                Profile
+                                            <Link
+                                                to={`/users/${u.id}/profile`}
+                                                className="btn btn-sm btn-secondary"
+                                            >
+                                                View Profile
                                             </Link>
+
                                         </td>
                                     </tr>
                                 ))}

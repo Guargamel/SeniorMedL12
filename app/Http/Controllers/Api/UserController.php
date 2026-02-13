@@ -12,16 +12,22 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function index(Request $request)
     {
         $q = trim((string) $request->query('q', ''));
 
-        $query = User::query()->with('roles')->orderByDesc('id');
+        $query = User::query()
+            ->with('roles')
+            ->whereHas('roles', fn($r) => $r->whereIn('name', ['staff', 'super-admin']));
+
         if ($q !== '') {
-            $query->where('name', 'like', "%{$q}%")->orWhere('email', 'like', "%{$q}%");
+            $query->where(function ($w) use ($q) {
+                $w->where('name', 'like', "%{$q}%")
+                    ->orWhere('email', 'like', "%{$q}%");
+            });
         }
 
-        return response()->json(['data' => $query->paginate(20)]);
+        return $query->orderBy('name')->paginate(10);
     }
 
     public function store(Request $request): JsonResponse
@@ -96,5 +102,18 @@ class UserController extends Controller
     {
         $user->delete();
         return response()->json(['message' => 'User deleted']);
+    }
+
+    // app/Http/Controllers/Api/UserController.php
+    public function autocompleteEmail(Request $request)
+    {
+        $email = $request->query('email'); // Get the search query parameter
+
+        // Fetch users that match the given email prefix (using LIKE query)
+        $users = User::where('email', 'like', "%$email%")
+            ->limit(5) // Limit to 5 results for performance
+            ->get(['id', 'name', 'email']); // Only return id, name, and email
+
+        return response()->json($users);
     }
 }

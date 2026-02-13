@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\RequestController;
 use App\Http\Controllers\Api\DistributionController;
 use App\Http\Controllers\Api\MedicineController;
 use App\Http\Controllers\Api\MedicineCategoryController;
+use App\Http\Controllers\Api\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -84,7 +85,16 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/staff/{user}', [StaffController::class, 'show']);
             Route::put('/staff/{user}', [StaffController::class, 'update']);
             Route::delete('/staff/{user}', [StaffController::class, 'destroy']);
+            Route::get('/me', [ProfileController::class, 'me']);
         });
+
+        Route::post('/distributions', [DistributionController::class, 'store']);
+        Route::get('/users/autocomplete-email', [UserController::class, 'autocompleteEmail']);
+    });
+
+
+    Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
+        return $request->user();
     });
 
     Route::get('/medicines/expired', [MedicineController::class, 'expired']);

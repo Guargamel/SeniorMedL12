@@ -27,6 +27,24 @@ class MedicineController extends Controller
         return response()->json($medicine);
     }
 
+    // app/Http/Controllers/Api/MedicineController.php
+    public function updateStock(Request $request, $medicineId)
+    {
+        $medicine = Medicine::findOrFail($medicineId);
+
+        // Validate input
+        $request->validate([
+            'stock_quantity' => 'required|integer|min:0',
+        ]);
+
+        // Update stock quantity
+        $medicine->stock_quantity = $request->input('stock_quantity');
+        $medicine->save();
+
+        return response()->json(['message' => 'Stock quantity updated successfully', 'medicine' => $medicine]);
+    }
+
+
     // POST /api/medicines
     public function store(Request $request)
     {

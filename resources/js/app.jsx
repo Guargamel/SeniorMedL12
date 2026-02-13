@@ -16,6 +16,7 @@ import Dashboard from "./Pages/Dashboard.jsx";
 import UsersIndex from "./Staff/Index.jsx";
 import UsersCreate from "./Staff/Create.jsx";
 import UsersEdit from "./Staff/Edit.jsx";
+import UserProfile from "./Users/Profile.jsx";
 
 /* SENIORS */
 import SeniorsIndex from "./Seniors/Index.jsx";
@@ -34,6 +35,8 @@ import MedicinesEdit from "./Medicines/Edit.jsx";
 import MedicinesExpired from "./Medicines/Expired.jsx";
 import MedicinesOutstock from "./Medicines/Outstock.jsx";
 import MedicinesCategories from "./Medicines/Categories.jsx";
+
+import DistributeStock from "./Distribute/DistributeStock.jsx";
 
 const container = document.getElementById("app");
 
@@ -63,13 +66,11 @@ createRoot(container).render(
                 <Route path="/seniors/create" element={<SeniorCreate />} />
                 <Route path="/seniors/:id/edit" element={<SeniorEdit />} />
 
-                {/* Profile */}
-                {/* <Route path="/profile" element={<Profile />} /> */}
-
                 {/* users */}
                 <Route path="/users" element={<UsersIndex />} />
                 <Route path="/users/create" element={<UsersCreate />} />
                 <Route path="/users/:id/edit" element={<UsersEdit />} />
+                <Route path="/profile" index element={<UserProfile />} />
 
 
                 {/* Roles / Permissions */}
@@ -86,7 +87,7 @@ createRoot(container).render(
                 <Route path="/medicines/outstock" element={<MedicinesOutstock />} />
                 <Route path="/medicines/categories" element={<MedicinesCategories />} />
 
-
+                <Route path="/distributions" element={<DistributeStock />} />
 
             </Route>
 

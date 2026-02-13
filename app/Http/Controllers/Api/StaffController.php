@@ -109,4 +109,18 @@ class StaffController extends Controller
         $user->delete();
         return response()->json(['message' => 'Staff deleted']);
     }
+
+    public function show($id)
+    {
+        // Find the staff by their ID
+        $staff = User::find($id);
+
+        // Check if the staff member was found
+        if (!$staff) {
+            return response()->json(['message' => 'Staff not found'], 404);
+        }
+
+        // Return the staff member as a JSON response
+        return response()->json($staff);
+    }
 }

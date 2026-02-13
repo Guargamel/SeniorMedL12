@@ -1,5 +1,6 @@
 // resources/js/Includes/Header.jsx
 import React, { useMemo } from "react";
+import { Link } from "react-router-dom";
 
 export default function Header({
     user = {},
@@ -13,6 +14,8 @@ export default function Header({
         .slice(0, 2)
         .map((s) => s[0]?.toUpperCase())
         .join("");
+
+    const userId = JSON.parse(localStorage.getItem("me"))?.id;
 
     return (
         <div className="mc-topbar">
@@ -36,6 +39,10 @@ export default function Header({
                         <div className="mc-user-role">{user?.role || "Health Worker"}</div>
                     </div>
                 </div>
+
+                <Link to="/profile" className="dropdown-item">
+                    My Profile
+                </Link>
 
                 <button className="mc-logout" onClick={onLogout} type="button">
                     Logout
