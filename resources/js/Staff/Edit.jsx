@@ -30,7 +30,8 @@ export default function StaffEdit() {
             try {
                 const res = await apiFetch(`/api/staff/${id}`);
 
-                const u = res?.user; // 🔥 THIS IS THE FIX
+                // The API returns the staff user directly, not wrapped in { user: ... }
+                const u = res;
 
                 if (!u) throw new Error("Invalid response");
 

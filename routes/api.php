@@ -31,7 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Compatibility alias (so frontend checks like /api/user work)
     Route::get('/user', function (Request $request) {
-        return $request->user();
+        return response()->json(['user' => $request->user()->load('roles')]);
     });
 
     Route::put('/profile', [ProfileController::class, 'update']); // multipart (avatar)
@@ -85,33 +85,20 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/staff/{user}', [StaffController::class, 'show']);
             Route::put('/staff/{user}', [StaffController::class, 'update']);
             Route::delete('/staff/{user}', [StaffController::class, 'destroy']);
-            Route::get('/me', [ProfileController::class, 'me']);
         });
 
         Route::post('/distributions', [DistributionController::class, 'store']);
         Route::get('/users/autocomplete-email', [UserController::class, 'autocompleteEmail']);
     });
 
-
-    Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
-        return $request->user();
-    });
-
+    // Medicines (accessible to all authenticated users)
     Route::get('/medicines/expired', [MedicineController::class, 'expired']);
     Route::get('/medicines/outstock', [MedicineController::class, 'outstock']);
     Route::apiResource('medicines', MedicineController::class);
 
-
-    // Categories CRUD
+    // Categories CRUD (accessible to all authenticated users)
     Route::apiResource('medicine-categories', MedicineCategoryController::class);
 
-    // Medicines CRUD
-    Route::apiResource('medicines', MedicineController::class);
-
-    // Extra lists used by the sidebar pages (optional but recommended)
-    Route::get('/medicines/expired', [MedicineController::class, 'expired']);
-    Route::get('/medicines/outstock', [MedicineController::class, 'outstock']);
-
-
+    // Seniors CRUD (accessible to all authenticated users for viewing)
     Route::apiResource('seniors', SeniorController::class);
 });
