@@ -42,7 +42,7 @@ class User extends Authenticatable
     {
         if (empty($this->avatar)) return null;
         // stored in /storage/... via public disk
-        return Storage::disk('public')->url($this->avatar);
+        return Storage::url('public/' . $this->avatar);
     }
 
     /**

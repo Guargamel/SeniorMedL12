@@ -98,6 +98,12 @@ export default function Login() {
                     </button>
                 </div>
             </form>
+
+
+            <div className="text-center dont-have">
+                Request an account from the baranggay station
+            </div>
+
         </div>
     );
 }

@@ -5,6 +5,11 @@ import Header from "../Includes/Header.jsx";
 import Sidebar from "../Includes/Sidebar.jsx";
 import { safeArray } from "../utils/api";
 
+// Global styles for authenticated area (ensure sidebar/header styles load)
+import "bootstrap/dist/css/bootstrap.min.css";
+import "../../css/style.css";
+import "../../css/mc-dashboard.css";
+
 const defaultPermissions = {
     viewCategory: true,
     viewPurchase: true,
@@ -30,33 +35,24 @@ export default function Layout({
     notifications = [],
     appLogo = "",
     handleLogout = () => { },
-    handleMarkAllRead = () => { },
-    handleReadNotification = () => { },
     errors = [],
     pageHeader = null,
-    permissions = { /* ...your defaults... */ },
+    permissions = defaultPermissions,
 }) {
     return (
-        <div className="main-wrapper">
+        <div className="mc-shell">
+            <Sidebar permissions={permissions} />
 
-            <Header
-                user={user}
-                notifications={notifications}
-                appLogo={appLogo}
-                onLogout={handleLogout}
-                onMarkAllRead={handleMarkAllRead}
-                onReadNotification={handleReadNotification}
-            />
+            <div className="mc-main">
+                <Header
+                    user={user}
+                    notifications={notifications}
+                    appLogo={appLogo}
+                    onLogout={handleLogout}
+                />
 
-            <Sidebar permissions={defaultPermissions} />
-
-            <div className="page-wrapper">
-                <div className="content container-fluid">
-                    {pageHeader && (
-                        <div className="page-header">
-                            <div className="row">{pageHeader}</div>
-                        </div>
-                    )}
+                <div className="mc-content">
+                    {pageHeader}
 
                     {safeArray(errors).map((error, idx) => (
                         <div key={idx} className="alert alert-danger">

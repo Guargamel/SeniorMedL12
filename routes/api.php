@@ -38,13 +38,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         return response()->json(['message' => 'Logged out']);
     });
-    // ---- Products ----
-    Route::get('/products', [ProductController::class, 'index']);
-    Route::post('/products', [ProductController::class, 'store']);
-    Route::put('/products/{product}', [ProductController::class, 'update']);
-    Route::delete('/products/{product}', [ProductController::class, 'destroy']);
-    Route::get('/products/expired', [ProductController::class, 'expired']);
-    Route::get('/products/outstock', [ProductController::class, 'outstock']);
 
     // ---- Admin-only: Roles / Permissions / Users ----
     Route::middleware('role:super-admin')->group(function () {
