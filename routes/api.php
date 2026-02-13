@@ -5,13 +5,15 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\PermissionController;
-use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\SeniorController;
 use App\Http\Controllers\Api\BatchController;
 use App\Http\Controllers\Api\RequestController;
 use App\Http\Controllers\Api\DistributionController;
+use App\Http\Controllers\Api\MedicineController;
+use App\Http\Controllers\Api\MedicineCategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -65,7 +67,6 @@ Route::middleware('auth:sanctum')->group(function () {
     // Distributions (admin dispense)
     Route::middleware('role:super-admin')->post('/distributions', [DistributionController::class, 'store']);
 
-
     Route::middleware('role:super-admin')->group(function () {
         // Roles & permissions
         Route::get('/roles', [RoleController::class, 'index']);
@@ -76,11 +77,31 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/permissions', [PermissionController::class, 'index']);
 
-        // Users
-        Route::get('/users', [UserController::class, 'index']);
-        Route::post('/users', [UserController::class, 'store']);
-        Route::get('/users/{user}', [UserController::class, 'show']);
-        Route::put('/users/{user}', [UserController::class, 'update']);
-        Route::delete('/users/{user}', [UserController::class, 'destroy']);
+
+        Route::middleware(['auth:sanctum', 'role:super-admin'])->group(function () {
+            Route::get('/staff', [StaffController::class, 'index']);
+            Route::post('/staff', [StaffController::class, 'store']);
+            Route::get('/staff/{user}', [StaffController::class, 'show']);
+            Route::put('/staff/{user}', [StaffController::class, 'update']);
+            Route::delete('/staff/{user}', [StaffController::class, 'destroy']);
+        });
     });
+
+    Route::get('/medicines/expired', [MedicineController::class, 'expired']);
+    Route::get('/medicines/outstock', [MedicineController::class, 'outstock']);
+    Route::apiResource('medicines', MedicineController::class);
+
+
+    // Categories CRUD
+    Route::apiResource('medicine-categories', MedicineCategoryController::class);
+
+    // Medicines CRUD
+    Route::apiResource('medicines', MedicineController::class);
+
+    // Extra lists used by the sidebar pages (optional but recommended)
+    Route::get('/medicines/expired', [MedicineController::class, 'expired']);
+    Route::get('/medicines/outstock', [MedicineController::class, 'outstock']);
+
+
+    Route::apiResource('seniors', SeniorController::class);
 });

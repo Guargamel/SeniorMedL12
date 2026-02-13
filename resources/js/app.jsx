@@ -13,10 +13,9 @@ import Login from "./Auth/Login.jsx";
 import Dashboard from "./Pages/Dashboard.jsx";
 
 /* STAFF (USERS) */
-import UsersIndex from "./Staff(User)/Index.jsx";
-import UsersCreate from "./Staff(User)/Create.jsx";
-import UsersEdit from "./Staff(User)/Edit.jsx";
-import Profile from "./Staff(User)/Profile.jsx";
+import UsersIndex from "./Staff/Index.jsx";
+import UsersCreate from "./Staff/Create.jsx";
+import UsersEdit from "./Staff/Edit.jsx";
 
 /* SENIORS */
 import SeniorsIndex from "./Seniors/Index.jsx";
@@ -28,6 +27,13 @@ import RolesIndex from "./Roles/Index.jsx";
 import RolesCreate from "./Roles/Create.jsx";
 import RolesEdit from "./Roles/Edit.jsx";
 import Permissions from "./Roles/Permissions.jsx";
+
+import MedicinesIndex from "./Medicines/Index.jsx";
+import MedicinesCreate from "./Medicines/Create.jsx";
+import MedicinesEdit from "./Medicines/Edit.jsx";
+import MedicinesExpired from "./Medicines/Expired.jsx";
+import MedicinesOutstock from "./Medicines/Outstock.jsx";
+import MedicinesCategories from "./Medicines/Categories.jsx";
 
 const container = document.getElementById("app");
 
@@ -58,13 +64,30 @@ createRoot(container).render(
                 <Route path="/seniors/:id/edit" element={<SeniorEdit />} />
 
                 {/* Profile */}
-                <Route path="/profile" element={<Profile />} />
+                {/* <Route path="/profile" element={<Profile />} /> */}
+
+                {/* users */}
+                <Route path="/users" element={<UsersIndex />} />
+                <Route path="/users/create" element={<UsersCreate />} />
+                <Route path="/users/:id/edit" element={<UsersEdit />} />
+
 
                 {/* Roles / Permissions */}
                 <Route path="/roles" element={<RolesIndex />} />
                 <Route path="/roles/create" element={<RolesCreate />} />
                 <Route path="/roles/:id/edit" element={<RolesEdit />} />
                 <Route path="/permissions" element={<Permissions />} />
+
+                {/* Medicines */}
+                <Route path="/medicines" element={<MedicinesIndex />} />
+                <Route path="/medicines/create" element={<MedicinesCreate />} />
+                <Route path="/medicines/:id/edit" element={<MedicinesEdit />} />
+                <Route path="/medicines/expired" element={<MedicinesExpired />} />
+                <Route path="/medicines/outstock" element={<MedicinesOutstock />} />
+                <Route path="/medicines/categories" element={<MedicinesCategories />} />
+
+
+
             </Route>
 
             {/* 404 */}

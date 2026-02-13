@@ -13,8 +13,7 @@ export default function SeniorEdit() {
     const [form, setForm] = useState({
         name: "",
         email: "",
-        // password is optional on edit
-        password: "",
+        password: "", // optional on edit
 
         birthdate: "",
         sex: "Male",
@@ -32,25 +31,37 @@ export default function SeniorEdit() {
 
         (async () => {
             setLoading(true);
-            try {
-                const u = await apiFetch(`/api/seniors/${id}`);
-                if (!alive) return;
+            setErrors({});
 
-                const p = u?.seniorProfile || u?.senior_profile || {};
+            try {
+                const res = await apiFetch(`/api/seniors/${id}`);
+
+                // Support common API shapes:
+                const u = res?.senior || res?.data || res;
+
+                const p =
+                    u?.senior_profile ||
+                    u?.seniorProfile ||
+                    u?.profile ||
+                    {};
+
+                if (!alive) return;
 
                 setForm((prev) => ({
                     ...prev,
-                    name: u?.name || "",
-                    email: u?.email || "",
-                    birthdate: p?.birthdate || "",
-                    sex: p?.sex || "Male",
-                    contact_no: p?.contact_no || "",
-                    barangay: p?.barangay || "",
-                    address: p?.address || "",
-                    notes: p?.notes || "",
+                    name: u?.name ?? "",
+                    email: u?.email ?? "",
+                    birthdate: p?.birthdate ?? "",
+                    sex: p?.sex ?? "Male",
+                    contact_no: p?.contact_no ?? "",
+                    barangay: p?.barangay ?? "",
+                    address: p?.address ?? "",
+                    notes: p?.notes ?? "",
+                    password: "", // keep blank on load
                 }));
             } catch (e) {
-                // if not found or forbidden
+                if (!alive) return;
+                setErrors({ general: [e?.message || "Failed to load senior"] });
             } finally {
                 if (alive) setLoading(false);
             }
@@ -77,7 +88,11 @@ export default function SeniorEdit() {
 
             navigate("/seniors");
         } catch (e2) {
-            setErrors(e2?.data?.errors || { general: [e2?.message || "Failed to update senior"] });
+            setErrors(
+                e2?.data?.errors || {
+                    general: [e2?.message || "Failed to update senior"],
+                }
+            );
         } finally {
             setSaving(false);
         }
@@ -92,7 +107,9 @@ export default function SeniorEdit() {
             </div>
 
             <div className="mc-card-body">
-                {errors.general && <div className="alert alert-danger">{errors.general[0]}</div>}
+                {errors.general && (
+                    <div className="alert alert-danger">{errors.general[0]}</div>
+                )}
 
                 <form onSubmit={submit} style={{ display: "grid", gap: 12 }}>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>

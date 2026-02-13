@@ -3,22 +3,31 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use App\Models\User;
 use Spatie\Permission\Models\Role;
 
-class UserController extends Controller
+class StaffController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
         $q = trim((string) $request->query('q', ''));
 
-        $query = User::query()->with('roles')->orderByDesc('id');
+        $query = User::query()
+            ->with('roles')
+            ->whereHas('roles', function ($r) {
+                $r->whereIn('name', ['staff', 'super-admin']);
+            })
+            ->orderByDesc('id');
+
         if ($q !== '') {
-            $query->where('name', 'like', "%{$q}%")->orWhere('email', 'like', "%{$q}%");
+            $query->where(function ($w) use ($q) {
+                $w->where('name', 'like', "%{$q}%")
+                    ->orWhere('email', 'like', "%{$q}%");
+            });
         }
 
         return response()->json(['data' => $query->paginate(20)]);
@@ -30,7 +39,7 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
-            'role' => ['nullable', 'string'],
+            'role' => ['required', 'in:staff,super-admin'], // ✅ only staff roles
         ]);
 
         if ($v->fails()) {
@@ -43,26 +52,27 @@ class UserController extends Controller
             'password' => Hash::make($request->input('password')),
         ]);
 
-        if ($request->filled('role')) {
-            $role = Role::query()->where('name', $request->input('role'))->first();
-            if ($role) $user->syncRoles([$role]);
-        }
+        $role = Role::query()
+            ->where('name', $request->input('role'))
+            ->where('guard_name', 'web')
+            ->first();
 
-        return response()->json(['message' => 'User created', 'user' => $user->load('roles')], 201);
-    }
+        if ($role) $user->syncRoles([$role]);
 
-    public function show(User $user): JsonResponse
-    {
-        return response()->json(['user' => $user->load('roles')]);
+        return response()->json(['message' => 'Staff created', 'user' => $user->load('roles')], 201);
     }
 
     public function update(Request $request, User $user): JsonResponse
     {
+        if (!$user->hasAnyRole(['staff', 'super-admin'])) {
+            return response()->json(['message' => 'Not a staff account'], 404);
+        }
+
         $v = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'password' => ['nullable', 'string', 'min:8'],
-            'role' => ['nullable', 'string'],
+            'role' => ['required', 'in:staff,super-admin'],
         ]);
 
         if ($v->fails()) {
@@ -80,21 +90,23 @@ class UserController extends Controller
 
         $user->update($payload);
 
-        if ($request->has('role')) {
-            if ($request->filled('role')) {
-                $role = Role::query()->where('name', $request->input('role'))->first();
-                if ($role) $user->syncRoles([$role]);
-            } else {
-                $user->syncRoles([]);
-            }
-        }
+        $role = Role::query()
+            ->where('name', $request->input('role'))
+            ->where('guard_name', 'web')
+            ->first();
 
-        return response()->json(['message' => 'User updated', 'user' => $user->load('roles')]);
+        if ($role) $user->syncRoles([$role]);
+
+        return response()->json(['message' => 'Staff updated', 'user' => $user->load('roles')]);
     }
 
     public function destroy(User $user): JsonResponse
     {
+        if (!$user->hasAnyRole(['staff', 'super-admin'])) {
+            return response()->json(['message' => 'Not a staff account'], 404);
+        }
+
         $user->delete();
-        return response()->json(['message' => 'User deleted']);
+        return response()->json(['message' => 'Staff deleted']);
     }
 }

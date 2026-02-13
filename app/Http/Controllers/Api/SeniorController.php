@@ -12,24 +12,33 @@ use Illuminate\Support\Facades\Hash;
 
 class SeniorController extends Controller
 {
+    // SeniorsController.php
+
     public function index(Request $request)
     {
-        $q = trim((string)$request->query('q', ''));
+        $q = trim($request->query('q', ''));
 
-        $users = User::query()
-            ->role('senior_citizen')
-            ->with('seniorProfile')
-            ->when($q !== '', function ($qq) use ($q) {
-                $qq->where(function ($w) use ($q) {
-                    $w->where('name', 'like', "%$q%")
-                        ->orWhere('email', 'like', "%$q%");
-                });
+        $users = User::role('senior_citizen') // only seniors
+            ->with('seniorProfile')           // correct relation
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where(
+                    fn($qq) =>
+                    $qq->where('name', 'like', "%$q%")
+                        ->orWhere('email', 'like', "%$q%")
+                );
             })
-            ->orderBy('name')
-            ->paginate(15);
+            ->paginate(10);
 
         return response()->json($users);
     }
+
+    public function show($id)
+    {
+        $user = User::with('seniorProfile')->findOrFail($id);
+        return response()->json($user);
+    }
+
+
 
     public function store(Request $request)
     {
@@ -66,7 +75,51 @@ class SeniorController extends Controller
                 'notes' => $data['notes'] ?? null,
             ]);
 
-            return response()->json(['message' => 'Senior registered', 'user' => $user], 201);
+            return response()->json([
+                'message' => 'Senior registered',
+                'user' => $user->fresh('seniorProfile')
+            ], 201);
         });
+    }
+
+    public function update(Request $request, $id)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255'],
+            'password' => ['nullable', 'string', 'min:6'],
+
+            'birthdate' => ['nullable', 'date'],
+            'sex' => ['nullable', 'in:Male,Female'],
+            'contact_no' => ['nullable', 'string', 'max:50'],
+            'barangay' => ['nullable', 'string', 'max:120'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $user = User::with('seniorProfile')->findOrFail($id);
+
+        $user->update([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            ...(!empty($data['password']) ? ['password' => Hash::make($data['password'])] : []),
+        ]);
+
+        $user->seniorProfile()->updateOrCreate(
+            ['user_id' => $user->id],
+            collect($data)->only([
+                'birthdate',
+                'sex',
+                'contact_no',
+                'barangay',
+                'address',
+                'notes'
+            ])->toArray()
+        );
+
+        return response()->json([
+            'message' => 'Updated',
+            'user' => $user->fresh('seniorProfile')
+        ]);
     }
 }

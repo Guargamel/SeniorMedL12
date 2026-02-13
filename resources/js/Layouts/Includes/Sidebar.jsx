@@ -52,7 +52,6 @@ const menu = [
                     { label: "Add Medicine", to: "/medicines/create" },
                     { label: "Expired", to: "/medicines/expired" },
                     { label: "Out of Stock", to: "/medicines/outstock" },
-                    { label: "Categories", to: "/medicine-categories" },
                 ],
             },
             { label: "Stock Management", to: "/stock", icon: Boxes },
