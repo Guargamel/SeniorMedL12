@@ -16,7 +16,9 @@ import Dashboard from "./Pages/Dashboard.jsx";
 import UsersIndex from "./Staff/Index.jsx";
 import UsersCreate from "./Staff/Create.jsx";
 import UsersEdit from "./Staff/Edit.jsx";
+import ViewProfile from "./Staff/ViewProfile.jsx";
 import UserProfile from "./Users/Profile.jsx";
+import UserProfileView from "./Users/UserProfileView.jsx";
 
 /* SENIORS */
 import SeniorsIndex from "./Seniors/Index.jsx";
@@ -60,20 +62,15 @@ createRoot(container).render(
                 <Route path="/users" element={<UsersIndex />} />
                 <Route path="/users/create" element={<UsersCreate />} />
                 <Route path="/users/:id/edit" element={<UsersEdit />} />
+                <Route path="/users/:id/profile" element={<UserProfileView />} />
+                
+                {/* Current User Profile */}
+                <Route path="/profile" element={<UserProfile />} />
 
                 {/* Seniors */}
                 <Route path="/seniors" element={<SeniorsIndex />} />
                 <Route path="/seniors/create" element={<SeniorCreate />} />
                 <Route path="/seniors/:id/edit" element={<SeniorEdit />} />
-
-                {/* users */}
-                <Route path="/users" element={<UsersIndex />} />
-                <Route path="/users/create" element={<UsersCreate />} />
-                <Route path="/users/:id/edit" element={<UsersEdit />} />
-                <Route path="/profile" index element={<UserProfile />} />
-
-
-                {/* Roles / Permissions */}
                 <Route path="/roles" element={<RolesIndex />} />
                 <Route path="/roles/create" element={<RolesCreate />} />
                 <Route path="/roles/:id/edit" element={<RolesEdit />} />

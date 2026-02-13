@@ -1,89 +1,29 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Medicine;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 
 class MedicineController extends Controller
 {
+    // GET /api/medicines
     public function index()
     {
-        // Include category name + computed "quantity" (sum of batch quantities)
-        $items = Medicine::query()
-            ->with('category:id,name')
-            ->withSum('batches as quantity', 'quantity')
-            ->orderByDesc('id')
+        $medicines = Medicine::with('category')
+            ->withSum(['batches as available_quantity' => function ($query) {
+                $query->where('expiry_date', '>=', now())
+                    ->where('qty_remaining', '>', 0);
+            }], 'qty_remaining')
             ->get();
 
-        return response()->json($items);
+        return response()->json($medicines);
     }
 
+    // GET /api/medicines/{id}
     public function show($id)
     {
-        $item = Medicine::query()
-            ->with('category:id,name')
-            ->withSum('batches as quantity', 'quantity')
-            ->findOrFail($id);
-
-        return response()->json($item);
-    }
-
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'generic_name' => ['required', 'string', 'max:255'],
-            'brand_name'   => ['nullable', 'string', 'max:255'],
-            'dosage_form'  => ['nullable', 'string', 'max:255'],
-            'strength'     => ['nullable', 'string', 'max:255'],
-            'category_id'  => ['nullable', 'integer', 'exists:medicine_categories,id'],
-            'unit'         => ['nullable', 'string', 'max:255'],
-            'description'  => ['nullable', 'string'],
-            'is_active'    => ['nullable', 'boolean'],
-            'picture'      => ['nullable', 'image', 'max:5120'], // 5MB
-        ]);
-
-        // Handle upload (optional)
-        if ($request->hasFile('picture')) {
-            $path = $request->file('picture')->store('medicines', 'public');
-            $validated['picture'] = $path;
-        }
-
-        $medicine = Medicine::create($validated);
-
-        return response()->json($medicine, 201);
-    }
-
-    public function update(Request $request, $id)
-    {
-        $medicine = Medicine::findOrFail($id);
-
-        $validated = $request->validate([
-            'generic_name' => ['sometimes', 'required', 'string', 'max:255'],
-            'brand_name'   => ['nullable', 'string', 'max:255'],
-            'dosage_form'  => ['nullable', 'string', 'max:255'],
-            'strength'     => ['nullable', 'string', 'max:255'],
-            'category_id'  => ['nullable', 'integer', 'exists:medicine_categories,id'],
-            'unit'         => ['nullable', 'string', 'max:255'],
-            'description'  => ['nullable', 'string'],
-            'is_active'    => ['nullable', 'boolean'],
-            'picture'      => ['nullable', 'image', 'max:5120'],
-        ]);
-
-        // Replace picture if new one is uploaded
-        if ($request->hasFile('picture')) {
-            if ($medicine->picture) {
-                Storage::disk('public')->delete($medicine->picture);
-            }
-            $path = $request->file('picture')->store('medicines', 'public');
-            $validated['picture'] = $path;
-        }
-
-        $medicine->update($validated);
-
+        $medicine = Medicine::with('category', 'batches')->findOrFail($id);
         return response()->json($medicine);
     }
 
@@ -92,9 +32,9 @@ class MedicineController extends Controller
     {
         $medicine = Medicine::findOrFail($medicineId);
 
-        // Validate the request
+        // Validate input
         $request->validate([
-            'stock_quantity' => 'required|integer|min:0', // Ensure quantity is a positive integer
+            'stock_quantity' => 'required|integer|min:0',
         ]);
 
         // Update stock quantity
@@ -104,54 +44,53 @@ class MedicineController extends Controller
         return response()->json(['message' => 'Stock quantity updated successfully', 'medicine' => $medicine]);
     }
 
-    public function destroy($id)
+
+    // POST /api/medicines
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'generic_name' => 'required|string|max:255',
+            'brand_name' => 'nullable|string|max:255',
+            'dosage_form' => 'required|string',
+            'strength' => 'required|string',
+            'category_id' => 'nullable|exists:medicine_categories,id',
+            'unit' => 'required|string',
+            'description' => 'nullable|string',
+            'is_active' => 'boolean'
+        ]);
+
+        $medicine = Medicine::create($validated);
+
+        return response()->json($medicine, 201);
+    }
+
+    // PUT /api/medicines/{id}
+    public function update(Request $request, $id)
     {
         $medicine = Medicine::findOrFail($id);
 
-        if ($medicine->picture) {
-            Storage::disk('public')->delete($medicine->picture);
-        }
+        $validated = $request->validate([
+            'generic_name' => 'required|string|max:255',
+            'brand_name' => 'nullable|string|max:255',
+            'dosage_form' => 'required|string',
+            'strength' => 'required|string',
+            'category_id' => 'nullable|exists:medicine_categories,id',
+            'unit' => 'required|string',
+            'description' => 'nullable|string',
+            'is_active' => 'boolean'
+        ]);
 
+        $medicine->update($validated);
+
+        return response()->json($medicine);
+    }
+
+    // DELETE /api/medicines/{id}
+    public function destroy($id)
+    {
+        $medicine = Medicine::findOrFail($id);
         $medicine->delete();
 
-        return response()->json(['message' => 'Deleted']);
-    }
-
-    /**
-     * GET /api/medicines/outstock
-     * Out of stock = total remaining across batches <= 0
-     */
-    public function outstock()
-    {
-        $items = Medicine::query()
-            ->with('category:id,name')
-            ->withSum('batches as quantity', 'quantity')
-            ->having('quantity', '<=', 0)
-            ->orderByDesc('id')
-            ->get();
-
-        return response()->json($items);
-    }
-
-    /**
-     * GET /api/medicines/expired
-     * Expired = has at least one batch with expiry_date < today AND qty_remaining > 0
-     * (so it actually matters)
-     */
-    public function expired()
-    {
-        $today = now()->toDateString();
-
-        $items = Medicine::query()
-            ->with('category:id,name')
-            ->whereHas('batches', function ($q) use ($today) {
-                $q->whereDate('expiry_date', '<', $today)
-                    ->where('quantity', '>', 0);
-            })
-            ->withSum('batches as quantity', 'quantity')
-            ->orderByDesc('id')
-            ->get();
-
-        return response()->json($items);
+        return response()->json(['message' => 'Deleted successfully']);
     }
 }
