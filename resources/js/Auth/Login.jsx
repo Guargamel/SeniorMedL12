@@ -62,7 +62,7 @@ export default function Login() {
 
     return (
         <div>
-            <h1>Medicine Monitoring System</h1>
+            <h1>Senior Medicine Monitoring System</h1>
             <p className="account-subtitle">Login</p>
 
             {error ? <div className="alert alert-danger">{error}</div> : null}
@@ -99,9 +99,11 @@ export default function Login() {
                 </div>
             </form>
 
+
             <div className="text-center dont-have">
                 Request an account from the baranggay station
             </div>
+
         </div>
     );
 }
