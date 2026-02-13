@@ -27,17 +27,6 @@ import PurchasesCreate from "./Purchases/Create.jsx";
 import PurchasesEdit from "./Purchases/Edit.jsx";
 import PurchasesReport from "./Purchases/Reports.jsx";
 
-/* SALES */
-import SalesIndex from "./Sales/Index.jsx";
-import SalesCreate from "./Sales/Create.jsx";
-import SalesEdit from "./Sales/Edit.jsx";
-import SalesReport from "./Sales/Reports.jsx";
-
-/* SUPPLIERS */
-import SuppliersIndex from "./Suppliers/Index.jsx";
-import SuppliersCreate from "./Suppliers/Create.jsx";
-import SuppliersEdit from "./Suppliers/Edit.jsx";
-
 /* USERS */
 import UsersIndex from "./Users/Index.jsx";
 import UsersCreate from "./Users/Create.jsx";
@@ -80,15 +69,6 @@ createRoot(container).render(
                 <Route path="/purchases/create" element={<PurchasesCreate />} />
                 <Route path="/purchases/:id/edit" element={<PurchasesEdit />} />
                 <Route path="/purchases/report" element={<PurchasesReport />} />
-
-                <Route path="/sales" element={<SalesIndex />} />
-                <Route path="/sales/create" element={<SalesCreate />} />
-                <Route path="/sales/:id/edit" element={<SalesEdit />} />
-                <Route path="/sales/report" element={<SalesReport />} />
-
-                <Route path="/suppliers" element={<SuppliersIndex />} />
-                <Route path="/suppliers/create" element={<SuppliersCreate />} />
-                <Route path="/suppliers/:id/edit" element={<SuppliersEdit />} />
 
                 <Route path="/users" element={<UsersIndex />} />
                 <Route path="/users/create" element={<UsersCreate />} />

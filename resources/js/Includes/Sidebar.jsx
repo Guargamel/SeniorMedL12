@@ -26,15 +26,15 @@ export default function Sidebar({ permissions = {} }) {
             },
 
             // Categories
-            {
-                type: "link",
-                key: "categories",
-                label: "Categories",
-                icon: <i data-feather="layout" />,
-                to: "/categories",
-                show: can("view-category") || permissions.viewCategory,
-                active: routeIs("/categories"),
-            },
+            // {
+            //     type: "link",
+            //     key: "categories",
+            //     label: "Categories",
+            //     icon: <i data-feather="layout" />,
+            //     to: "/categories",
+            //     show: can("view-category") || permissions.viewCategory,
+            //     active: routeIs("/categories"),
+            // },
 
             // // Purchase submenu
             // {

@@ -49,7 +49,6 @@ export default function Header({
 
     return (
         <div className="header">
-            {/* Logo */}
             <div className="header-left">
                 <Link to="/dashboard" className="logo">
                     <img src={appLogo || "/assets/img/med.jpg"} alt="Logo" />
@@ -58,23 +57,16 @@ export default function Header({
                     <img src="/assets/img/med.jpg" alt="Logo" width="30" height="30" />
                 </Link>
             </div>
-            {/* /Logo */}
 
-            {/* Toggle (sidebar) */}
             <button type="button" id="toggle_btn" className="btn btn-link p-0">
-                {/* replaced feather icon */}
                 <i className="fas fa-align-left" />
             </button>
 
-            {/* Mobile Menu Toggle */}
             <button type="button" className="mobile_btn" id="mobile_btn">
                 <i className="fas fa-bars" />
             </button>
-            {/* /Mobile Menu Toggle */}
 
-            {/* Header Right Menu */}
             <ul className="nav user-menu">
-                {/* Make a sale (kept) */}
                 <li className="nav-item dropdown">
                     <a
                         href="#"
@@ -95,7 +87,6 @@ export default function Header({
                     </a>
                 </li>
 
-                {/* Notifications */}
                 <li
                     ref={notiWrapRef}
                     className={`nav-item dropdown noti-dropdown ${notiOpen ? "show" : ""}`}
