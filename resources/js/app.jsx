@@ -14,18 +14,12 @@ import Register from "./Auth/Register.jsx";
 import Dashboard from "./Pages/Dashboard.jsx";
 
 /* PRODUCTS */
-import ProductsIndex from "./Medicines/Index.jsx";
-import ProductsCreate from "./Medicines/Create.jsx";
-import ProductsEdit from "./Medicines/Edit.jsx";
-import ProductsExpired from "./Medicines/Expired.jsx";
-import ProductsOutstock from "./Medicines/Outstock.jsx";
-import Categories from "./Medicines/Categories.jsx";
-
-/* PURCHASES */
-import PurchasesIndex from "./Purchases/Index.jsx";
-import PurchasesCreate from "./Purchases/Create.jsx";
-import PurchasesEdit from "./Purchases/Edit.jsx";
-import PurchasesReport from "./Purchases/Reports.jsx";
+import ProductsIndex from "./Inventory/Index.jsx";
+import ProductsCreate from "./Inventory/Create.jsx";
+import ProductsEdit from "./Inventory/Edit.jsx";
+import ProductsExpired from "./Inventory/Expired.jsx";
+import ProductsOutstock from "./Inventory/Outstock.jsx";
+import Categories from "./Inventory/Categories.jsx";
 
 /* USERS */
 import UsersIndex from "./Users/Index.jsx";
