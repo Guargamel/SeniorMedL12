@@ -25,36 +25,6 @@ export default function Sidebar({ permissions = {} }) {
                 active: isExact("/dashboard"),
             },
 
-            // Categories
-            // {
-            //     type: "link",
-            //     key: "categories",
-            //     label: "Categories",
-            //     icon: <i data-feather="layout" />,
-            //     to: "/categories",
-            //     show: can("view-category") || permissions.viewCategory,
-            //     active: routeIs("/categories"),
-            // },
-
-            // Purchase submenu
-            // {
-            //     type: "submenu",
-            //     key: "purchase",
-            //     label: "Purchase",
-            //     icon: <i data-feather="star" />,
-            //     show: can("view-purchase") || permissions.viewPurchase,
-            //     active: routeIs("/purchases"),
-            //     children: [
-            //         { label: "Purchase", to: "/purchases", show: true, active: routeIs("/purchases") },
-            //         {
-            //             label: "Add Purchase",
-            //             to: "/purchases/create",
-            //             show: can("create-purchase") || permissions.createPurchase,
-            //             active: isExact("/purchases/create"),
-            //         },
-            //     ],
-            // },
-
             // Products submenu
             {
                 type: "submenu",
@@ -155,28 +125,6 @@ export default function Sidebar({ permissions = {} }) {
                 show: true,
                 active: isExact("/profile"),
             },
-
-            // Backups (Blade had backup.index; SPA path choose one and match your router)
-            // {
-            //     type: "link",
-            //     key: "backups",
-            //     label: "Backups",
-            //     icon: <i data-feather="database" />,
-            //     to: "/backups",
-            //     show: true,
-            //     active: routeIs("/backups"),
-            // },
-
-            // Settings
-            // {
-            //     type: "link",
-            //     key: "settings",
-            //     label: "Settings",
-            //     icon: <i data-feather="settings" />,
-            //     to: "/settings",
-            //     show: can("view-settings") || permissions.viewSettings,
-            //     active: isExact("/settings"),
-            // },
         ];
     }, [permissions, pathname]);
 
