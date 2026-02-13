@@ -133,26 +133,26 @@ export default function Sidebar({ permissions = {} }) {
             },
 
             // Backups (Blade had backup.index; SPA path choose one and match your router)
-            {
-                type: "link",
-                key: "backups",
-                label: "Backups",
-                icon: <i data-feather="database" />,
-                to: "/backups",
-                show: true,
-                active: routeIs("/backups"),
-            },
+            // {
+            //     type: "link",
+            //     key: "backups",
+            //     label: "Backups",
+            //     icon: <i data-feather="database" />,
+            //     to: "/backups",
+            //     show: true,
+            //     active: routeIs("/backups"),
+            // },
 
             // Settings
-            {
-                type: "link",
-                key: "settings",
-                label: "Settings",
-                icon: <i data-feather="settings" />,
-                to: "/settings",
-                show: can("view-settings") || permissions.viewSettings,
-                active: isExact("/settings"),
-            },
+            // {
+            //     type: "link",
+            //     key: "settings",
+            //     label: "Settings",
+            //     icon: <i data-feather="settings" />,
+            //     to: "/settings",
+            //     show: can("view-settings") || permissions.viewSettings,
+            //     active: isExact("/settings"),
+            // },
         ];
     }, [permissions, pathname]);
 
