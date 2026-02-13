@@ -16,21 +16,24 @@ class SeniorController extends Controller
 
     public function index(Request $request)
     {
-        $q = trim($request->query('q', ''));
+        $q = trim((string) $request->query('q', ''));
 
-        $users = User::role('senior_citizen') // only seniors
-            ->with('seniorProfile')           // correct relation
-            ->when($q !== '', function ($query) use ($q) {
-                $query->where(
-                    fn($qq) =>
-                    $qq->where('name', 'like', "%$q%")
-                        ->orWhere('email', 'like', "%$q%")
-                );
-            })
-            ->paginate(10);
+        $query = User::query()
+            ->with('seniorProfile')
+            ->whereHas('seniorProfile'); // ensures only seniors
 
-        return response()->json($users);
+        if ($q !== '') {
+            $query->where(function ($w) use ($q) {
+                $w->where('name', 'like', "%{$q}%")
+                    ->orWhere('email', 'like', "%{$q}%");
+            });
+        }
+
+        $data = $query->orderByDesc('id')->paginate(20);
+
+        return response()->json($data);
     }
+
 
     public function show($id)
     {

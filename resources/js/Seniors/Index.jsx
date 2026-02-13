@@ -68,7 +68,9 @@ export default function SeniorsIndex() {
                                     <th>Name</th>
                                     <th>Email</th>
                                     <th>Barangay</th>
+                                    <th>Address</th>
                                     <th>Contact</th>
+                                    <th>Notes</th>
                                     <th style={{ width: 140 }}></th>
                                 </tr>
                             </thead>
@@ -82,11 +84,16 @@ export default function SeniorsIndex() {
                                             </td>
                                             <td>{u.email}</td>
                                             <td>{p.barangay || "-"}</td>
+                                            <td>{p.address || "-"}</td>
                                             <td>{p.contact_no || "-"}</td>
+                                            <td style={{ maxWidth: 200, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                                {p.notes || "-"}
+                                            </td>
                                             <td style={{ whiteSpace: "nowrap" }}>
                                                 <Link className="btn btn-sm btn-outline-primary" to={`/seniors/${u.id}/edit`}>
                                                     Edit
                                                 </Link>
+
                                             </td>
                                         </tr>
                                     );
@@ -94,7 +101,7 @@ export default function SeniorsIndex() {
 
                                 {rows.length === 0 && (
                                     <tr>
-                                        <td colSpan={5} style={{ padding: 12, color: "var(--mc-muted)" }}>
+                                        <td colSpan={7} style={{ padding: 12, color: "var(--mc-muted)" }}>
                                             No seniors found.
                                         </td>
                                     </tr>
