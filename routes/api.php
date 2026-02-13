@@ -18,7 +18,6 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\AnalyticsController;
 use App\Http\Controllers\Api\ReportController;
-use App\Http\Controllers\Api\UserProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -46,13 +45,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         return response()->json(['message' => 'Logged out']);
     });
-
-    // ---- User Profiles (View any user's profile) ----
-    Route::get('/users/{id}/profile', [UserProfileController::class, 'show']);
-    Route::post('/users/{id}/profile', [UserProfileController::class, 'update']);
-    Route::post('/users/{id}/avatar', [UserProfileController::class, 'uploadAvatar']);
-    Route::delete('/users/{id}/avatar', [UserProfileController::class, 'deleteAvatar']);
-    Route::get('/users/{id}/activity', [UserProfileController::class, 'activity']);
 
     // ---- Dashboard ----
     Route::get('/dashboard/summary', [DashboardController::class, 'summary']);

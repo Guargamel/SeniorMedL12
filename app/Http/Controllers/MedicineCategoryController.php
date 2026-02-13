@@ -6,16 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\Medicine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 
 class MedicineController extends Controller
 {
     public function index()
     {
-        // Include category name + computed "quantity" (sum of batch quantities)
+        // Include category name + computed "quantity" (sum of remaining batches)
         $items = Medicine::query()
             ->with('category:id,name')
-            ->withSum('batches as quantity', 'quantity')
+            ->withSum('batches as quantity', 'qty_remaining') // requires medicine_batches relationship
             ->orderByDesc('id')
             ->get();
 
@@ -26,7 +25,7 @@ class MedicineController extends Controller
     {
         $item = Medicine::query()
             ->with('category:id,name')
-            ->withSum('batches as quantity', 'quantity')
+            ->withSum('batches as quantity', 'qty_remaining')
             ->findOrFail($id);
 
         return response()->json($item);
@@ -87,23 +86,6 @@ class MedicineController extends Controller
         return response()->json($medicine);
     }
 
-    // app/Http/Controllers/Api/MedicineController.php
-    public function updateStock(Request $request, $medicineId)
-    {
-        $medicine = Medicine::findOrFail($medicineId);
-
-        // Validate the request
-        $request->validate([
-            'stock_quantity' => 'required|integer|min:0', // Ensure quantity is a positive integer
-        ]);
-
-        // Update stock quantity
-        $medicine->stock_quantity = $request->input('stock_quantity');
-        $medicine->save();
-
-        return response()->json(['message' => 'Stock quantity updated successfully', 'medicine' => $medicine]);
-    }
-
     public function destroy($id)
     {
         $medicine = Medicine::findOrFail($id);
@@ -125,7 +107,7 @@ class MedicineController extends Controller
     {
         $items = Medicine::query()
             ->with('category:id,name')
-            ->withSum('batches as quantity', 'quantity')
+            ->withSum('batches as quantity', 'qty_remaining')
             ->having('quantity', '<=', 0)
             ->orderByDesc('id')
             ->get();
@@ -146,9 +128,9 @@ class MedicineController extends Controller
             ->with('category:id,name')
             ->whereHas('batches', function ($q) use ($today) {
                 $q->whereDate('expiry_date', '<', $today)
-                    ->where('quantity', '>', 0);
+                    ->where('qty_remaining', '>', 0);
             })
-            ->withSum('batches as quantity', 'quantity')
+            ->withSum('batches as quantity', 'qty_remaining')
             ->orderByDesc('id')
             ->get();
 

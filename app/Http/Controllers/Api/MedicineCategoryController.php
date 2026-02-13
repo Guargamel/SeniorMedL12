@@ -3,137 +3,89 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Medicine;
+use App\Models\MedicineCategory;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\JsonResponse;
 
-class MedicineController extends Controller
+class MedicineCategoryController extends Controller
 {
-    public function index()
+    /**
+     * Get all medicine categories
+     */
+    public function index(): JsonResponse
     {
-        // Include category name + computed "quantity" (sum of remaining batches)
-        $items = Medicine::query()
-            ->with('category:id,name')
-            ->withSum('batches as quantity', 'qty_remaining') // requires medicine_batches relationship
-            ->orderByDesc('id')
+        $categories = MedicineCategory::query()
+            ->orderBy('name', 'asc')
             ->get();
 
-        return response()->json($items);
-    }
-
-    public function show($id)
-    {
-        $item = Medicine::query()
-            ->with('category:id,name')
-            ->withSum('batches as quantity', 'qty_remaining')
-            ->findOrFail($id);
-
-        return response()->json($item);
-    }
-
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'generic_name' => ['required', 'string', 'max:255'],
-            'brand_name'   => ['nullable', 'string', 'max:255'],
-            'dosage_form'  => ['nullable', 'string', 'max:255'],
-            'strength'     => ['nullable', 'string', 'max:255'],
-            'category_id'  => ['nullable', 'integer', 'exists:medicine_categories,id'],
-            'unit'         => ['nullable', 'string', 'max:255'],
-            'description'  => ['nullable', 'string'],
-            'is_active'    => ['nullable', 'boolean'],
-            'picture'      => ['nullable', 'image', 'max:5120'], // 5MB
-        ]);
-
-        // Handle upload (optional)
-        if ($request->hasFile('picture')) {
-            $path = $request->file('picture')->store('medicines', 'public');
-            $validated['picture'] = $path;
-        }
-
-        $medicine = Medicine::create($validated);
-
-        return response()->json($medicine, 201);
-    }
-
-    public function update(Request $request, $id)
-    {
-        $medicine = Medicine::findOrFail($id);
-
-        $validated = $request->validate([
-            'generic_name' => ['sometimes', 'required', 'string', 'max:255'],
-            'brand_name'   => ['nullable', 'string', 'max:255'],
-            'dosage_form'  => ['nullable', 'string', 'max:255'],
-            'strength'     => ['nullable', 'string', 'max:255'],
-            'category_id'  => ['nullable', 'integer', 'exists:medicine_categories,id'],
-            'unit'         => ['nullable', 'string', 'max:255'],
-            'description'  => ['nullable', 'string'],
-            'is_active'    => ['nullable', 'boolean'],
-            'picture'      => ['nullable', 'image', 'max:5120'],
-        ]);
-
-        // Replace picture if new one is uploaded
-        if ($request->hasFile('picture')) {
-            if ($medicine->picture) {
-                Storage::disk('public')->delete($medicine->picture);
-            }
-            $path = $request->file('picture')->store('medicines', 'public');
-            $validated['picture'] = $path;
-        }
-
-        $medicine->update($validated);
-
-        return response()->json($medicine);
-    }
-
-    public function destroy($id)
-    {
-        $medicine = Medicine::findOrFail($id);
-
-        if ($medicine->picture) {
-            Storage::disk('public')->delete($medicine->picture);
-        }
-
-        $medicine->delete();
-
-        return response()->json(['message' => 'Deleted']);
+        return response()->json($categories);
     }
 
     /**
-     * GET /api/medicines/outstock
-     * Out of stock = total remaining across batches <= 0
+     * Get a single category
      */
-    public function outstock()
+    public function show($id): JsonResponse
     {
-        $items = Medicine::query()
-            ->with('category:id,name')
-            ->withSum('batches as quantity', 'qty_remaining')
-            ->having('quantity', '<=', 0)
-            ->orderByDesc('id')
-            ->get();
-
-        return response()->json($items);
+        $category = MedicineCategory::findOrFail($id);
+        return response()->json($category);
     }
 
     /**
-     * GET /api/medicines/expired
-     * Expired = has at least one batch with expiry_date < today AND qty_remaining > 0
-     * (so it actually matters)
+     * Create a new category
      */
-    public function expired()
+    public function store(Request $request): JsonResponse
     {
-        $today = now()->toDateString();
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:medicine_categories,name'],
+            'description' => ['nullable', 'string'],
+        ]);
 
-        $items = Medicine::query()
-            ->with('category:id,name')
-            ->whereHas('batches', function ($q) use ($today) {
-                $q->whereDate('expiry_date', '<', $today)
-                    ->where('qty_remaining', '>', 0);
-            })
-            ->withSum('batches as quantity', 'qty_remaining')
-            ->orderByDesc('id')
-            ->get();
+        $category = MedicineCategory::create($validated);
 
-        return response()->json($items);
+        return response()->json([
+            'message' => 'Category created successfully',
+            'category' => $category
+        ], 201);
+    }
+
+    /**
+     * Update an existing category
+     */
+    public function update(Request $request, $id): JsonResponse
+    {
+        $category = MedicineCategory::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:medicine_categories,name,' . $id],
+            'description' => ['nullable', 'string'],
+        ]);
+
+        $category->update($validated);
+
+        return response()->json([
+            'message' => 'Category updated successfully',
+            'category' => $category
+        ]);
+    }
+
+    /**
+     * Delete a category
+     */
+    public function destroy($id): JsonResponse
+    {
+        $category = MedicineCategory::findOrFail($id);
+        
+        // Check if category is being used by any medicines
+        if ($category->medicines()->count() > 0) {
+            return response()->json([
+                'message' => 'Cannot delete category that is in use by medicines'
+            ], 422);
+        }
+
+        $category->delete();
+
+        return response()->json([
+            'message' => 'Category deleted successfully'
+        ]);
     }
 }
