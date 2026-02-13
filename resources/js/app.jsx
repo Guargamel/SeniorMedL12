@@ -44,7 +44,6 @@ createRoot(container).render(
             {/* Public */}
             <Route element={<PlainLayout />}>
                 <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
             </Route>
 
             {/* Protected */}

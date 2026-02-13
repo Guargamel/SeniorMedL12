@@ -17,6 +17,6 @@ class Medicine_Batches extends Model
 
     public function medicine()
     {
-        return $this->belongsTo(Medicines::class);
+        return $this->belongsTo(Medicine::class);
     }
 }

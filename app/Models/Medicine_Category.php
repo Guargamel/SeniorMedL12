@@ -12,6 +12,6 @@ class Medicine_Category extends Model
 
     public function medicines()
     {
-        return $this->hasMany(Medicines::class, 'category_id');
+        return $this->hasMany(Medicine::class, 'category_id');
     }
 }
