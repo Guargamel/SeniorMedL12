@@ -1,233 +1,293 @@
 import React, { useEffect, useState } from 'react';
-import { apiFetch } from "../utils/api"; // Adjust this path if needed
+import { apiFetch } from "../utils/api";
 
 export default function Profile() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [errors, setErrors] = useState({});
+    const [successMessage, setSuccessMessage] = useState('');
 
     // For editable fields
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [currentPassword, setCurrentPassword] = useState("");
-    const [newPassword, setNewPassword] = useState("");
-    const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
-    const [avatarFile, setAvatarFile] = useState(null);
+    const [form, setForm] = useState({
+        name: "",
+        email: "",
+        currentPassword: "",
+        newPassword: "",
+        newPasswordConfirm: "",
+    });
 
-    // Avatar preview
-    const [avatarPreview, setAvatarPreview] = useState(null);
+    const [saving, setSaving] = useState(false);
+
+    const set = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+    const err = (field) => errors?.[field]?.[0] || '';
 
     // Fetch user data
     useEffect(() => {
-        setLoading(true);
-        setError(null);
-        apiFetch('/api/user') // Assuming you're fetching the authenticated user
-            .then(data => {
+        let alive = true;
+        
+        (async () => {
+            setLoading(true);
+            setErrors({});
+            
+            try {
+                const data = await apiFetch('/api/user');
+                
+                if (!alive) return;
+                
                 setUser(data.user);
-                setName(data.user.name);
-                setEmail(data.user.email);
-                setAvatarPreview(data.user.avatar_url || "https://via.placeholder.com/150");
-                setLoading(false);
-            })
-            .catch(err => {
-                setError("Failed to load profile");
-                setLoading(false);
-            });
+                setForm(prev => ({
+                    ...prev,
+                    name: data.user.name || "",
+                    email: data.user.email || "",
+                }));
+            } catch (err) {
+                if (!alive) return;
+                setErrors({ general: ["Failed to load profile"] });
+            } finally {
+                if (alive) setLoading(false);
+            }
+        })();
+        
+        return () => { alive = false; };
     }, []);
 
-    // Handle form submission for name and email update
-    const handleProfileUpdate = (e) => {
+    // Handle profile info update
+    const handleProfileUpdate = async (e) => {
         e.preventDefault();
-        setError(null);
+        setSaving(true);
+        setErrors({});
+        setSuccessMessage('');
 
-        const payload = {
-            name,
-            email,
-        };
-
-        apiFetch('/api/user', {
-            method: 'POST',
-            body: JSON.stringify(payload),
-        })
-            .then(response => {
-                setUser(response.user);
-                setError("Profile updated successfully");
-            })
-            .catch(err => {
-                setError("Failed to update profile");
+        try {
+            const response = await apiFetch('/api/profile', {
+                method: 'PUT',
+                body: JSON.stringify({
+                    name: form.name,
+                    email: form.email,
+                }),
             });
+            
+            setUser(response.user);
+            setSuccessMessage('Profile updated successfully!');
+            
+            // Clear success message after 3 seconds
+            setTimeout(() => setSuccessMessage(''), 3000);
+        } catch (err) {
+            setErrors(err?.data?.errors || { general: ["Failed to update profile"] });
+        } finally {
+            setSaving(false);
+        }
     };
 
     // Handle password change
-    const handlePasswordChange = (e) => {
+    const handlePasswordChange = async (e) => {
         e.preventDefault();
-        setError(null);
-
-        if (newPassword !== newPasswordConfirm) {
-            setError("New passwords do not match");
+        
+        if (form.newPassword !== form.newPasswordConfirm) {
+            setErrors({ newPassword: ["Passwords do not match"] });
             return;
         }
 
-        const passwordPayload = {
-            current_password: currentPassword,
-            password: newPassword,
-            password_confirmation: newPasswordConfirm,
-        };
+        setSaving(true);
+        setErrors({});
+        setSuccessMessage('');
 
-        apiFetch('/api/user/password', {
-            method: 'POST',
-            body: JSON.stringify(passwordPayload),
-        })
-            .then(() => {
-                setCurrentPassword("");
-                setNewPassword("");
-                setNewPasswordConfirm("");
-                setError("Password updated successfully");
-            })
-            .catch(err => {
-                setError("Failed to update password");
+        try {
+            await apiFetch('/api/profile/password', {
+                method: 'PUT',
+                body: JSON.stringify({
+                    current_password: form.currentPassword,
+                    password: form.newPassword,
+                    password_confirmation: form.newPasswordConfirm,
+                }),
             });
-    };
-
-    // Handle avatar upload
-    const handleAvatarUpload = (e) => {
-        e.preventDefault();
-        setError(null);
-
-        const formData = new FormData();
-        formData.append('avatar', avatarFile);
-
-        apiFetch('/api/user/avatar', {
-            method: 'POST',
-            body: formData,
-        })
-            .then(response => {
-                setUser(response.user);
-                setAvatarPreview(response.user.avatar_url);
-                setError("Avatar updated successfully");
-            })
-            .catch(err => {
-                setError("Failed to upload avatar");
-            });
+            
+            setForm(prev => ({
+                ...prev,
+                currentPassword: "",
+                newPassword: "",
+                newPasswordConfirm: "",
+            }));
+            
+            setSuccessMessage('Password updated successfully!');
+            setTimeout(() => setSuccessMessage(''), 3000);
+        } catch (err) {
+            setErrors(err?.data?.errors || { general: ["Failed to update password"] });
+        } finally {
+            setSaving(false);
+        }
     };
 
     if (loading) {
-        return <div>Loading profile...</div>;
+        return (
+            <div className="mc-card">
+                <div className="mc-card-body" style={{ padding: 40, textAlign: 'center' }}>
+                    Loading profile...
+                </div>
+            </div>
+        );
     }
 
-    if (error) {
-        return <div>{error}</div>;
-    }
+    const initials = (user?.name || "NA")
+        .split(" ")
+        .slice(0, 2)
+        .map((s) => s[0]?.toUpperCase())
+        .join("");
+
+    const roleName = user?.roles?.[0]?.name || "user";
+    const roleDisplay = roleName.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
 
     return (
-        <div className="container mt-4">
-            <h2>My Profile</h2>
-            <div className="row">
-                {/* Left Column: Editable Name, Email */}
-                <div className="col-md-6">
-                    <div className="card mb-3">
-                        <div className="card-header">Account Information</div>
-                        <div className="card-body">
-                            <form onSubmit={handleProfileUpdate}>
-                                <div className="mb-3">
-                                    <label className="form-label">Name</label>
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                                <div className="mb-3">
-                                    <label className="form-label">Email</label>
-                                    <input
-                                        type="email"
-                                        className="form-control"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                                <button type="submit" className="btn btn-primary">
-                                    Save Changes
-                                </button>
-                            </form>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+            <div className="mc-card-header" style={{ marginBottom: 20 }}>
+                <h2 className="mc-card-title">My Profile</h2>
+            </div>
+
+            {successMessage && (
+                <div className="alert alert-success" style={{ marginBottom: 20 }}>
+                    {successMessage}
+                </div>
+            )}
+
+            {errors.general && (
+                <div className="alert alert-danger" style={{ marginBottom: 20 }}>
+                    {errors.general[0]}
+                </div>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                {/* Left Column - Profile Info */}
+                <div className="mc-card">
+                    <div className="mc-card-header">
+                        <h3 className="mc-card-title" style={{ fontSize: 16 }}>Account Information</h3>
+                    </div>
+                    <div className="mc-card-body">
+                        {/* User Avatar & Info */}
+                        <div style={{ textAlign: 'center', marginBottom: 24, paddingBottom: 24, borderBottom: '1px solid var(--mc-border)' }}>
+                            <div style={{
+                                width: 80,
+                                height: 80,
+                                borderRadius: 20,
+                                background: '#1e6f4f',
+                                color: '#fff',
+                                display: 'grid',
+                                placeItems: 'center',
+                                fontSize: 28,
+                                fontWeight: 800,
+                                margin: '0 auto 12px',
+                            }}>
+                                {initials}
+                            </div>
+                            <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>
+                                {user?.name}
+                            </div>
+                            <div style={{ fontSize: 13, color: 'var(--mc-muted)' }}>
+                                {roleDisplay}
+                            </div>
                         </div>
+
+                        <form onSubmit={handleProfileUpdate}>
+                            <Field 
+                                label="Full Name" 
+                                value={form.name} 
+                                onChange={(v) => set('name', v)} 
+                                error={err('name')} 
+                            />
+                            <Field 
+                                label="Email Address" 
+                                type="email"
+                                value={form.email} 
+                                onChange={(v) => set('email', v)} 
+                                error={err('email')} 
+                            />
+
+                            <div style={{ marginTop: 20 }}>
+                                <button 
+                                    type="submit" 
+                                    className="btn btn-success" 
+                                    disabled={saving}
+                                    style={{ width: '100%' }}
+                                >
+                                    {saving ? 'Saving...' : 'Save Changes'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
 
-                {/* Right Column: Avatar Upload & Password Change */}
-                <div className="col-md-6">
-                    {/* Avatar Section */}
-                    <div className="card mb-3">
-                        <div className="card-header">Avatar</div>
-                        <div className="card-body">
-                            <div className="d-flex align-items-center gap-3 mb-3">
-                                <img
-                                    src={avatarPreview || "https://via.placeholder.com/150"}
-                                    alt="Avatar"
-                                    width="150"
-                                    height="150"
-                                    style={{ borderRadius: '50%', objectFit: 'cover' }}
-                                />
-                                <div>
-                                    <label className="form-label">Upload a new avatar (jpg/png/webp, max 2MB)</label>
-                                    <input
-                                        type="file"
-                                        className="form-control mb-2"
-                                        accept="image/*"
-                                        onChange={(e) => setAvatarFile(e.target.files[0])}
-                                    />
-                                    <button onClick={handleAvatarUpload} className="btn btn-secondary">Upload Avatar</button>
-                                </div>
-                            </div>
-                        </div>
+                {/* Right Column - Security */}
+                <div className="mc-card">
+                    <div className="mc-card-header">
+                        <h3 className="mc-card-title" style={{ fontSize: 16 }}>Security</h3>
                     </div>
+                    <div className="mc-card-body">
+                        <form onSubmit={handlePasswordChange}>
+                            <Field 
+                                label="Current Password" 
+                                type="password"
+                                value={form.currentPassword} 
+                                onChange={(v) => set('currentPassword', v)} 
+                                error={err('current_password')} 
+                            />
+                            <Field 
+                                label="New Password" 
+                                type="password"
+                                value={form.newPassword} 
+                                onChange={(v) => set('newPassword', v)} 
+                                error={err('password')} 
+                            />
+                            <Field 
+                                label="Confirm New Password" 
+                                type="password"
+                                value={form.newPasswordConfirm} 
+                                onChange={(v) => set('newPasswordConfirm', v)} 
+                                error={err('newPassword')} 
+                            />
 
-                    {/* Password Section */}
-                    <div className="card">
-                        <div className="card-header">Change Password</div>
-                        <div className="card-body">
-                            <form onSubmit={handlePasswordChange}>
-                                <div className="mb-2">
-                                    <label className="form-label">Current Password</label>
-                                    <input
-                                        type="password"
-                                        className="form-control"
-                                        value={currentPassword}
-                                        onChange={(e) => setCurrentPassword(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                                <div className="mb-2">
-                                    <label className="form-label">New Password</label>
-                                    <input
-                                        type="password"
-                                        className="form-control"
-                                        value={newPassword}
-                                        onChange={(e) => setNewPassword(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                                <div className="mb-3">
-                                    <label className="form-label">Confirm New Password</label>
-                                    <input
-                                        type="password"
-                                        className="form-control"
-                                        value={newPasswordConfirm}
-                                        onChange={(e) => setNewPasswordConfirm(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                                <button type="submit" className="btn btn-warning">
-                                    Change Password
+                            <div style={{ marginTop: 20 }}>
+                                <button 
+                                    type="submit" 
+                                    className="btn btn-warning" 
+                                    disabled={saving}
+                                    style={{ width: '100%' }}
+                                >
+                                    {saving ? 'Updating...' : 'Change Password'}
                                 </button>
-                            </form>
+                            </div>
+                        </form>
+
+                        <div style={{
+                            marginTop: 20,
+                            padding: 12,
+                            background: 'var(--mc-bg)',
+                            borderRadius: 8,
+                            fontSize: 12,
+                            color: 'var(--mc-muted)'
+                        }}>
+                            <strong>Password requirements:</strong>
+                            <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
+                                <li>Minimum 8 characters</li>
+                                <li>Mix of letters and numbers recommended</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+    );
+}
+
+function Field({ label, error, type = "text", value, onChange }) {
+    return (
+        <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 6 }}>{label}</div>
+            <input 
+                className="form-control" 
+                type={type} 
+                value={value} 
+                onChange={(e) => onChange(e.target.value)} 
+            />
+            {error && <div style={{ color: "#c0392b", fontSize: 12, marginTop: 4 }}>{error}</div>}
         </div>
     );
 }
