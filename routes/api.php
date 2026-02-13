@@ -3,20 +3,11 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-
-use App\Http\Controllers\Api\DashboardController;
-use App\Http\Controllers\Api\CategoryController;
-use App\Http\Controllers\Api\SupplierController;
-use App\Http\Controllers\Api\PurchaseController;
 use App\Http\Controllers\Api\ProductController;
-use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ProfileController;
-use App\Http\Controllers\Api\NotificationController;
-use App\Http\Controllers\Api\SettingController;
-use App\Http\Controllers\Api\BackupController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,29 +38,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         return response()->json(['message' => 'Logged out']);
     });
-
-    // ---- Dashboard ----
-    Route::get('/dashboard', [DashboardController::class, 'index']);
-
-    // ---- Categories ----
-    Route::get('/categories', [CategoryController::class, 'index']);
-    Route::post('/categories', [CategoryController::class, 'store']);
-    Route::put('/categories/{category}', [CategoryController::class, 'update']);
-    Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
-
-    // ---- Suppliers ----
-    Route::get('/suppliers', [SupplierController::class, 'index']);
-    Route::post('/suppliers', [SupplierController::class, 'store']);
-    Route::put('/suppliers/{supplier}', [SupplierController::class, 'update']);
-    Route::delete('/suppliers/{supplier}', [SupplierController::class, 'destroy']);
-
-    // ---- Purchases ----
-    Route::get('/purchases', [PurchaseController::class, 'index']);
-    Route::post('/purchases', [PurchaseController::class, 'store']); // multipart (image)
-    Route::post('/purchases/report', [PurchaseController::class, 'report']);
-    Route::put('/purchases/{purchase}', [PurchaseController::class, 'update']); // multipart (image)
-    Route::delete('/purchases/{purchase}', [PurchaseController::class, 'destroy']);
-
     // ---- Products ----
     Route::get('/products', [ProductController::class, 'index']);
     Route::post('/products', [ProductController::class, 'store']);
@@ -77,14 +45,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/products/{product}', [ProductController::class, 'destroy']);
     Route::get('/products/expired', [ProductController::class, 'expired']);
     Route::get('/products/outstock', [ProductController::class, 'outstock']);
-
-    // ---- Sales ----
-    Route::get('/sales', [SaleController::class, 'index']);
-    Route::post('/sales', [SaleController::class, 'store']);
-    Route::post('/sales/report', [SaleController::class, 'report']);
-    Route::get('/sales/form-options', [SaleController::class, 'formOptions']);
-    Route::put('/sales/{sale}', [SaleController::class, 'update']);
-    Route::delete('/sales/{sale}', [SaleController::class, 'destroy']);
 
     // ---- Admin-only: Roles / Permissions / Users ----
     Route::middleware('role:super-admin')->group(function () {
@@ -103,16 +63,5 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users/{user}', [UserController::class, 'show']);
         Route::put('/users/{user}', [UserController::class, 'update']);
         Route::delete('/users/{user}', [UserController::class, 'destroy']);
-
-        // Settings & backups
-        Route::get('/settings', [SettingController::class, 'index']);
-        Route::post('/settings', [SettingController::class, 'update']);
-        Route::get('/backups', [BackupController::class, 'index']);
-        Route::post('/backups/run', [BackupController::class, 'run']);
     });
-
-    // ---- Notifications ----
-    Route::get('/notifications', [NotificationController::class, 'index']);
-    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
-    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
 });
