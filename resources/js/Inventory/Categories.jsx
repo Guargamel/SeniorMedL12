@@ -26,7 +26,7 @@ export default function Categories() {
 
             setItems(list);
         } catch (e) {
-            setItems([]); // ensure array
+            setItems([]);
             setErr(e.message || "Failed to load categories");
         } finally {
             setLoading(false);

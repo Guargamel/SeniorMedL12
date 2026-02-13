@@ -36,10 +36,30 @@ const Register = () => {
             return;
         }
 
-        try {
-            const API_BASE = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:8000`;
+        const API_BASE =
+            import.meta.env.VITE_API_BASE_URL ||
+            `${window.location.protocol}//${window.location.hostname}:8000`;
 
-            await fetch(`${API_BASE}/sanctum/csrf-cookie`, { credentials: "include" });
+        // helper to read cookies
+        const getCookie = (name) => {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(";").shift();
+            return null;
+        };
+
+        try {
+            // 1) Get CSRF cookies
+            await fetch(`${API_BASE}/sanctum/csrf-cookie`, {
+                credentials: "include",
+            });
+
+            // 2) Read XSRF token from cookie and send it in header
+            const xsrfToken = getCookie("XSRF-TOKEN");
+            if (!xsrfToken) {
+                setError("Missing CSRF cookie (XSRF-TOKEN). Check CORS/sanctum config.");
+                return;
+            }
 
             const response = await fetch(`${API_BASE}/register`, {
                 method: "POST",
@@ -48,21 +68,31 @@ const Register = () => {
                     "Content-Type": "application/json",
                     Accept: "application/json",
                     "X-Requested-With": "XMLHttpRequest",
+                    "X-XSRF-TOKEN": decodeURIComponent(xsrfToken),
                 },
-                body: JSON.stringify({ name, email, password, password_confirmation: passwordConfirm }),
+                body: JSON.stringify({
+                    name,
+                    email,
+                    password,
+                    password_confirmation: passwordConfirm,
+                }),
             });
 
-
-            const data = await response.json();
+            const data = await response.json().catch(() => ({}));
 
             if (response.ok) {
                 navigate("/login");
             } else {
-                setError(data.message || "Registration failed");
+                // show validation errors if any
+                const fieldErrors = data?.errors
+                    ? Object.values(data.errors).flat().join(" | ")
+                    : null;
+
+                setError(fieldErrors || data.message || `Registration failed (${response.status})`);
             }
         } catch (err) {
-            setError("Something went wrong");
             console.error(err);
+            setError("Something went wrong");
         }
     };
 

@@ -14,29 +14,18 @@ import Register from "./Auth/Register.jsx";
 import Dashboard from "./Pages/Dashboard.jsx";
 
 /* PRODUCTS */
-import ProductsIndex from "./Products/Index.jsx";
-import ProductsCreate from "./Products/Create.jsx";
-import ProductsEdit from "./Products/Edit.jsx";
-import ProductsExpired from "./Products/Expired.jsx";
-import ProductsOutstock from "./Products/Outstock.jsx";
-import Categories from "./Products/Categories.jsx";
+import ProductsIndex from "./Medicines/Index.jsx";
+import ProductsCreate from "./Medicines/Create.jsx";
+import ProductsEdit from "./Medicines/Edit.jsx";
+import ProductsExpired from "./Medicines/Expired.jsx";
+import ProductsOutstock from "./Medicines/Outstock.jsx";
+import Categories from "./Medicines/Categories.jsx";
 
 /* PURCHASES */
 import PurchasesIndex from "./Purchases/Index.jsx";
 import PurchasesCreate from "./Purchases/Create.jsx";
 import PurchasesEdit from "./Purchases/Edit.jsx";
 import PurchasesReport from "./Purchases/Reports.jsx";
-
-/* SALES */
-import SalesIndex from "./Sales/Index.jsx";
-import SalesCreate from "./Sales/Create.jsx";
-import SalesEdit from "./Sales/Edit.jsx";
-import SalesReport from "./Sales/Reports.jsx";
-
-/* SUPPLIERS */
-import SuppliersIndex from "./Suppliers/Index.jsx";
-import SuppliersCreate from "./Suppliers/Create.jsx";
-import SuppliersEdit from "./Suppliers/Edit.jsx";
 
 /* USERS */
 import UsersIndex from "./Users/Index.jsx";
@@ -75,24 +64,6 @@ createRoot(container).render(
                 <Route path="/products/:id/edit" element={<ProductsEdit />} />
                 <Route path="/expired" element={<ProductsExpired />} />
                 <Route path="/outstock" element={<ProductsOutstock />} />
-
-                <Route path="/purchases" element={<PurchasesIndex />} />
-                <Route path="/purchases/create" element={<PurchasesCreate />} />
-                <Route path="/purchases/:id/edit" element={<PurchasesEdit />} />
-                <Route path="/purchases/report" element={<PurchasesReport />} />
-
-                <Route path="/sales" element={<SalesIndex />} />
-                <Route path="/sales/create" element={<SalesCreate />} />
-                <Route path="/sales/:id/edit" element={<SalesEdit />} />
-                <Route path="/sales/report" element={<SalesReport />} />
-
-                <Route path="/suppliers" element={<SuppliersIndex />} />
-                <Route path="/suppliers/create" element={<SuppliersCreate />} />
-                <Route path="/suppliers/:id/edit" element={<SuppliersEdit />} />
-
-                <Route path="/users" element={<UsersIndex />} />
-                <Route path="/users/create" element={<UsersCreate />} />
-                <Route path="/users/:id/edit" element={<UsersEdit />} />
 
                 <Route path="/profile" element={<Profile />} />
 

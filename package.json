@@ -24,7 +24,10 @@
         "vite": "^7.0.7"
     },
     "dependencies": {
+        "@emotion/react": "^11.14.0",
+        "@emotion/styled": "^11.14.1",
         "@fortawesome/fontawesome-free": "^7.1.0",
+        "@mui/material": "^7.3.8",
         "bootstrap": "^5.3.8",
         "feather-icons": "^4.29.2",
         "font-awesome": "^4.7.0",

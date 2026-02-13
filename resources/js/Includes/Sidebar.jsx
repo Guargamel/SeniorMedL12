@@ -26,15 +26,15 @@ export default function Sidebar({ permissions = {} }) {
             },
 
             // Categories
-            {
-                type: "link",
-                key: "categories",
-                label: "Categories",
-                icon: <i data-feather="layout" />,
-                to: "/categories",
-                show: can("view-category") || permissions.viewCategory,
-                active: routeIs("/categories"),
-            },
+            // {
+            //     type: "link",
+            //     key: "categories",
+            //     label: "Categories",
+            //     icon: <i data-feather="layout" />,
+            //     to: "/categories",
+            //     show: can("view-category") || permissions.viewCategory,
+            //     active: routeIs("/categories"),
+            // },
 
             // Purchase submenu
             {
@@ -64,6 +64,30 @@ export default function Sidebar({ permissions = {} }) {
                 show: can("view-products") || permissions.viewProducts,
                 active: routeIs("/products") || isExact("/outstock") || isExact("/expired"),
                 children: [
+                    { label: "Available", to: "/products", show: true, active: routeIs("/products") },
+                    {
+                        label: "Out-Stock",
+                        to: "/outstock",
+                        show: can("view-outstock-products") || permissions.viewOutStock,
+                        active: isExact("/outstock"),
+                    },
+                    {
+                        label: "Expired",
+                        to: "/expired",
+                        show: can("view-expired-products") || permissions.viewExpired,
+                        active: isExact("/expired"),
+                    },
+                ],
+            },
+
+            {
+                type: "submenu",
+                key: "products",
+                label: "Inventory",
+                icon: <i data-feather="file-text" />,
+                show: can("view-products") || permissions.viewProducts,
+                active: routeIs("/products") || isExact("/outstock") || isExact("/expired"),
+                children: [
                     { label: "Products", to: "/products", show: true, active: routeIs("/products") },
                     {
                         label: "Add Product",
@@ -83,58 +107,6 @@ export default function Sidebar({ permissions = {} }) {
                         show: can("view-expired-products") || permissions.viewExpired,
                         active: isExact("/expired"),
                     },
-                ],
-            },
-
-            // Sales submenu
-            {
-                type: "submenu",
-                key: "sales",
-                label: "Sale",
-                icon: <i data-feather="activity" />,
-                show: can("view-sales") || permissions.viewSales,
-                active: routeIs("/sales"),
-                children: [
-                    { label: "Sales", to: "/sales", show: true, active: routeIs("/sales") },
-                    {
-                        label: "Add Sale",
-                        to: "/sales/create",
-                        show: can("create-sale") || permissions.createSale,
-                        active: isExact("/sales/create"),
-                    },
-                ],
-            },
-
-            // Supplier submenu
-            {
-                type: "submenu",
-                key: "supplier",
-                label: "Supplier",
-                icon: <i data-feather="user" />,
-                show: can("view-supplier") || permissions.viewSupplier,
-                active: routeIs("/suppliers"),
-                children: [
-                    { label: "Supplier", to: "/suppliers", show: true, active: routeIs("/suppliers") },
-                    {
-                        label: "Add Supplier",
-                        to: "/suppliers/create",
-                        show: can("create-supplier") || permissions.createSupplier,
-                        active: isExact("/suppliers/create"),
-                    },
-                ],
-            },
-
-            // Reports submenu
-            {
-                type: "submenu",
-                key: "reports",
-                label: "Reports",
-                icon: <i data-feather="file" />,
-                show: can("view-reports") || permissions.viewReports,
-                active: isExact("/sales/report") || isExact("/purchases/report"),
-                children: [
-                    { label: "Sale Report", to: "/sales/report", show: true, active: isExact("/sales/report") },
-                    { label: "Purchase Report", to: "/purchases/report", show: true, active: isExact("/purchases/report") },
                 ],
             },
 
@@ -185,26 +157,26 @@ export default function Sidebar({ permissions = {} }) {
             },
 
             // Backups (Blade had backup.index; SPA path choose one and match your router)
-            {
-                type: "link",
-                key: "backups",
-                label: "Backups",
-                icon: <i data-feather="database" />,
-                to: "/backups",
-                show: true,
-                active: routeIs("/backups"),
-            },
+            // {
+            //     type: "link",
+            //     key: "backups",
+            //     label: "Backups",
+            //     icon: <i data-feather="database" />,
+            //     to: "/backups",
+            //     show: true,
+            //     active: routeIs("/backups"),
+            // },
 
             // Settings
-            {
-                type: "link",
-                key: "settings",
-                label: "Settings",
-                icon: <i data-feather="settings" />,
-                to: "/settings",
-                show: can("view-settings") || permissions.viewSettings,
-                active: isExact("/settings"),
-            },
+            // {
+            //     type: "link",
+            //     key: "settings",
+            //     label: "Settings",
+            //     icon: <i data-feather="settings" />,
+            //     to: "/settings",
+            //     show: can("view-settings") || permissions.viewSettings,
+            //     active: isExact("/settings"),
+            // },
         ];
     }, [permissions, pathname]);
 
