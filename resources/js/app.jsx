@@ -10,7 +10,7 @@ import RequireAuthLayout from "./Layouts/RequireAuthLayout.jsx";
 import Login from "./Auth/Login.jsx";
 
 // Dashboard
-import Dashboard from "./Pages/Dashboard.jsx";
+import Dashboard from "./Pages/Dashboard/Dashboard.jsx";
 
 /* PRODUCTS */
 import ProductsIndex from "./Inventory/Index.jsx";

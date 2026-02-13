@@ -1,8 +1,8 @@
 // resources/js/Layouts/Layout.jsx
 import React from "react";
 import { Outlet } from "react-router-dom";
-import Header from "../Includes/Header.jsx";
-import Sidebar from "../Includes/Sidebar.jsx";
+import Header from "./Includes/Header.jsx";
+import Sidebar from "./Includes/Sidebar.jsx";
 import { safeArray } from "../utils/api";
 
 // Global styles for authenticated area (ensure sidebar/header styles load)

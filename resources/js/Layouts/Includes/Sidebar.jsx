@@ -18,7 +18,7 @@ const menu = [
         title: "MAIN",
         items: [
             { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
-            { label: "Senior Citizens", to: "/seniors", icon: Users },
+            { label: "Senior Citizens", to: "/users/index", icon: Users },
         ],
     },
     {
