@@ -10,23 +10,20 @@ import RequireAuthLayout from "./Layouts/RequireAuthLayout.jsx";
 import Login from "./Auth/Login.jsx";
 
 // Dashboard
-import Dashboard from "./Pages/Dashboard/Dashboard.jsx";
+import Dashboard from "./Pages/Dashboard.jsx";
 
-/* PRODUCTS */
-import ProductsIndex from "./Inventory/Index.jsx";
-import ProductsCreate from "./Inventory/Create.jsx";
-import ProductsEdit from "./Inventory/Edit.jsx";
-import ProductsExpired from "./Inventory/Expired.jsx";
-import ProductsOutstock from "./Inventory/Outstock.jsx";
-import Categories from "./Inventory/Categories.jsx";
+/* STAFF (USERS) */
+import UsersIndex from "./Staff(User)/Index.jsx";
+import UsersCreate from "./Staff(User)/Create.jsx";
+import UsersEdit from "./Staff(User)/Edit.jsx";
+import Profile from "./Staff(User)/Profile.jsx";
 
-/* USERS */
-import UsersIndex from "./Users/Index.jsx";
-import UsersCreate from "./Users/Create.jsx";
-import UsersEdit from "./Users/Edit.jsx";
-import Profile from "./Users/Profile.jsx";
+/* SENIORS */
+import SeniorsIndex from "./Seniors/Index.jsx";
+import SeniorCreate from "./Seniors/Create.jsx";
+import SeniorEdit from "./Seniors/Edit.jsx";
 
-/*HEAD ROLES / PERMISSIONS */
+/* ROLES / PERMISSIONS */
 import RolesIndex from "./Roles/Index.jsx";
 import RolesCreate from "./Roles/Create.jsx";
 import RolesEdit from "./Roles/Edit.jsx";
@@ -38,28 +35,32 @@ createRoot(container).render(
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
             {/* Default landing */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
             {/* Public */}
             <Route element={<PlainLayout />}>
                 <Route path="/login" element={<Login />} />
-        
             </Route>
 
             {/* Protected */}
             <Route element={<RequireAuthLayout />}>
+                {/* Dashboard */}
                 <Route path="/dashboard" element={<Dashboard />} />
 
-                <Route path="/categories" element={<Categories />} />
+                {/* Staff */}
+                <Route path="/users" element={<UsersIndex />} />
+                <Route path="/users/create" element={<UsersCreate />} />
+                <Route path="/users/:id/edit" element={<UsersEdit />} />
 
-                <Route path="/products" element={<ProductsIndex />} />
-                <Route path="/products/create" element={<ProductsCreate />} />
-                <Route path="/products/:id/edit" element={<ProductsEdit />} />
-                <Route path="/expired" element={<ProductsExpired />} />
-                <Route path="/outstock" element={<ProductsOutstock />} />
+                {/* Seniors */}
+                <Route path="/seniors" element={<SeniorsIndex />} />
+                <Route path="/seniors/create" element={<SeniorCreate />} />
+                <Route path="/seniors/:id/edit" element={<SeniorEdit />} />
 
+                {/* Profile */}
                 <Route path="/profile" element={<Profile />} />
 
+                {/* Roles / Permissions */}
                 <Route path="/roles" element={<RolesIndex />} />
                 <Route path="/roles/create" element={<RolesCreate />} />
                 <Route path="/roles/:id/edit" element={<RolesEdit />} />

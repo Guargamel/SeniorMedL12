@@ -366,3 +366,35 @@
     color: var(--mc-primary-dark);
     font-weight: 800;
 }
+
+.mc-nav-item-btn {
+    cursor: pointer;
+}
+
+.mc-subnav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 6px 0 10px 34px;
+    /* indent under icon */
+}
+
+.mc-subnav-item {
+    display: block;
+    color: #d1e7dd;
+    text-decoration: none;
+    padding: 8px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+.mc-subnav-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.mc-subnav-item.active {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+}

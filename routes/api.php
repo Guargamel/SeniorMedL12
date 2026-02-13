@@ -7,6 +7,11 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\SeniorController;
+use App\Http\Controllers\Api\BatchController;
+use App\Http\Controllers\Api\RequestController;
+use App\Http\Controllers\Api\DistributionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,7 +43,29 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json(['message' => 'Logged out']);
     });
 
-    // ---- Admin-only: Roles / Permissions / Users ----
+    // Dashboard
+    Route::get('/dashboard/summary', [DashboardController::class, 'summary']);
+    Route::get('/dashboard/alerts', [DashboardController::class, 'alerts']);
+    Route::get('/dashboard/recent-distributions', [DashboardController::class, 'recentDistributions']);
+
+    // Seniors (admin creates account + profile)
+    Route::middleware('role:super-admin')->group(function () {
+        Route::get('/seniors', [SeniorController::class, 'index']);
+        Route::post('/seniors', [SeniorController::class, 'store']);
+    });
+
+
+    // Stock (record stock = create batch)
+    Route::middleware('role:super-admin')->post('/batches', [BatchController::class, 'store']);
+
+    // Requests (common users create; admin reviews)
+    Route::post('/requests', [RequestController::class, 'store']); // common user
+    Route::middleware('role:super-admin')->put('/requests/{id}/review', [RequestController::class, 'review']);
+
+    // Distributions (admin dispense)
+    Route::middleware('role:super-admin')->post('/distributions', [DistributionController::class, 'store']);
+
+
     Route::middleware('role:super-admin')->group(function () {
         // Roles & permissions
         Route::get('/roles', [RoleController::class, 'index']);

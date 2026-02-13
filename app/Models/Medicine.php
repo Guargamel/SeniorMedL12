@@ -11,14 +11,20 @@ class Medicine extends Model
         'brand_name',
         'dosage_form',
         'strength',
-        'category',
+        'category_id',
         'unit',
         'description',
         'is_active',
+        'picture',
     ];
 
     public function category()
     {
-        return $this->belongsTo(Medicine_Category::class);
+        return $this->belongsTo(Medicine_Category::class, 'category_id');
+    }
+
+    public function batches()
+    {
+        return $this->hasMany(Medicine_Batches::class, 'medicine_id');
     }
 }
