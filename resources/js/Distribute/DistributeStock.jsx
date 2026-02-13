@@ -1,38 +1,74 @@
 import React, { useState, useEffect } from "react";
-import { apiFetch } from "../utils/api";  // Ensure this path is correct
-import Select from "react-select"; // Import react-select
+import { apiFetch } from "../utils/api";
+import Select from "react-select";
 
 export default function DistributeStock() {
-    const [email, setEmail] = useState('');
-    const [userId, setUserId] = useState(null);
-    const [medicineId, setMedicineId] = useState('');
+    const [selectedSenior, setSelectedSenior] = useState(null);
+    const [selectedMedicine, setSelectedMedicine] = useState(null);
     const [quantity, setQuantity] = useState('');
+    const [notes, setNotes] = useState('');
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(null);
-    const [emailSuggestions, setEmailSuggestions] = useState([]);
+    
+    const [seniors, setSeniors] = useState([]);
+    const [medicines, setMedicines] = useState([]);
+    const [loadingSeniors, setLoadingSeniors] = useState(true);
+    const [loadingMedicines, setLoadingMedicines] = useState(true);
+    const [distributing, setDistributing] = useState(false);
 
-    // Fetch email suggestions based on user input
+    // Load seniors and medicines on mount
     useEffect(() => {
-        if (email.length >= 3) { // Trigger search after 3 characters typed
-            apiFetch(`/api/users/autocomplete-email?email=${email}`)
-                .then((data) => {
-                    setEmailSuggestions(data.map(user => ({
-                        label: user.email,  // Display email
-                        value: user.id,     // Use user ID to link back
-                        name: user.name     // Store the user's name for display
-                    })));
-                })
-                .catch((err) => {
-                    setError('Failed to fetch user suggestions');
-                });
-        } else {
-            setEmailSuggestions([]);
-        }
-    }, [email]);
+        loadSeniors();
+        loadMedicines();
+    }, []);
 
-    const handleEmailChange = (selectedOption) => {
-        setEmail(selectedOption ? selectedOption.label : '');
-        setUserId(selectedOption ? selectedOption.value : null);
+    const loadSeniors = async () => {
+        setLoadingSeniors(true);
+        try {
+            // Try seniors endpoint first
+            let data;
+            try {
+                data = await apiFetch('/api/seniors');
+            } catch {
+                // Fallback to autocomplete endpoint
+                data = await apiFetch('/api/users/autocomplete-email?search=');
+            }
+            
+            const seniorList = Array.isArray(data) ? data : (data.data || []);
+            const seniorOptions = seniorList.map(senior => ({
+                value: senior.id,
+                label: `${senior.name} (${senior.email})`,
+                email: senior.email,
+                name: senior.name
+            }));
+            setSeniors(seniorOptions);
+        } catch (err) {
+            console.error('Failed to load seniors:', err);
+            setError('Failed to load senior citizens list');
+        } finally {
+            setLoadingSeniors(false);
+        }
+    };
+
+    const loadMedicines = async () => {
+        setLoadingMedicines(true);
+        try {
+            const data = await apiFetch('/api/medicines');
+            const medicineList = Array.isArray(data) ? data : [];
+            const medicineOptions = medicineList.map(med => ({
+                value: med.id,
+                label: `${med.generic_name}${med.brand_name ? ` (${med.brand_name})` : ''} - ${med.strength || ''}`,
+                stock: med.quantity || med.batches_sum_quantity || 0,
+                name: med.generic_name,
+                unit: med.unit || 'units'
+            }));
+            setMedicines(medicineOptions);
+        } catch (err) {
+            console.error('Failed to load medicines:', err);
+            setError('Failed to load medicines list');
+        } finally {
+            setLoadingMedicines(false);
+        }
     };
 
     const handleDistribution = async (e) => {
@@ -40,62 +76,184 @@ export default function DistributeStock() {
         setError(null);
         setSuccessMessage(null);
 
+        if (!selectedSenior) {
+            setError('Please select a senior citizen');
+            return;
+        }
+
+        if (!selectedMedicine) {
+            setError('Please select a medicine');
+            return;
+        }
+
+        if (!quantity || quantity <= 0) {
+            setError('Please enter a valid quantity');
+            return;
+        }
+
+        setDistributing(true);
+
         try {
-            const response = await apiFetch('/api/distributions', {
+            await apiFetch('/api/distributions', {
                 method: 'POST',
-                body: JSON.stringify({ email, user_id: userId, medicine_id: medicineId, quantity }),
+                body: JSON.stringify({
+                    user_id: selectedSenior.value,
+                    medicine_id: selectedMedicine.value,
+                    quantity: parseInt(quantity),
+                    notes: notes || null
+                }),
             });
 
-            setSuccessMessage('Stock distributed successfully!');
-            setEmail('');
-            setUserId(null);
-            setMedicineId('');
+            setSuccessMessage(`Successfully distributed ${quantity} ${selectedMedicine.unit} of ${selectedMedicine.name} to ${selectedSenior.name}`);
+            
+            // Reset form
+            setSelectedSenior(null);
+            setSelectedMedicine(null);
             setQuantity('');
+            setNotes('');
+            
+            // Reload medicines to update stock
+            loadMedicines();
         } catch (err) {
-            setError('Failed to distribute stock');
+            const errorMsg = err?.data?.message || err?.message || 'Failed to distribute stock';
+            setError(errorMsg);
+            console.error('Distribution error:', err);
+        } finally {
+            setDistributing(false);
         }
     };
 
     return (
-        <div className="container mt-4">
-            <h2>Distribute Stock</h2>
-            {error && <div className="alert alert-danger">{error}</div>}
-            {successMessage && <div className="alert alert-success">{successMessage}</div>}
+        <div className="mc-card">
+            <div className="mc-card-header">
+                <h2 className="mc-card-title">Distribute Medicine</h2>
+            </div>
 
-            <form onSubmit={handleDistribution}>
-                <div className="mb-3">
-                    <label className="form-label">User Email</label>
-                    <Select
-                        value={emailSuggestions.find(option => option.value === userId)}
-                        onChange={handleEmailChange}
-                        options={emailSuggestions}
-                        getOptionLabel={(e) => `${e.name} (${e.label})`} // Format option display
-                        placeholder="Search by email"
-                    />
-                </div>
+            <div className="mc-card-body">
+                {error && (
+                    <div className="alert alert-danger" style={{ marginBottom: 20 }}>
+                        {error}
+                    </div>
+                )}
+                
+                {successMessage && (
+                    <div className="alert alert-success" style={{ marginBottom: 20 }}>
+                        {successMessage}
+                    </div>
+                )}
 
-                <div className="mb-3">
-                    <label className="form-label">Medicine</label>
-                    <input
-                        type="number"
-                        className="form-control"
-                        value={medicineId}
-                        onChange={(e) => setMedicineId(e.target.value)}
-                        required
-                    />
-                </div>
-                <div className="mb-3">
-                    <label className="form-label">Quantity</label>
-                    <input
-                        type="number"
-                        className="form-control"
-                        value={quantity}
-                        onChange={(e) => setQuantity(e.target.value)}
-                        required
-                    />
-                </div>
-                <button type="submit" className="btn btn-primary">Distribute</button>
-            </form>
+                <form onSubmit={handleDistribution}>
+                    <div style={{ marginBottom: 20 }}>
+                        <label className="form-label" style={{ fontSize: 12, fontWeight: 800, marginBottom: 6 }}>
+                            Senior Citizen *
+                        </label>
+                        <Select
+                            value={selectedSenior}
+                            onChange={setSelectedSenior}
+                            options={seniors}
+                            isLoading={loadingSeniors}
+                            placeholder={loadingSeniors ? "Loading seniors..." : "Search by name or email"}
+                            isClearable
+                            isSearchable
+                            noOptionsMessage={() => seniors.length === 0 ? "No senior citizens found. Please register seniors first." : "No match found"}
+                        />
+                        <div style={{ fontSize: 11, color: 'var(--mc-muted)', marginTop: 4 }}>
+                            {seniors.length} senior citizen{seniors.length !== 1 ? 's' : ''} registered
+                        </div>
+                    </div>
+
+                    <div style={{ marginBottom: 20 }}>
+                        <label className="form-label" style={{ fontSize: 12, fontWeight: 800, marginBottom: 6 }}>
+                            Medicine *
+                        </label>
+                        <Select
+                            value={selectedMedicine}
+                            onChange={setSelectedMedicine}
+                            options={medicines}
+                            isLoading={loadingMedicines}
+                            placeholder={loadingMedicines ? "Loading medicines..." : "Search by name"}
+                            isClearable
+                            isSearchable
+                            getOptionLabel={(option) => `${option.label} (Stock: ${option.stock} ${option.unit})`}
+                            noOptionsMessage={() => medicines.length === 0 ? "No medicines found. Please add medicines first." : "No match found"}
+                        />
+                        {selectedMedicine && (
+                            <div style={{ fontSize: 11, color: selectedMedicine.stock > 10 ? 'var(--mc-muted)' : '#c0392b', marginTop: 4 }}>
+                                Available stock: {selectedMedicine.stock} {selectedMedicine.unit}
+                                {selectedMedicine.stock <= 10 && ' ⚠️ Low stock!'}
+                            </div>
+                        )}
+                    </div>
+
+                    <div style={{ marginBottom: 20 }}>
+                        <label className="form-label" style={{ fontSize: 12, fontWeight: 800, marginBottom: 6 }}>
+                            Quantity *
+                        </label>
+                        <input
+                            type="number"
+                            className="form-control"
+                            value={quantity}
+                            onChange={(e) => setQuantity(e.target.value)}
+                            min="1"
+                            max={selectedMedicine?.stock || 999999}
+                            placeholder="Enter quantity"
+                            required
+                        />
+                        {selectedMedicine && quantity > selectedMedicine.stock && (
+                            <div style={{ color: '#c0392b', fontSize: 12, marginTop: 4 }}>
+                                ⚠️ Warning: Quantity exceeds available stock ({selectedMedicine.stock} {selectedMedicine.unit})
+                            </div>
+                        )}
+                    </div>
+
+                    <div style={{ marginBottom: 20 }}>
+                        <label className="form-label" style={{ fontSize: 12, fontWeight: 800, marginBottom: 6 }}>
+                            Notes (Optional)
+                        </label>
+                        <textarea
+                            className="form-control"
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            rows={3}
+                            placeholder="Add any notes about this distribution..."
+                        />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                        <button 
+                            type="button" 
+                            className="btn btn-outline-secondary"
+                            onClick={() => {
+                                setSelectedSenior(null);
+                                setSelectedMedicine(null);
+                                setQuantity('');
+                                setNotes('');
+                                setError(null);
+                                setSuccessMessage(null);
+                            }}
+                            disabled={distributing}
+                        >
+                            Clear Form
+                        </button>
+                        <button 
+                            type="submit" 
+                            className="btn btn-success"
+                            disabled={!selectedSenior || !selectedMedicine || !quantity || distributing}
+                        >
+                            {distributing ? 'Distributing...' : 'Distribute Medicine'}
+                        </button>
+                    </div>
+                </form>
+
+                {seniors.length === 0 && !loadingSeniors && (
+                    <div style={{ marginTop: 20, padding: 16, background: 'var(--mc-warning-bg)', borderRadius: 8, border: '1px solid var(--mc-warning-border)' }}>
+                        <strong>No senior citizens registered</strong>
+                        <p style={{ margin: '8px 0 0', fontSize: 13 }}>
+                            Please go to <strong>Senior Citizens → Register Senior</strong> to add senior citizens before distributing medicines.
+                        </p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

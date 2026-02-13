@@ -15,6 +15,9 @@ use App\Http\Controllers\Api\DistributionController;
 use App\Http\Controllers\Api\MedicineController;
 use App\Http\Controllers\Api\MedicineCategoryController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\AnalyticsController;
+use App\Http\Controllers\Api\ReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,18 +29,15 @@ use App\Http\Controllers\Api\UserController;
 Route::middleware('auth:sanctum')->group(function () {
 
     // ---- Auth / Profile ----
-    // Primary "who am I" endpoint for your app
     Route::get('/me', [ProfileController::class, 'me']);
 
-    // Compatibility alias (so frontend checks like /api/user work)
     Route::get('/user', function (Request $request) {
         return response()->json(['user' => $request->user()->load('roles')]);
     });
 
-    Route::put('/profile', [ProfileController::class, 'update']); // multipart (avatar)
+    Route::put('/profile', [ProfileController::class, 'update']);
     Route::put('/profile/password', [ProfileController::class, 'updatePassword']);
 
-    // API logout (recommended; avoids /logout web-route confusion)
     Route::post('/logout', function (Request $request) {
         Auth::guard('web')->logout();
         $request->session()->invalidate();
@@ -46,30 +46,44 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json(['message' => 'Logged out']);
     });
 
-    // Dashboard
+    // ---- Dashboard ----
     Route::get('/dashboard/summary', [DashboardController::class, 'summary']);
     Route::get('/dashboard/alerts', [DashboardController::class, 'alerts']);
     Route::get('/dashboard/recent-distributions', [DashboardController::class, 'recentDistributions']);
 
-    // Seniors (admin creates account + profile)
+    // ---- Notifications ----
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
+
+    // ---- Analytics ----
+    Route::get('/analytics/dashboard', [AnalyticsController::class, 'dashboard']);
+    Route::get('/analytics/expiring-medicines', [AnalyticsController::class, 'expiringMedicines']);
+    Route::get('/analytics/low-stock', [AnalyticsController::class, 'lowStock']);
+
+    // ---- Reports ----
+    Route::get('/reports/inventory', [ReportController::class, 'inventory']);
+    Route::get('/reports/distributions', [ReportController::class, 'distributions']);
+    Route::get('/reports/expiry', [ReportController::class, 'expiry']);
+    Route::get('/reports/seniors', [ReportController::class, 'seniors']);
+    Route::get('/reports/usage', [ReportController::class, 'usage']);
+
+    // ---- Seniors ----
+    Route::apiResource('seniors', SeniorController::class);
+
+    // ---- Staff (Admin only) ----
     Route::middleware('role:super-admin')->group(function () {
-        Route::get('/seniors', [SeniorController::class, 'index']);
-        Route::post('/seniors', [SeniorController::class, 'store']);
+        Route::get('/staff', [StaffController::class, 'index']);
+        Route::post('/staff', [StaffController::class, 'store']);
+        Route::get('/staff/{user}', [StaffController::class, 'show']);
+        Route::put('/staff/{user}', [StaffController::class, 'update']);
+        Route::delete('/staff/{user}', [StaffController::class, 'destroy']);
     });
 
-
-    // Stock (record stock = create batch)
-    Route::middleware('role:super-admin')->post('/batches', [BatchController::class, 'store']);
-
-    // Requests (common users create; admin reviews)
-    Route::post('/requests', [RequestController::class, 'store']); // common user
-    Route::middleware('role:super-admin')->put('/requests/{id}/review', [RequestController::class, 'review']);
-
-    // Distributions (admin dispense)
-    Route::middleware('role:super-admin')->post('/distributions', [DistributionController::class, 'store']);
-
+    // ---- Roles & Permissions (Admin only) ----
     Route::middleware('role:super-admin')->group(function () {
-        // Roles & permissions
         Route::get('/roles', [RoleController::class, 'index']);
         Route::post('/roles', [RoleController::class, 'store']);
         Route::get('/roles/{role}', [RoleController::class, 'show']);
@@ -77,28 +91,29 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/roles/{role}', [RoleController::class, 'destroy']);
 
         Route::get('/permissions', [PermissionController::class, 'index']);
-
-
-        Route::middleware(['auth:sanctum', 'role:super-admin'])->group(function () {
-            Route::get('/staff', [StaffController::class, 'index']);
-            Route::post('/staff', [StaffController::class, 'store']);
-            Route::get('/staff/{user}', [StaffController::class, 'show']);
-            Route::put('/staff/{user}', [StaffController::class, 'update']);
-            Route::delete('/staff/{user}', [StaffController::class, 'destroy']);
-        });
-
-        Route::post('/distributions', [DistributionController::class, 'store']);
-        Route::get('/users/autocomplete-email', [UserController::class, 'autocompleteEmail']);
     });
 
-    // Medicines (accessible to all authenticated users)
+    // ---- Distributions (Admin only) ----
+    Route::middleware('role:super-admin')->group(function () {
+        Route::post('/distributions', [DistributionController::class, 'store']);
+        Route::get('/users/autocomplete-email', [UserController::class, 'autocompleteEmail']);
+        
+        // Admin notifications
+        Route::post('/notifications', [NotificationController::class, 'store']);
+    });
+
+    // ---- Stock Management (Admin only) ----
+    Route::middleware('role:super-admin')->post('/batches', [BatchController::class, 'store']);
+
+    // ---- Requests ----
+    Route::post('/requests', [RequestController::class, 'store']);
+    Route::middleware('role:super-admin')->put('/requests/{id}/review', [RequestController::class, 'review']);
+
+    // ---- Medicines ----
     Route::get('/medicines/expired', [MedicineController::class, 'expired']);
     Route::get('/medicines/outstock', [MedicineController::class, 'outstock']);
     Route::apiResource('medicines', MedicineController::class);
 
-    // Categories CRUD (accessible to all authenticated users)
+    // ---- Medicine Categories ----
     Route::apiResource('medicine-categories', MedicineCategoryController::class);
-
-    // Seniors CRUD (accessible to all authenticated users for viewing)
-    Route::apiResource('seniors', SeniorController::class);
 });

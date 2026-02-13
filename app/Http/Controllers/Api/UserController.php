@@ -104,15 +104,31 @@ class UserController extends Controller
         return response()->json(['message' => 'User deleted']);
     }
 
-    // app/Http/Controllers/Api/UserController.php
+    /**
+     * Autocomplete for senior citizens (for distributions)
+     */
     public function autocompleteEmail(Request $request)
     {
-        $email = $request->query('email'); // Get the search query parameter
+        $search = $request->query('email', $request->query('search', ''));
 
-        // Fetch users that match the given email prefix (using LIKE query)
-        $users = User::where('email', 'like', "%$email%")
-            ->limit(5) // Limit to 5 results for performance
-            ->get(['id', 'name', 'email']); // Only return id, name, and email
+        // Only return senior citizens
+        $query = User::query()
+            ->whereHas('roles', function($q) {
+                $q->where('name', 'senior_citizen');
+            });
+
+        // Search by email or name
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('email', 'like', "%{$search}%")
+                  ->orWhere('name', 'like', "%{$search}%");
+            });
+        }
+
+        $users = $query
+            ->orderBy('name')
+            ->limit(20)
+            ->get(['id', 'name', 'email']);
 
         return response()->json($users);
     }
