@@ -64,6 +64,30 @@ export default function Sidebar({ permissions = {} }) {
                 show: can("view-products") || permissions.viewProducts,
                 active: routeIs("/products") || isExact("/outstock") || isExact("/expired"),
                 children: [
+                    { label: "Available", to: "/products", show: true, active: routeIs("/products") },
+                    {
+                        label: "Out-Stock",
+                        to: "/outstock",
+                        show: can("view-outstock-products") || permissions.viewOutStock,
+                        active: isExact("/outstock"),
+                    },
+                    {
+                        label: "Expired",
+                        to: "/expired",
+                        show: can("view-expired-products") || permissions.viewExpired,
+                        active: isExact("/expired"),
+                    },
+                ],
+            },
+
+            {
+                type: "submenu",
+                key: "products",
+                label: "Inventory",
+                icon: <i data-feather="file-text" />,
+                show: can("view-products") || permissions.viewProducts,
+                active: routeIs("/products") || isExact("/outstock") || isExact("/expired"),
+                children: [
                     { label: "Products", to: "/products", show: true, active: routeIs("/products") },
                     {
                         label: "Add Product",
@@ -85,6 +109,7 @@ export default function Sidebar({ permissions = {} }) {
                     },
                 ],
             },
+
 
             // Access Control submenu
             {

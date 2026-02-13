@@ -14,12 +14,12 @@ import Register from "./Auth/Register.jsx";
 import Dashboard from "./Pages/Dashboard.jsx";
 
 /* PRODUCTS */
-import ProductsIndex from "./Products/Index.jsx";
-import ProductsCreate from "./Products/Create.jsx";
-import ProductsEdit from "./Products/Edit.jsx";
-import ProductsExpired from "./Products/Expired.jsx";
-import ProductsOutstock from "./Products/Outstock.jsx";
-import Categories from "./Products/Categories.jsx";
+import ProductsIndex from "./Medicines/Index.jsx";
+import ProductsCreate from "./Medicines/Create.jsx";
+import ProductsEdit from "./Medicines/Edit.jsx";
+import ProductsExpired from "./Medicines/Expired.jsx";
+import ProductsOutstock from "./Medicines/Outstock.jsx";
+import Categories from "./Medicines/Categories.jsx";
 
 /* PURCHASES */
 import PurchasesIndex from "./Purchases/Index.jsx";
@@ -64,15 +64,6 @@ createRoot(container).render(
                 <Route path="/products/:id/edit" element={<ProductsEdit />} />
                 <Route path="/expired" element={<ProductsExpired />} />
                 <Route path="/outstock" element={<ProductsOutstock />} />
-
-                <Route path="/purchases" element={<PurchasesIndex />} />
-                <Route path="/purchases/create" element={<PurchasesCreate />} />
-                <Route path="/purchases/:id/edit" element={<PurchasesEdit />} />
-                <Route path="/purchases/report" element={<PurchasesReport />} />
-
-                <Route path="/users" element={<UsersIndex />} />
-                <Route path="/users/create" element={<UsersCreate />} />
-                <Route path="/users/:id/edit" element={<UsersEdit />} />
 
                 <Route path="/profile" element={<Profile />} />
 
