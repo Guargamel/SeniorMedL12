@@ -36,30 +36,30 @@ export default function Sidebar({ permissions = {} }) {
                 active: routeIs("/categories"),
             },
 
-            // Purchase submenu
-            {
-                type: "submenu",
-                key: "purchase",
-                label: "Purchase",
-                icon: <i data-feather="star" />,
-                show: can("view-purchase") || permissions.viewPurchase,
-                active: routeIs("/purchases"),
-                children: [
-                    { label: "Purchase", to: "/purchases", show: true, active: routeIs("/purchases") },
-                    {
-                        label: "Add Purchase",
-                        to: "/purchases/create",
-                        show: can("create-purchase") || permissions.createPurchase,
-                        active: isExact("/purchases/create"),
-                    },
-                ],
-            },
+            // // Purchase submenu
+            // {
+            //     type: "submenu",
+            //     key: "purchase",
+            //     label: "Purchase",
+            //     icon: <i data-feather="star" />,
+            //     show: can("view-purchase") || permissions.viewPurchase,
+            //     active: routeIs("/purchases"),
+            //     children: [
+            //         { label: "Purchase", to: "/purchases", show: true, active: routeIs("/purchases") },
+            //         {
+            //             label: "Add Purchase",
+            //             to: "/purchases/create",
+            //             show: can("create-purchase") || permissions.createPurchase,
+            //             active: isExact("/purchases/create"),
+            //         },
+            //     ],
+            // },
 
             // Products submenu
             {
                 type: "submenu",
                 key: "products",
-                label: "Products",
+                label: "Medicines",
                 icon: <i data-feather="file-text" />,
                 show: can("view-products") || permissions.viewProducts,
                 active: routeIs("/products") || isExact("/outstock") || isExact("/expired"),
@@ -83,58 +83,6 @@ export default function Sidebar({ permissions = {} }) {
                         show: can("view-expired-products") || permissions.viewExpired,
                         active: isExact("/expired"),
                     },
-                ],
-            },
-
-            // Sales submenu
-            {
-                type: "submenu",
-                key: "sales",
-                label: "Sale",
-                icon: <i data-feather="activity" />,
-                show: can("view-sales") || permissions.viewSales,
-                active: routeIs("/sales"),
-                children: [
-                    { label: "Sales", to: "/sales", show: true, active: routeIs("/sales") },
-                    {
-                        label: "Add Sale",
-                        to: "/sales/create",
-                        show: can("create-sale") || permissions.createSale,
-                        active: isExact("/sales/create"),
-                    },
-                ],
-            },
-
-            // Supplier submenu
-            {
-                type: "submenu",
-                key: "supplier",
-                label: "Supplier",
-                icon: <i data-feather="user" />,
-                show: can("view-supplier") || permissions.viewSupplier,
-                active: routeIs("/suppliers"),
-                children: [
-                    { label: "Supplier", to: "/suppliers", show: true, active: routeIs("/suppliers") },
-                    {
-                        label: "Add Supplier",
-                        to: "/suppliers/create",
-                        show: can("create-supplier") || permissions.createSupplier,
-                        active: isExact("/suppliers/create"),
-                    },
-                ],
-            },
-
-            // Reports submenu
-            {
-                type: "submenu",
-                key: "reports",
-                label: "Reports",
-                icon: <i data-feather="file" />,
-                show: can("view-reports") || permissions.viewReports,
-                active: isExact("/sales/report") || isExact("/purchases/report"),
-                children: [
-                    { label: "Sale Report", to: "/sales/report", show: true, active: isExact("/sales/report") },
-                    { label: "Purchase Report", to: "/purchases/report", show: true, active: isExact("/purchases/report") },
                 ],
             },
 

@@ -5,7 +5,7 @@ import DashboardCards from "../Views/DashboardCards.jsx";
 export default function Dashboard() {
     return (
         <div>
-            <DashboardCards />
+
         </div>
     );
 }
