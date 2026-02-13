@@ -8,7 +8,6 @@ import RequireAuthLayout from "./Layouts/RequireAuthLayout.jsx";
 
 // Auth
 import Login from "./Auth/Login.jsx";
-import Register from "./Auth/Register.jsx";
 
 // Dashboard
 import Dashboard from "./Pages/Dashboard.jsx";

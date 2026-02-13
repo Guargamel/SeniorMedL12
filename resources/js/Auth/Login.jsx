@@ -100,7 +100,7 @@ export default function Login() {
             </form>
 
             <div className="text-center dont-have">
-                Don't have an account? <Link to="/register">Register</Link>
+                Request an account from the baranggay station
             </div>
         </div>
     );
