@@ -3,20 +3,27 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MedicineBatch extends Model
 {
     protected $fillable = [
         'medicine_id',
+        'batch_no',
         'expiry_date',
-        'qty_received',
-        'qty_remaining',
-        'created_at',
-        'updated_at',
+        'quantity',
+        'received_at',
+        'supplier',
+        'cost',
     ];
 
-    public function medicine()
+    protected $casts = [
+        'expiry_date' => 'date',
+        'received_at' => 'date',
+    ];
+
+    public function medicine(): BelongsTo
     {
-        return $this->belongsTo(Medicine::class);
+        return $this->belongsTo(Medicine::class, 'medicine_id');
     }
 }

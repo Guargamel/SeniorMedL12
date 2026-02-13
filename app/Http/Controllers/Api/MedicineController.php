@@ -12,10 +12,10 @@ class MedicineController extends Controller
 {
     public function index()
     {
-        // Include category name + computed "quantity" (sum of remaining batches)
+        // Include category name + computed "quantity" (sum of batch quantities)
         $items = Medicine::query()
             ->with('category:id,name')
-            ->withSum('batches as quantity', 'qty_remaining') // requires medicine_batches relationship
+            ->withSum('batches as quantity', 'quantity')
             ->orderByDesc('id')
             ->get();
 
@@ -26,7 +26,7 @@ class MedicineController extends Controller
     {
         $item = Medicine::query()
             ->with('category:id,name')
-            ->withSum('batches as quantity', 'qty_remaining')
+            ->withSum('batches as quantity', 'quantity')
             ->findOrFail($id);
 
         return response()->json($item);
@@ -108,7 +108,7 @@ class MedicineController extends Controller
     {
         $items = Medicine::query()
             ->with('category:id,name')
-            ->withSum('batches as quantity', 'qty_remaining')
+            ->withSum('batches as quantity', 'quantity')
             ->having('quantity', '<=', 0)
             ->orderByDesc('id')
             ->get();
@@ -129,9 +129,9 @@ class MedicineController extends Controller
             ->with('category:id,name')
             ->whereHas('batches', function ($q) use ($today) {
                 $q->whereDate('expiry_date', '<', $today)
-                    ->where('qty_remaining', '>', 0);
+                    ->where('quantity', '>', 0);
             })
-            ->withSum('batches as quantity', 'qty_remaining')
+            ->withSum('batches as quantity', 'quantity')
             ->orderByDesc('id')
             ->get();
 
