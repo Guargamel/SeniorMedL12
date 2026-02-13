@@ -36,30 +36,30 @@ export default function Sidebar({ permissions = {} }) {
             //     active: routeIs("/categories"),
             // },
 
-            // // Purchase submenu
-            // {
-            //     type: "submenu",
-            //     key: "purchase",
-            //     label: "Purchase",
-            //     icon: <i data-feather="star" />,
-            //     show: can("view-purchase") || permissions.viewPurchase,
-            //     active: routeIs("/purchases"),
-            //     children: [
-            //         { label: "Purchase", to: "/purchases", show: true, active: routeIs("/purchases") },
-            //         {
-            //             label: "Add Purchase",
-            //             to: "/purchases/create",
-            //             show: can("create-purchase") || permissions.createPurchase,
-            //             active: isExact("/purchases/create"),
-            //         },
-            //     ],
-            // },
+            // Purchase submenu
+            {
+                type: "submenu",
+                key: "purchase",
+                label: "Purchase",
+                icon: <i data-feather="star" />,
+                show: can("view-purchase") || permissions.viewPurchase,
+                active: routeIs("/purchases"),
+                children: [
+                    { label: "Purchase", to: "/purchases", show: true, active: routeIs("/purchases") },
+                    {
+                        label: "Add Purchase",
+                        to: "/purchases/create",
+                        show: can("create-purchase") || permissions.createPurchase,
+                        active: isExact("/purchases/create"),
+                    },
+                ],
+            },
 
             // Products submenu
             {
                 type: "submenu",
                 key: "products",
-                label: "Medicines",
+                label: "Products",
                 icon: <i data-feather="file-text" />,
                 show: can("view-products") || permissions.viewProducts,
                 active: routeIs("/products") || isExact("/outstock") || isExact("/expired"),
@@ -109,7 +109,6 @@ export default function Sidebar({ permissions = {} }) {
                     },
                 ],
             },
-
 
             // Access Control submenu
             {
