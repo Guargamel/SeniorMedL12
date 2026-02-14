@@ -15,8 +15,7 @@ use App\Http\Controllers\Api\{
     MedicineBatchController,
     NotificationController,
     AnalyticsController,
-    ReportController,
-    MedicineRequestController
+    ReportController
 };
 
 use App\Models\Supplier;
@@ -95,6 +94,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{role}', [RoleController::class, 'destroy']);
     });
 
+
     // ---- Suppliers (Admin only) ----
     Route::middleware('role:super-admin')->get('/suppliers', fn() => Supplier::all());
 
@@ -102,25 +102,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:super-admin')->prefix('distributions')->group(function () {
         Route::post('/', [DistributionController::class, 'store']);
         Route::post('/notifications', [NotificationController::class, 'store']);
-    });
-
-    // ---- Stock Management (Admin only) ----
-    // Route::middleware('role:super-admin')->prefix('batches')->group(function () {
-    //     Route::post('/', [BatchController::class, 'store']);
-    // });
-
-    // ---- Medicine Requests ----
-    Route::prefix('medicine-requests')->group(function () {
-        Route::get('/', [MedicineRequestController::class, 'index']); // All users see their requests
-        Route::post('/', [MedicineRequestController::class, 'store']); // Senior citizens create requests
-        Route::get('/pending-count', [MedicineRequestController::class, 'pendingCount']); // Count pending
-        Route::get('/{id}', [MedicineRequestController::class, 'show']); // View specific request
-        Route::delete('/{id}', [MedicineRequestController::class, 'destroy']); // Delete own pending request
-
-        // Staff and Super-Admin only routes
-        Route::middleware('role:super-admin|staff')->group(function () {
-            Route::put('/{id}/review', [MedicineRequestController::class, 'review']); // Approve/Decline
-        });
     });
 
     // ---- Medicines ----
