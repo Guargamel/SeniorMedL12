@@ -41,14 +41,34 @@ const Create = () => {
 
         setLoading(true);
         try {
-            await apiFetch("/api/medicine-requests", {
+            const response = await apiFetch("/api/medicine-requests", {
                 method: "POST",
                 body: JSON.stringify(data),
             });
+            console.log('Request created successfully:', response);
             toast.success("Medicine request submitted successfully!");
             navigate("/medicine-requests");
         } catch (err) {
-            toast.error(err.message || "Failed to create request");
+            console.error('Medicine request error:', err);
+            
+            // Display detailed error message
+            let errorMessage = "Failed to create request";
+            
+            if (err.data && err.data.errors) {
+                // Validation errors
+                const errors = Object.values(err.data.errors).flat();
+                errorMessage = errors.join(', ');
+            } else if (err.data && err.data.error) {
+                // Server error with details
+                errorMessage = err.data.error;
+            } else if (err.data && err.data.message) {
+                // Server message
+                errorMessage = err.data.message;
+            } else if (err.message) {
+                errorMessage = err.message;
+            }
+            
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }

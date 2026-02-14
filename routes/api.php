@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\{
     MedicineController,
     MedicineCategoryController,
     MedicineBatchController,
+    MedicineRequestController,
     NotificationController,
     AnalyticsController,
     ReportController
@@ -102,6 +103,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:super-admin')->prefix('distributions')->group(function () {
         Route::post('/', [DistributionController::class, 'store']);
         Route::post('/notifications', [NotificationController::class, 'store']);
+    });
+
+    // ---- Medicine Requests ----
+    Route::prefix('medicine-requests')->group(function () {
+        Route::get('/', [MedicineRequestController::class, 'index']); // All users see their requests
+        Route::post('/', [MedicineRequestController::class, 'store']); // Senior citizens create requests
+        Route::get('/pending-count', [MedicineRequestController::class, 'pendingCount']); // Count pending
+        Route::get('/{id}', [MedicineRequestController::class, 'show']); // View specific request
+        Route::delete('/{id}', [MedicineRequestController::class, 'destroy']); // Delete own pending request
+
+        // Staff and Super-Admin only routes
+        Route::middleware('role:super-admin|staff')->group(function () {
+            Route::put('/{id}/review', [MedicineRequestController::class, 'review']); // Approve/Decline
+        });
     });
 
     // ---- Medicines ----
