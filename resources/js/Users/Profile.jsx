@@ -14,6 +14,7 @@ export default function Profile() {
         currentPassword: "",
         newPassword: "",
         newPasswordConfirm: "",
+        avatar: null, // Avatar file (for upload)
     });
 
     const [saving, setSaving] = useState(false);
@@ -24,21 +25,22 @@ export default function Profile() {
     // Fetch user data
     useEffect(() => {
         let alive = true;
-        
+
         (async () => {
             setLoading(true);
             setErrors({});
-            
+
             try {
                 const data = await apiFetch('/api/user');
-                
+
                 if (!alive) return;
-                
+
                 setUser(data.user);
                 setForm(prev => ({
                     ...prev,
                     name: data.user.name || "",
                     email: data.user.email || "",
+                    avatar: data.user.avatar || "", // Set avatar from the backend
                 }));
             } catch (err) {
                 if (!alive) return;
@@ -47,7 +49,7 @@ export default function Profile() {
                 if (alive) setLoading(false);
             }
         })();
-        
+
         return () => { alive = false; };
     }, []);
 
@@ -58,18 +60,23 @@ export default function Profile() {
         setErrors({});
         setSuccessMessage('');
 
+        const formData = new FormData();
+        formData.append('name', form.name);
+        formData.append('email', form.email);
+
+        if (form.avatar) {
+            formData.append('avatar', form.avatar); // Append avatar file
+        }
+
         try {
             const response = await apiFetch('/api/profile', {
                 method: 'PUT',
-                body: JSON.stringify({
-                    name: form.name,
-                    email: form.email,
-                }),
+                body: formData,
             });
-            
+
             setUser(response.user);
             setSuccessMessage('Profile updated successfully!');
-            
+
             // Clear success message after 3 seconds
             setTimeout(() => setSuccessMessage(''), 3000);
         } catch (err) {
@@ -82,7 +89,7 @@ export default function Profile() {
     // Handle password change
     const handlePasswordChange = async (e) => {
         e.preventDefault();
-        
+
         if (form.newPassword !== form.newPasswordConfirm) {
             setErrors({ newPassword: ["Passwords do not match"] });
             return;
@@ -101,14 +108,14 @@ export default function Profile() {
                     password_confirmation: form.newPasswordConfirm,
                 }),
             });
-            
+
             setForm(prev => ({
                 ...prev,
                 currentPassword: "",
                 newPassword: "",
                 newPasswordConfirm: "",
             }));
-            
+
             setSuccessMessage('Password updated successfully!');
             setTimeout(() => setSuccessMessage(''), 3000);
         } catch (err) {
@@ -136,6 +143,9 @@ export default function Profile() {
 
     const roleName = user?.roles?.[0]?.name || "user";
     const roleDisplay = roleName.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+
+    // Avatar URL (using storage link for public access)
+    const avatarUrl = user?.avatar ? `http://127.0.0.1:8000/storage/${user.avatar}` : null;
 
     return (
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
@@ -176,7 +186,13 @@ export default function Profile() {
                                 fontWeight: 800,
                                 margin: '0 auto 12px',
                             }}>
-                                {initials}
+                                {avatarUrl ? (
+                                    <img
+                                        src={avatarUrl}
+                                        alt="Avatar"
+                                        style={{ width: "100%", height: "100%", borderRadius: "50%" }}
+                                    />
+                                ) : initials}
                             </div>
                             <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>
                                 {user?.name}
@@ -187,24 +203,23 @@ export default function Profile() {
                         </div>
 
                         <form onSubmit={handleProfileUpdate}>
-                            <Field 
-                                label="Full Name" 
-                                value={form.name} 
-                                onChange={(v) => set('name', v)} 
-                                error={err('name')} 
+                            <Field
+                                label="Full Name"
+                                value={form.name}
+                                onChange={(v) => set('name', v)}
+                                error={err('name')}
                             />
-                            <Field 
-                                label="Email Address" 
+                            <Field
+                                label="Email Address"
                                 type="email"
-                                value={form.email} 
-                                onChange={(v) => set('email', v)} 
-                                error={err('email')} 
+                                value={form.email}
+                                onChange={(v) => set('email', v)}
+                                error={err('email')}
                             />
-
                             <div style={{ marginTop: 20 }}>
-                                <button 
-                                    type="submit" 
-                                    className="btn btn-success" 
+                                <button
+                                    type="submit"
+                                    className="btn btn-success"
                                     disabled={saving}
                                     style={{ width: '100%' }}
                                 >
@@ -222,32 +237,31 @@ export default function Profile() {
                     </div>
                     <div className="mc-card-body">
                         <form onSubmit={handlePasswordChange}>
-                            <Field 
-                                label="Current Password" 
+                            <Field
+                                label="Current Password"
                                 type="password"
-                                value={form.currentPassword} 
-                                onChange={(v) => set('currentPassword', v)} 
-                                error={err('current_password')} 
+                                value={form.currentPassword}
+                                onChange={(v) => set('currentPassword', v)}
+                                error={err('current_password')}
                             />
-                            <Field 
-                                label="New Password" 
+                            <Field
+                                label="New Password"
                                 type="password"
-                                value={form.newPassword} 
-                                onChange={(v) => set('newPassword', v)} 
-                                error={err('password')} 
+                                value={form.newPassword}
+                                onChange={(v) => set('newPassword', v)}
+                                error={err('password')}
                             />
-                            <Field 
-                                label="Confirm New Password" 
+                            <Field
+                                label="Confirm New Password"
                                 type="password"
-                                value={form.newPasswordConfirm} 
-                                onChange={(v) => set('newPasswordConfirm', v)} 
-                                error={err('newPassword')} 
+                                value={form.newPasswordConfirm}
+                                onChange={(v) => set('newPasswordConfirm', v)}
+                                error={err('newPassword')}
                             />
-
                             <div style={{ marginTop: 20 }}>
-                                <button 
-                                    type="submit" 
-                                    className="btn btn-warning" 
+                                <button
+                                    type="submit"
+                                    className="btn btn-warning"
                                     disabled={saving}
                                     style={{ width: '100%' }}
                                 >
@@ -281,11 +295,11 @@ function Field({ label, error, type = "text", value, onChange }) {
     return (
         <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 6 }}>{label}</div>
-            <input 
-                className="form-control" 
-                type={type} 
-                value={value} 
-                onChange={(e) => onChange(e.target.value)} 
+            <input
+                className="form-control"
+                type={type}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
             />
             {error && <div style={{ color: "#c0392b", fontSize: 12, marginTop: 4 }}>{error}</div>}
         </div>

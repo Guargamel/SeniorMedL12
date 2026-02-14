@@ -55,6 +55,8 @@ import BrowseMedicines from "./Request/BrowseMedicines.jsx";
 // Notifications
 import Notifications from "./Notifications/Notifications.jsx";
 
+import Profile from "./Users/Profile.jsx";
+
 // Main App Route Setup
 const container = document.getElementById("app");
 
@@ -116,6 +118,9 @@ createRoot(container).render(
 
                 {/* Notifications */}
                 <Route path="/notifications" element={<Notifications />} />
+
+                {/* Profile Route */}
+                <Route path="/profile" element={<Profile />} /> {/* Add this line */}
             </Route>
 
             {/* 404 - Page not found */}

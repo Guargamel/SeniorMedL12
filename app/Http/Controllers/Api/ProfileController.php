@@ -30,49 +30,46 @@ class ProfileController extends Controller
      * @param  Request  $request
      * @return JsonResponse
      */
-    public function update(Request $request): JsonResponse
-    {
-        $user = $request->user();
+    // app/Http/Controllers/Api/ProfileController.php
 
-        $v = Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
-            'avatar' => ['nullable', 'image', 'max:4096'], // Ensure avatar is an image with max size 4MB
-            'role' => ['nullable', 'string'], // Role change should be handled separately
+    // app/Http/Controllers/Api/ProfileController.php
+
+    public function update(Request $request)
+    {
+        // Validate input data
+        $validated = $request->validate([
+            'name' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
         ]);
 
-        if ($v->fails()) {
-            return response()->json(['message' => 'Validation failed', 'errors' => $v->errors()], 422);
+        // Get the currently authenticated user
+        $user = auth()->user();
+
+        // Update user fields
+        if (isset($validated['name'])) {
+            $user->name = $validated['name'];
         }
 
-        // Update name and email
-        $user->name = $request->input('name');
-        $user->email = $request->input('email');
+        if (isset($validated['email'])) {
+            $user->email = $validated['email'];
+        }
 
         // Handle avatar upload
         if ($request->hasFile('avatar')) {
-            // Delete old avatar if it exists
-            if (!empty($user->avatar)) {
-                Storage::disk('public')->delete($user->avatar);
-            }
-
-            // Store new avatar in the public directory
-            $path = $request->file('avatar')->store('avatars', 'public');
-            $user->avatar = $path;
+            // Store the avatar in the 'avatars' folder, and make it publicly accessible
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $user->avatar = $avatarPath;
         }
 
+        // Save the updated user data
         $user->save();
 
-        // Handle role update (only super-admins can change roles)
-        if ($request->filled('role') && $user->hasRole('super-admin')) {
-            $role = Role::findByName($request->input('role'));
-            if ($role) {
-                $user->syncRoles([$role]); // Sync the new role
-            }
-        }
-
-        return response()->json(['message' => 'Profile updated', 'user' => $user->load('roles')]);
+        // Return the updated user data, including the avatar
+        return response()->json(['user' => $user]);
     }
+
+
 
     /**
      * Update the authenticated user's password

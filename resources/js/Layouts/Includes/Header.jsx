@@ -19,7 +19,8 @@ export default function Header({
     const roleName = user?.roles?.[0]?.name || user?.role || "Health Worker";
     const roleDisplay = roleName.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
 
-    const avatarUrl = user?.avatar ? user.avatar : null; // Use the avatar URL from user data
+    // Construct the avatar URL based on the user data
+    const avatarUrl = user?.avatar ? `http://127.0.0.1:8000/storage/${user.avatar}` : null;
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -65,7 +66,7 @@ export default function Header({
                         {/* Avatar or Initials */}
                         {avatarUrl ? (
                             <img
-                                src={avatarUrl}
+                                src={avatarUrl}  // Use the full avatar URL here
                                 alt="User Avatar"
                                 className="mc-user-avatar"
                                 style={{ width: 40, height: 40, borderRadius: '50%' }}
