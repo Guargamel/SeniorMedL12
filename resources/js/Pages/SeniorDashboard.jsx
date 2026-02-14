@@ -17,7 +17,7 @@ const SeniorDashboard = () => {
         async function fetchData() {
             try {
                 const requests = await apiFetch("/api/medicine-requests");
-                
+
                 setStats({
                     pendingRequests: requests.filter(r => r.status === 'pending').length,
                     approvedRequests: requests.filter(r => r.status === 'approved').length,
@@ -140,7 +140,7 @@ const SeniorDashboard = () => {
                                 <h3 className="text-xl font-bold mb-2">Request Medicine</h3>
                                 <p className="text-green-100 text-sm">Submit a new medicine request for approval</p>
                             </div>
-                            <svg className="w-10 h-10 text-green-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-2 h-2 text-green-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
                             </svg>
                         </div>

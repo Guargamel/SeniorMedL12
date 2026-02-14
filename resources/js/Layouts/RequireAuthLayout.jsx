@@ -60,8 +60,8 @@ export default function RequireAuthLayout() {
         return <Navigate to="/login" replace state={{ from: location.pathname }} />;
     }
 
-    // Check user roles using the specified logic
-    const isSeniorCitizen = !user?.role_id || (Array.isArray(user?.roles) && user.roles.some(role => role.name === 'senior-citizen'));
+    // Ensure roles are loaded before checking
+    const isSeniorCitizen = Array.isArray(user?.roles) && user.roles.some(role => role.name === 'senior_citizen');
     const isAdminOrStaff = Array.isArray(user?.roles)
         ? user.roles.some(role => [1, 2].includes(role.id) || ['super-admin', 'staff'].includes(role.name))
         : [1, 2].includes(user?.role_id);

@@ -37,14 +37,14 @@ const DashboardRouter = () => {
 
     // Check roles properly
     const roles = user?.roles || [];
-    
+
     // Check if senior citizen (role_id 3 or role name 'senior-citizen')
-    const isSeniorCitizen = roles.some(role => 
-        role.id === 3 || role.name === 'senior-citizen'
+    const isSeniorCitizen = roles.some(role =>
+        role.id === 4 || role.name === 'senior-citizen'
     );
-    
+
     // Check if admin or staff (role_id 1 or 2)
-    const isAdminOrStaff = roles.some(role => 
+    const isAdminOrStaff = roles.some(role =>
         role.id === 1 || role.id === 2 || role.name === 'super-admin' || role.name === 'staff'
     );
 
@@ -60,7 +60,7 @@ const DashboardRouter = () => {
         return <SeniorDashboard />;
     } else {
         // No recognized role - show unauthorized
-        return <Navigate to="/unauthorized" replace />;
+        //  return <Navigate to="/unauthorized" replace />;
     }
 };
 

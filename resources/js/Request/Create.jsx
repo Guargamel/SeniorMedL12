@@ -93,7 +93,7 @@ const Create = () => {
                                 id="quantity"
                                 type="number"
                                 min="1"
-                                {...register("quantity", { 
+                                {...register("quantity", {
                                     required: "Quantity is required",
                                     min: { value: 1, message: "Quantity must be at least 1" }
                                 })}
@@ -124,7 +124,7 @@ const Create = () => {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="flex-1 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="flex-1 py-3 bg-blue-600 text-black font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 {loading ? "Submitting..." : "Submit Request"}
                             </button>
@@ -147,7 +147,7 @@ const Create = () => {
                             <div>
                                 <h4 className="text-sm font-semibold text-blue-900 mb-1">Request Information</h4>
                                 <p className="text-sm text-blue-800">
-                                    Your request will be reviewed by staff. You'll be notified once your request is approved or declined. 
+                                    Your request will be reviewed by staff. You'll be notified once your request is approved or declined.
                                     You can check the status of your requests anytime.
                                 </p>
                             </div>

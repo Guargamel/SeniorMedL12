@@ -5,18 +5,14 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Api\{
     RoleController,
-    PermissionController,
     StaffController,
     ProfileController,
     DashboardController,
     SeniorController,
-    BatchController,
-    RequestController,
     DistributionController,
     MedicineController,
     MedicineCategoryController,
     MedicineBatchController,
-    UserController,
     NotificationController,
     AnalyticsController,
     ReportController,
@@ -26,9 +22,9 @@ use App\Http\Controllers\Api\{
 use App\Models\Supplier;
 
 /*
-|--------------------------------------------------------------------------
+|---------------------------------------------------------------------------
 | API Routes
-|--------------------------------------------------------------------------
+|---------------------------------------------------------------------------
 | All routes below require Sanctum auth (session/cookie auth for SPA).
 */
 
@@ -109,9 +105,9 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // ---- Stock Management (Admin only) ----
-    Route::middleware('role:super-admin')->prefix('batches')->group(function () {
-        Route::post('/', [BatchController::class, 'store']);
-    });
+    // Route::middleware('role:super-admin')->prefix('batches')->group(function () {
+    //     Route::post('/', [BatchController::class, 'store']);
+    // });
 
     // ---- Medicine Requests ----
     Route::prefix('medicine-requests')->group(function () {
@@ -120,7 +116,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pending-count', [MedicineRequestController::class, 'pendingCount']); // Count pending
         Route::get('/{id}', [MedicineRequestController::class, 'show']); // View specific request
         Route::delete('/{id}', [MedicineRequestController::class, 'destroy']); // Delete own pending request
-        
+
         // Staff and Super-Admin only routes
         Route::middleware('role:super-admin|staff')->group(function () {
             Route::put('/{id}/review', [MedicineRequestController::class, 'review']); // Approve/Decline
@@ -129,6 +125,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ---- Medicines ----
     Route::prefix('medicines')->group(function () {
+        // Allow all authenticated users to see medicines
+        Route::get('/', [MedicineController::class, 'index']); // Show all medicines
+        Route::get('/{medicine}', [MedicineController::class, 'show']); // Show specific medicine
         Route::get('/expired', [MedicineController::class, 'expired']);
         Route::get('/outstock', [MedicineController::class, 'outstock']);
         Route::apiResource('/', MedicineController::class);
@@ -138,8 +137,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('medicine-categories', MedicineCategoryController::class);
 
     // ---- Medicine Batches ----
-    // ---- Medicine Batches ----
-    Route::get('/medicine-batches', [MedicineBatchController::class, 'index']);
-    Route::post('/medicine-batches/create', [MedicineBatchController::class, 'store']);
-    Route::middleware('auth:sanctum')->get('/notifications', [NotificationController::class, 'index']);
+    Route::middleware('role:super-admin|staff')->prefix('medicine-batches')->group(function () {
+        Route::get('/', [MedicineBatchController::class, 'index']);
+        Route::post('/create', [MedicineBatchController::class, 'store']);
+    });
 });
