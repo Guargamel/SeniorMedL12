@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { apiFetch } from "../utils/api";
+import { apiFetch } from "../utils/api";  // Adjust if the path is wrong
 import Select from "react-select";
+
 
 export default function DistributeStock() {
     const [selectedSenior, setSelectedSenior] = useState(null);
@@ -9,7 +10,7 @@ export default function DistributeStock() {
     const [notes, setNotes] = useState('');
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(null);
-    
+
     const [seniors, setSeniors] = useState([]);
     const [medicines, setMedicines] = useState([]);
     const [loadingSeniors, setLoadingSeniors] = useState(true);
@@ -25,15 +26,13 @@ export default function DistributeStock() {
     const loadSeniors = async () => {
         setLoadingSeniors(true);
         try {
-            // Try seniors endpoint first
             let data;
             try {
                 data = await apiFetch('/api/seniors');
             } catch {
-                // Fallback to autocomplete endpoint
                 data = await apiFetch('/api/users/autocomplete-email?search=');
             }
-            
+
             const seniorList = Array.isArray(data) ? data : (data.data || []);
             const seniorOptions = seniorList.map(senior => ({
                 value: senior.id,
@@ -58,7 +57,7 @@ export default function DistributeStock() {
             const medicineOptions = medicineList.map(med => ({
                 value: med.id,
                 label: `${med.generic_name}${med.brand_name ? ` (${med.brand_name})` : ''} - ${med.strength || ''}`,
-                stock: med.quantity || med.batches_sum_quantity || 0,
+                stock: med.quantity || med.batches_sum_quantity || 0,  // Adjust for stock
                 name: med.generic_name,
                 unit: med.unit || 'units'
             }));
@@ -94,24 +93,30 @@ export default function DistributeStock() {
         setDistributing(true);
 
         try {
-            await apiFetch('/api/distributions', {
-                method: 'POST',
+            await apiFetch("/api/distributions", {
+                method: "POST",
                 body: JSON.stringify({
                     user_id: selectedSenior.value,
+                    email: selectedSenior.email,
                     medicine_id: selectedMedicine.value,
-                    quantity: parseInt(quantity),
-                    notes: notes || null
-                }),
+                    quantity: parseInt(quantity),  // Ensure quantity is an integer
+                    notes: notes || null           // Optional notes
+                })
             });
 
+            console.log("Quantity being sent:", quantity);
+            console.log("Medicine ID:", selectedMedicine?.value);  // Optional chaining to prevent errors if undefined
+            console.log("Selected Senior Email:", selectedSenior?.email);  // Optional chaining
+
+
             setSuccessMessage(`Successfully distributed ${quantity} ${selectedMedicine.unit} of ${selectedMedicine.name} to ${selectedSenior.name}`);
-            
+
             // Reset form
             setSelectedSenior(null);
             setSelectedMedicine(null);
             setQuantity('');
             setNotes('');
-            
+
             // Reload medicines to update stock
             loadMedicines();
         } catch (err) {
@@ -122,6 +127,13 @@ export default function DistributeStock() {
             setDistributing(false);
         }
     };
+
+    // Update the quantity input with available stock when a medicine is selected
+    useEffect(() => {
+        if (selectedMedicine) {
+            setQuantity('');
+        }
+    }, [selectedMedicine]);
 
     return (
         <div className="mc-card">
@@ -135,7 +147,7 @@ export default function DistributeStock() {
                         {error}
                     </div>
                 )}
-                
+
                 {successMessage && (
                     <div className="alert alert-success" style={{ marginBottom: 20 }}>
                         {successMessage}
@@ -220,8 +232,8 @@ export default function DistributeStock() {
                     </div>
 
                     <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             className="btn btn-outline-secondary"
                             onClick={() => {
                                 setSelectedSenior(null);
@@ -235,8 +247,8 @@ export default function DistributeStock() {
                         >
                             Clear Form
                         </button>
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             className="btn btn-success"
                             disabled={!selectedSenior || !selectedMedicine || !quantity || distributing}
                         >

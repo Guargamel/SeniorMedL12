@@ -10,40 +10,37 @@ use App\Models\Medicine;
 
 class DistributionController extends Controller
 {
-    // app/Http/Controllers/Api/DistributionController.php
-    // app/Http/Controllers/Api/DistributionController.php
-    public function distribute(Request $request)
+    public function store(Request $request)
     {
-        // Validate input
+        // Validate the incoming request
         $validated = $request->validate([
-            'email' => 'required|email|exists:users,email', // Allow users to search by email
-            'medicine_id' => 'required|exists:medicines,id',
-            'quantity' => 'required|integer|min:1',
+            'email' => 'required|email|exists:users,email',  // Ensure the email exists in the users table
+            'medicine_id' => 'required|exists:medicines,id', // Ensure the medicine exists in the medicines table
+            'quantity' => 'required|integer|min:1',  // Ensure the quantity is a positive integer
         ]);
 
-        // Find the user by email (can be any user, not just seniors)
-        $user = User::where('email', $request->input('email'))->firstOrFail();
+        // Get the medicine record
         $medicine = Medicine::findOrFail($request->input('medicine_id'));
 
         // Check if there is enough stock
         if ($medicine->stock_quantity < $request->input('quantity')) {
-            return response()->json(['message' => 'Not enough stock'], 400);
+            return response()->json(['message' => 'Not enough stock'], 400);  // If not enough stock, return error
         }
 
-        // Reduce stock in the medicine table
+        // Reduce the stock from the medicine's stock_quantity
         $medicine->stock_quantity -= $request->input('quantity');
-        $medicine->save();
+        $medicine->save(); // Save the updated stock_quantity
 
-        // Create the distribution record
+        // Get the user using the email
+        $user = User::where('email', $request->input('email'))->firstOrFail();
+
+        // Create a new distribution record
         $distribution = Distribution::create([
             'user_id' => $user->id,
             'medicine_id' => $medicine->id,
             'quantity' => $request->input('quantity'),
             'distribution_date' => now(),
         ]);
-
-        // Optional: Send notification (if needed)
-        // $user->notify(new DistributionNotification($distribution));
 
         return response()->json(['message' => 'Stock distributed successfully', 'distribution' => $distribution]);
     }
