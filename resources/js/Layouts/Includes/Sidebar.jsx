@@ -75,7 +75,7 @@ const menu = [
         title: "REQUESTS",
         items: [
             { label: "Analytics", to: "/analytics", icon: BarChart3 },
-            { label: "Requests", to: "/requests", icon: FileText },
+            { label: "Requests", to: "/medicine-requests", icon: FileText },
         ],
     },
     {

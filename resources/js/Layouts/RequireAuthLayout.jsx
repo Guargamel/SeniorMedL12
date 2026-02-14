@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import Layout from "./Layout";
+import SeniorLayout from "./SeniorLayout";
 import { fetchCurrentUser, logout as apiLogout } from "../utils/auth";
 
 export default function RequireAuthLayout() {
@@ -48,5 +49,11 @@ export default function RequireAuthLayout() {
         return <Navigate to="/login" replace state={{ from: location.pathname }} />;
     }
 
-    return <Layout user={user} errors={errors} handleLogout={handleLogout} />;
+    // Check if user is a senior citizen
+    const isSeniorCitizen = user?.roles?.some(role => role.name === 'senior-citizen');
+
+    // Use SeniorLayout for senior citizens, regular Layout for staff/admin
+    const LayoutComponent = isSeniorCitizen ? SeniorLayout : Layout;
+
+    return <LayoutComponent user={user} errors={errors} handleLogout={handleLogout} />;
 }
