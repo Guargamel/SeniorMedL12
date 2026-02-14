@@ -1,19 +1,13 @@
 <?php
 
 use Illuminate\Routing\Controller;
+use Illuminate\Http\Request;
+use App\Models\MedicineRequest;
+use App\Models\Notification;
+use Illuminate\Support\Facades\Auth;
 
 class MedicineRequestController extends Controller
 {
-<<<<<<< HEAD
-    // Method for storing the new medicine request
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'medicine_id' => 'required|exists:medicines,id',
-            'quantity' => 'required|integer|min:1',
-            'reason' => 'nullable|string|max:500',
-        ]);
-=======
     /**
      * Display a listing of medicine requests
      */
@@ -37,101 +31,34 @@ class MedicineRequestController extends Controller
         return response()->json($requests);
     }
 
-    /**
-     * Store a new medicine request (Senior Citizens only)
-     */
-    // In app/Http/Controllers/Api/MedicineRequestController.php
-
     public function store(Request $request)
     {
-        try {
-            $user = Auth::user();
->>>>>>> parent of 044c421 (Revert "ss")
+        $validated = $request->validate([
+            'medicine_id' => 'required|exists:medicines,id',  // Ensure the medicine exists
+            'quantity' => 'required|integer|min:1',  // Ensure quantity is valid
+            'reason' => 'nullable|string|max:500',  // Optional reason field
+        ]);
 
-            // If user is not authenticated, return an error
-            if (!$user) {
-                return response()->json(['error' => 'User not authenticated'], 401);
-            }
-
-<<<<<<< HEAD
-        // Create the new medicine request
+        // If validation passes, proceed with storing the request
         $medicineRequest = MedicineRequest::create([
-            'user_id' => $user->id,
+            'user_id' => Auth::id(),
             'medicine_id' => $validated['medicine_id'],
             'quantity' => $validated['quantity'],
-            'reason' => $validated['reason'] ?? null,
+            'reason' => $validated['reason'],
             'status' => 'pending',
         ]);
-=======
-            // Validate the incoming data
-            $validated = $request->validate([
-                'medicine_id' => 'required|exists:medicines,id',
-                'quantity' => 'required|integer|min:1',
-                'reason' => 'nullable|string|max:500'
-            ]);
->>>>>>> parent of 044c421 (Revert "ss")
 
-            // Create the request in the database
-            $medicineRequest = MedicineRequest::create([
-                'user_id' => $user->id, // Assuming 'user_id' is the requester of the medicine
-                'medicine_id' => $validated['medicine_id'],
-                'quantity' => $validated['quantity'],
-                'reason' => $validated['reason'] ?? null,
-                'status' => 'pending' // Default status
-            ]);
-
-<<<<<<< HEAD
-        // Notify staff and admins about the new medicine request
-        $this->notifyStaffAndAdmins($medicineRequest);
-=======
-            // Load the relationships
-            $medicineRequest->load('medicine', 'user');
->>>>>>> parent of 044c421 (Revert "ss")
-
-            // Now notify staff and admin about this request
-            $this->notifyStaffAndAdmins($medicineRequest);
-
-            return response()->json([
-                'message' => 'Medicine request submitted successfully',
-                'request' => $medicineRequest
-            ], 201);
-        } catch (\Exception $e) {
-            // Handle any errors
-            return response()->json(['error' => 'An unexpected error occurred'], 500);
-        }
-    }
-    public function notifyStaffAndAdmins($medicineRequest)
-    {
-        $staffAndAdmins = User::role(['staff', 'super-admin'])->get();
-
-        foreach ($staffAndAdmins as $staff) {
-            Notification::create([
-                'user_id' => $staff->id,
-                'type' => 'medicine_request',
-                'title' => 'New Medicine Request',
-                'message' => $medicineRequest->user->name . ' requested ' . $medicineRequest->quantity . ' units of ' . $medicineRequest->medicine->generic_name,
-                'data' => json_encode([
-                    'request_id' => $medicineRequest->id,
-                    'medicine_name' => $medicineRequest->medicine->generic_name,
-                    'quantity' => $medicineRequest->quantity
-                ]),
-                'read_at' => null,
-                'notifiable_type' => 'MedicineRequest',
-                'notifiable_id' => $medicineRequest->id,
-            ]);
-        }
+        return response()->json($medicineRequest, 201);
     }
 
 
-
-<<<<<<< HEAD
-    // This method will be responsible for notifying the staff and admins about the new medicine request
+    /**
+     * Notify staff and admins about the new medicine request
+     */
     private function notifyStaffAndAdmins($medicineRequest)
     {
-        // Retrieve the staff and admin users
         $staffAndAdmins = User::role(['staff', 'super-admin'])->get();
 
-        // Loop through each staff/admin to send notifications
         foreach ($staffAndAdmins as $staff) {
             Notification::create([
                 'user_id' => $staff->id,
@@ -146,11 +73,12 @@ class MedicineRequestController extends Controller
                     'quantity' => $medicineRequest->quantity
                 ]),
                 'read_at' => null,
-                'notifiable_type' => 'App\Models\MedicineRequest', // The model being notified
-                'notifiable_id' => $medicineRequest->id, // The ID of the requested medicine
+                'notifiable_type' => 'App\Models\MedicineRequest',  // Set the model type that is being notified
+                'notifiable_id' => $medicineRequest->id,  // Set the ID of the entity being notified (the medicine request)
             ]);
         }
-=======
+    }
+
     /**
      * Display a specific medicine request
      */
@@ -182,9 +110,7 @@ class MedicineRequestController extends Controller
 
         // Check if already reviewed
         if ($medicineRequest->status !== 'pending') {
-            return response()->json([
-                'message' => 'This request has already been reviewed'
-            ], 400);
+            return response()->json(['message' => 'This request has already been reviewed'], 400);
         }
 
         // Update the request
@@ -194,9 +120,6 @@ class MedicineRequestController extends Controller
             'reviewed_at' => now(),
             'review_notes' => $validated['review_notes'] ?? null
         ]);
-
-        // Load relationships
-        $medicineRequest->load('medicine', 'user', 'reviewer');
 
         // Notify the senior citizen about the decision
         $this->notifySeniorCitizen($medicineRequest);
@@ -257,6 +180,5 @@ class MedicineRequestController extends Controller
             ]),
             'read_at' => null
         ]);
->>>>>>> parent of 044c421 (Revert "ss")
     }
 }

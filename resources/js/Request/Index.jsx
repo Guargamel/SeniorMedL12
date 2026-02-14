@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { apiFetch } from "../utils/api";
+import { safeArray, apiFetch } from "../utils/api";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import "../../css/style.css";
@@ -17,6 +17,7 @@ const Index = () => {
                     apiFetch("/api/medicine-requests"),
                     apiFetch("/api/user")
                 ]);
+                console.log(requestsData);  // Log this to check the structure of the data
                 setRequests(requestsData);
                 setUser(userData.user);
             } catch (error) {
@@ -29,6 +30,7 @@ const Index = () => {
         fetchData();
     }, []);
 
+
     const handleStatusUpdate = async (id, status, reviewNotes = '') => {
         try {
             await apiFetch(`/api/medicine-requests/${id}/review`, {
@@ -36,7 +38,7 @@ const Index = () => {
                 body: JSON.stringify({ status, review_notes: reviewNotes })
             });
             toast.success(`Request ${status} successfully!`);
-            
+
             // Refresh requests
             const updatedRequests = await apiFetch("/api/medicine-requests");
             setRequests(updatedRequests);
@@ -48,13 +50,13 @@ const Index = () => {
 
     const handleDelete = async (id) => {
         if (!window.confirm("Are you sure you want to delete this request?")) return;
-        
+
         try {
             await apiFetch(`/api/medicine-requests/${id}`, {
                 method: "DELETE"
             });
             toast.success("Request deleted successfully!");
-            
+
             // Refresh requests
             const updatedRequests = await apiFetch("/api/medicine-requests");
             setRequests(updatedRequests);
@@ -70,7 +72,7 @@ const Index = () => {
             approved: "bg-green-100 text-green-800 border-green-300",
             declined: "bg-red-100 text-red-800 border-red-300"
         };
-        
+
         return (
             <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${statusStyles[status]}`}>
                 {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -78,13 +80,13 @@ const Index = () => {
         );
     };
 
-    const canReview = user?.roles?.some(role => 
+    const canReview = user?.roles?.some(role =>
         role.name === 'super-admin' || role.name === 'staff'
     );
 
     const isSeniorCitizen = user?.roles?.some(role => role.name === 'senior-citizen');
 
-    const filteredRequests = requests.filter(req => {
+    const filteredRequests = safeArray(requests).filter(req => {
         if (filter === 'all') return true;
         return req.status === filter;
     });
@@ -122,43 +124,39 @@ const Index = () => {
                 <div className="flex gap-3 mb-6">
                     <button
                         onClick={() => setFilter('all')}
-                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                            filter === 'all'
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-                        }`}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all ${filter === 'all'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                            }`}
                     >
                         All ({requests.length})
                     </button>
                     <button
                         onClick={() => setFilter('pending')}
-                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                            filter === 'pending'
-                                ? 'bg-yellow-500 text-white'
-                                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-                        }`}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all ${filter === 'pending'
+                            ? 'bg-yellow-500 text-white'
+                            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                            }`}
                     >
-                        Pending ({requests.filter(r => r.status === 'pending').length})
+                        Pending ({safeArray(requests).filter(r => r.status === 'pending').length})
                     </button>
                     <button
                         onClick={() => setFilter('approved')}
-                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                            filter === 'approved'
-                                ? 'bg-green-500 text-white'
-                                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-                        }`}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all ${filter === 'approved'
+                            ? 'bg-green-500 text-white'
+                            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                            }`}
                     >
-                        Approved ({requests.filter(r => r.status === 'approved').length})
+                        Approved ({safeArray(requests).filter(r => r.status === 'approved').length})
                     </button>
                     <button
                         onClick={() => setFilter('declined')}
-                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                            filter === 'declined'
-                                ? 'bg-red-500 text-white'
-                                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-                        }`}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all ${filter === 'declined'
+                            ? 'bg-red-500 text-white'
+                            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                            }`}
                     >
-                        Declined ({requests.filter(r => r.status === 'declined').length})
+                        Declined ({safeArray(requests).filter(r => r.status === 'declined').length})
                     </button>
                 </div>
 
@@ -183,7 +181,7 @@ const Index = () => {
                                                 </h3>
                                                 {getStatusBadge(request.status)}
                                             </div>
-                                            
+
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                                 {!isSeniorCitizen && (
                                                     <div className="text-sm">

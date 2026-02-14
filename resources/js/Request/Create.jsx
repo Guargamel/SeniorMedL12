@@ -26,7 +26,7 @@ const Create = () => {
                 const urlParams = new URLSearchParams(window.location.search);
                 const medicineId = urlParams.get('medicine_id');
                 if (medicineId) {
-                    setValue('medicine_id', parseInt(medicineId));
+                    setValue('medicine_id', parseInt(medicineId));  // Set the medicine_id to the form
                 }
             } catch (err) {
                 toast.error("Failed to load medicines");
@@ -35,7 +35,10 @@ const Create = () => {
         fetchMedicines();
     }, [setValue]);
 
+
     const onSubmit = async (data) => {
+        console.log("Form Data:", data); // Inspect form data before submitting
+
         setLoading(true);
         try {
             await apiFetch("/api/medicine-requests", {
@@ -50,6 +53,7 @@ const Create = () => {
             setLoading(false);
         }
     };
+
 
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4">
