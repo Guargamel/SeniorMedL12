@@ -29,6 +29,15 @@ const Index = () => {
         );
     }
 
+    // If no data is found
+    if (medicineBatches.length === 0) {
+        return (
+            <div className="text-center py-4">
+                <span>No medicine batches found.</span>
+            </div>
+        );
+    }
+
     return (
         <div className="p-4">
             <h2 className="text-3xl font-semibold mb-6 text-center text-gray-700">Medicine Batches List</h2>
@@ -38,19 +47,19 @@ const Index = () => {
                 <table className="min-w-full table-auto border-collapse">
                     <thead className="bg-gradient-to-r from-green-400 to-blue-500">
                         <tr>
-                            <th className="py-3 px-6 text-left text-sm font-medium text-white">Batch Number</th>
-                            <th className="py-3 px-6 text-left text-sm font-medium text-white">Quantity</th>
-                            <th className="py-3 px-6 text-left text-sm font-medium text-white">Expiry Date</th>
-                            <th className="py-3 px-6 text-left text-sm font-medium text-white">Cost</th>
-                            <th className="py-3 px-6 text-left text-sm font-medium text-white">Supplier</th>
-                            <th className="py-3 px-6 text-left text-sm font-medium text-white">Medicine Type</th>
-                            <th className="py-3 px-6 text-left text-sm font-medium text-white">Actions</th>
+                            <th className="py-3 px-6 text-left text-sm font-medium text-black">Batch Number</th>
+                            <th className="py-3 px-6 text-left text-sm font-medium text-black">Quantity</th>
+                            <th className="py-3 px-6 text-left text-sm font-medium text-black">Expiry Date</th>
+                            <th className="py-3 px-6 text-left text-sm font-medium text-black">Cost</th>
+                            <th className="py-3 px-6 text-left text-sm font-medium text-black">Supplier</th>
+                            <th className="py-3 px-6 text-left text-sm font-medium text-black">Medicine Type</th>
+                            <th className="py-3 px-6 text-left text-sm font-medium text-black">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {/* Render medicine batches */}
                         {safeArray(medicineBatches).map((batch) => (
-                            <tr key={batch.id} className="border-b hover:bg-gray-50 transition-colors">
+                            <tr key={batch.id} className="border-b hover:bg-blue-100 transition-colors">
                                 <td className="py-4 px-6 text-sm text-gray-900">{batch.batch_no}</td>
                                 <td className="py-4 px-6 text-sm text-gray-900">{batch.quantity}</td>
                                 <td className="py-4 px-6 text-sm text-gray-900">
@@ -78,6 +87,7 @@ const Index = () => {
             </div>
         </div>
     );
+
 };
 
 export default Index;

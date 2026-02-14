@@ -11,8 +11,8 @@ class MedicineBatchController extends Controller
     // Fetch all medicine batches
     public function index()
     {
-        // Eager load the 'medicine' relationship (assuming a relationship exists)
-        $batches = MedicineBatch::with('medicine', 'supplier')->get(); // Or you could use `select` if 'medicine_type' is a column in the batch table
+        // Eager load the supplier relationship (and any other relationships you need)
+        $batches = MedicineBatch::with(['supplier', 'medicine'])->get();
         return response()->json($batches);
     }
 
