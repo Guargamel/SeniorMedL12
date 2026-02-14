@@ -37,6 +37,9 @@ import MedicinesOutstock from "./Medicines/Outstock.jsx";
 import MedicinesCategories from "./Medicines/Categories.jsx";
 
 import DistributeStock from "./Distribute/DistributeStock.jsx";
+import StockCreate from "./Stock/Create.jsx"; // Add create route component
+import StockIndex from "./Stock/Index.jsx"; // Add index route component
+import StockEdit from "./Stock/Edit.jsx"; // Add edit route component
 
 const container = document.getElementById("app");
 
@@ -66,12 +69,8 @@ createRoot(container).render(
                 <Route path="/seniors/create" element={<SeniorCreate />} />
                 <Route path="/seniors/:id/edit" element={<SeniorEdit />} />
 
-                {/* users */}
-                <Route path="/users" element={<UsersIndex />} />
-                <Route path="/users/create" element={<UsersCreate />} />
-                <Route path="/users/:id/edit" element={<UsersEdit />} />
+                {/* Users Profile */}
                 <Route path="/profile" index element={<UserProfile />} />
-
 
                 {/* Roles / Permissions */}
                 <Route path="/roles" element={<RolesIndex />} />
@@ -87,7 +86,13 @@ createRoot(container).render(
                 <Route path="/medicines/outstock" element={<MedicinesOutstock />} />
                 <Route path="/medicines/categories" element={<MedicinesCategories />} />
 
+                {/* Distribute Stock */}
                 <Route path="/distributions" element={<DistributeStock />} />
+
+                {/* Stock Management Routes */}
+                <Route path="/stock/index" element={<StockIndex />} /> {/* Stock Index Route */}
+                <Route path="/stock/create" element={<StockCreate />} /> {/* Stock Create Route */}
+                <Route path="/stock/:id/edit" element={<StockEdit />} /> {/* Stock Edit Route */}
 
             </Route>
 

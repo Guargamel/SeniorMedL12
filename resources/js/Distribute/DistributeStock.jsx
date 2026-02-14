@@ -90,6 +90,11 @@ export default function DistributeStock() {
             return;
         }
 
+        if (quantity > selectedMedicine.stock) {
+            setError(`Quantity exceeds available stock (${selectedMedicine.stock} ${selectedMedicine.unit})`);
+            return;
+        }
+
         setDistributing(true);
 
         try {
@@ -169,9 +174,6 @@ export default function DistributeStock() {
                             isSearchable
                             noOptionsMessage={() => seniors.length === 0 ? "No senior citizens found. Please register seniors first." : "No match found"}
                         />
-                        <div style={{ fontSize: 11, color: 'var(--mc-muted)', marginTop: 4 }}>
-                            {seniors.length} senior citizen{seniors.length !== 1 ? 's' : ''} registered
-                        </div>
                     </div>
 
                     <div style={{ marginBottom: 20 }}>
@@ -211,11 +213,6 @@ export default function DistributeStock() {
                             placeholder="Enter quantity"
                             required
                         />
-                        {selectedMedicine && quantity > selectedMedicine.stock && (
-                            <div style={{ color: '#c0392b', fontSize: 12, marginTop: 4 }}>
-                                ⚠️ Warning: Quantity exceeds available stock ({selectedMedicine.stock} {selectedMedicine.unit})
-                            </div>
-                        )}
                     </div>
 
                     <div style={{ marginBottom: 20 }}>
@@ -256,15 +253,6 @@ export default function DistributeStock() {
                         </button>
                     </div>
                 </form>
-
-                {seniors.length === 0 && !loadingSeniors && (
-                    <div style={{ marginTop: 20, padding: 16, background: 'var(--mc-warning-bg)', borderRadius: 8, border: '1px solid var(--mc-warning-border)' }}>
-                        <strong>No senior citizens registered</strong>
-                        <p style={{ margin: '8px 0 0', fontSize: 13 }}>
-                            Please go to <strong>Senior Citizens → Register Senior</strong> to add senior citizens before distributing medicines.
-                        </p>
-                    </div>
-                )}
             </div>
         </div>
     );

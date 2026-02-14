@@ -232,33 +232,6 @@ export default function MedicineForm({
                                 {errors.category_id ? <div className="text-danger small">{errors.category_id[0]}</div> : null}
                             </div>
 
-                            {/* Quantity */}
-                            <div className="col-md-3 mb-3">
-                                <label className="form-label">Quantity</label>
-                                <input
-                                    className="form-control"
-                                    type="number"
-                                    name="quantity"
-                                    value={model.quantity}
-                                    onChange={(e) => setModel((m) => ({ ...m, quantity: Number(e.target.value) }))}
-                                    min="0"
-                                />
-                                {errors.quantity ? <div className="text-danger small">{errors.quantity[0]}</div> : null}
-                            </div>
-
-                            {/* Expiry Date */}
-                            <div className="col-md-3 mb-3">
-                                <label className="form-label">Expiry Date</label>
-                                <input
-                                    className="form-control"
-                                    type="date"
-                                    name="expiry_date"
-                                    value={model.expiry_date || ""}
-                                    onChange={onChange}
-                                />
-                                {errors.expiry_date ? <div className="text-danger small">{errors.expiry_date[0]}</div> : null}
-                            </div>
-
                             {/* Description */}
                             <div className="col-md-12 mb-3">
                                 <label className="form-label">Description</label>

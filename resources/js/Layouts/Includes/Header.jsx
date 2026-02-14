@@ -1,9 +1,8 @@
-// resources/js/Includes/Header.jsx
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 export default function Header({
-    user = {},
+    user = {},  // Assuming user prop contains the user data including avatar
     notifications = [],
     onLogout = () => { },
 }) {
@@ -19,6 +18,8 @@ export default function Header({
 
     const roleName = user?.roles?.[0]?.name || user?.role || "Health Worker";
     const roleDisplay = roleName.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+
+    const avatarUrl = user?.avatar ? user.avatar : null; // Use the avatar URL from user data
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -48,52 +49,67 @@ export default function Header({
 
                 {/* Profile Dropdown */}
                 <div className="mc-user-dropdown" ref={dropdownRef}>
-                    <button 
-                        className="mc-user" 
+                    <button
+                        className="mc-user"
                         onClick={() => setShowDropdown(!showDropdown)}
                         type="button"
-                        style={{ 
-                            border: 'none', 
-                            background: 'transparent', 
+                        style={{
+                            border: 'none',
+                            background: 'transparent',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px'
                         }}
                     >
-                        <div className="mc-user-avatar">{initials}</div>
+                        {/* Avatar or Initials */}
+                        {avatarUrl ? (
+                            <img
+                                src={avatarUrl}
+                                alt="User Avatar"
+                                className="mc-user-avatar"
+                                style={{ width: 40, height: 40, borderRadius: '50%' }}
+                            />
+                        ) : (
+                            <div className="mc-user-avatar" style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: '#4caf50', color: '#fff', display: 'grid', placeItems: 'center' }}>
+                                {initials}
+                            </div>
+                        )}
+
+                        {/* User Info */}
                         <div className="mc-user-meta">
                             <div className="mc-user-name">{user?.name || "User"}</div>
                             <div className="mc-user-role">{roleDisplay}</div>
                         </div>
-                        <svg 
-                            width="16" 
-                            height="16" 
-                            viewBox="0 0 16 16" 
+
+                        <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 16 16"
                             fill="currentColor"
-                            style={{ 
+                            style={{
                                 transition: 'transform 0.2s',
                                 transform: showDropdown ? 'rotate(180deg)' : 'rotate(0deg)'
                             }}
                         >
-                            <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="2" fill="none"/>
+                            <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="2" fill="none" />
                         </svg>
                     </button>
 
                     {showDropdown && (
                         <div className="mc-dropdown-menu">
-                            <Link 
-                                to="/profile" 
+                            <Link
+                                to="/profile"
                                 className="mc-dropdown-item"
                                 onClick={() => setShowDropdown(false)}
                             >
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                    <path d="M8 8a3 3 0 100-6 3 3 0 000 6zM12.93 13c-.03-2.76-2.24-5-5-5h-.86c-2.76 0-4.97 2.24-5 5h10.86z"/>
+                                    <path d="M8 8a3 3 0 100-6 3 3 0 000 6zM12.93 13c-.03-2.76-2.24-5-5-5h-.86c-2.76 0-4.97 2.24-5 5h10.86z" />
                                 </svg>
                                 My Profile
                             </Link>
-                            <button 
-                                className="mc-dropdown-item mc-dropdown-item-logout" 
+                            <button
+                                className="mc-dropdown-item mc-dropdown-item-logout"
                                 onClick={() => {
                                     setShowDropdown(false);
                                     onLogout();
@@ -101,7 +117,7 @@ export default function Header({
                                 type="button"
                             >
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                    <path d="M6 13V3h4v10H6zM3 6h3v4H3V6zm10 0h-3v4h3V6z"/>
+                                    <path d="M6 13V3h4v10H6zM3 6h3v4H3V6zm10 0h-3v4h3V6z" />
                                 </svg>
                                 Logout
                             </button>

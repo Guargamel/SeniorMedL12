@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Spatie\Permission\Models\Role;
 
@@ -31,6 +32,37 @@ class StaffController extends Controller
         }
 
         return response()->json(['data' => $query->paginate(20)]);
+    }
+
+    public function updateAvatar(Request $request, $id)
+    {
+        // Validate that an image is provided
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpg,png,jpeg,gif,svg|max:2048', // Limit file size to 2MB and only allow certain types
+        ]);
+
+        // Find the staff member by ID
+        $staff = User::findOrFail($id);
+
+        // Handle the avatar upload
+        if ($request->hasFile('avatar')) {
+            // Delete old avatar if exists
+            if ($staff->avatar) {
+                Storage::delete($staff->avatar);
+            }
+
+            // Store the new avatar
+            $path = $request->file('avatar')->store('avatars', 'public');
+
+            // Update the avatar field in the database
+            $staff->avatar = $path;
+            $staff->save();
+        }
+
+        // Return the updated staff information, including the new avatar URL
+        return response()->json([
+            'avatar' => Storage::url($path),  // Return the URL of the uploaded avatar
+        ]);
     }
 
     public function store(Request $request): JsonResponse

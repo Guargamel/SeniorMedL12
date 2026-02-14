@@ -14,10 +14,12 @@ use App\Http\Controllers\Api\RequestController;
 use App\Http\Controllers\Api\DistributionController;
 use App\Http\Controllers\Api\MedicineController;
 use App\Http\Controllers\Api\MedicineCategoryController;
+use App\Http\Controllers\Api\MedicineBatchController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\AnalyticsController;
 use App\Http\Controllers\Api\ReportController;
+use App\Models\Supplier;
 
 /*
 |--------------------------------------------------------------------------
@@ -80,6 +82,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/staff/{user}', [StaffController::class, 'show']);
         Route::put('/staff/{user}', [StaffController::class, 'update']);
         Route::delete('/staff/{user}', [StaffController::class, 'destroy']);
+        // routes/api.php
+        Route::post('/staff/{id}/avatar', [StaffController::class, 'updateAvatar']);
     });
 
     // ---- Roles & Permissions (Admin only) ----
@@ -90,14 +94,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/roles/{role}', [RoleController::class, 'update']);
         Route::delete('/roles/{role}', [RoleController::class, 'destroy']);
 
-        Route::get('/permissions', [PermissionController::class, 'index']);
+
+        Route::get('/suppliers', function () {
+            return Supplier::all(); // Fetch all suppliers
+        });
     });
 
     // ---- Distributions (Admin only) ----
     Route::middleware('role:super-admin')->group(function () {
         Route::post('/distributions', [DistributionController::class, 'store']);
         Route::get('/users/autocomplete-email', [UserController::class, 'autocompleteEmail']);
-        
+
         // Admin notifications
         Route::post('/notifications', [NotificationController::class, 'store']);
     });

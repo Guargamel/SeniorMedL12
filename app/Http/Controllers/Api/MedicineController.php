@@ -11,14 +11,31 @@ class MedicineController extends Controller
 {
     public function index()
     {
-        // Include category name + computed "quantity" (sum of batch quantities)
-        $items = Medicine::query()
-            ->with('category:id,name')
-            ->withSum('batches as quantity', 'quantity')
-            ->orderByDesc('id')
-            ->get();
+        $medicines = Medicine::with('batches') // Eager load the related medicine batches
+            ->get()
+            ->map(function ($medicine) {
+                // Calculate the total quantity for this medicine by summing all related batches
+                $medicine->quantity = $medicine->batches->sum('quantity');
 
-        return response()->json($items);
+                // Get the earliest expiry date from the batches (you can change this logic if needed)
+                $earliestExpiry = $medicine->batches->min('expiry_date');
+                $medicine->expiry_date = $earliestExpiry; // Assign the earliest expiry date to the medicine
+
+                // Check if any batch is expired
+                $medicine->is_expired = $medicine->batches->some(function ($batch) {
+                    return $batch->expiry_date < now(); // Check if any batch has expired
+                });
+
+                // Check if the stock is low (define low stock threshold, e.g., 10 units)
+                $medicine->is_low_stock = $medicine->quantity < 10;
+
+                // Determine if the medicine is OK (not expired and sufficient stock)
+                $medicine->is_ok = !$medicine->is_expired && !$medicine->is_low_stock;
+
+                return $medicine;
+            });
+
+        return response()->json($medicines);
     }
 
     public function show($id)

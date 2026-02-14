@@ -1,10 +1,3 @@
-/**
- * Medicines module pages for React Router.
- * Assumes you have an apiFetch helper at: resources/js/api.js
- *   export async function apiFetch(url, options) { ... }
- * And the SPA is authenticated via Laravel Sanctum cookie/session auth.
- */
-
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { apiFetch } from "../utils/api";
@@ -21,6 +14,7 @@ export default function Index() {
     const [loading, setLoading] = useState(true);
     const [q, setQ] = useState("");
 
+    // Load the medicines from the API
     async function load() {
         setLoading(true);
         try {
@@ -37,6 +31,7 @@ export default function Index() {
         load();
     }, []);
 
+    // Filter the medicines based on the search query
     const filtered = useMemo(() => {
         const s = q.trim().toLowerCase();
         if (!s) return items;
@@ -56,6 +51,7 @@ export default function Index() {
         });
     }, [items, q]);
 
+    // Handle the deletion of a medicine
     async function onDelete(id) {
         if (!confirm("Delete this medicine?")) return;
         try {
@@ -114,8 +110,6 @@ export default function Index() {
                                         <th>Brand</th>
                                         <th>Form</th>
                                         <th>Strength</th>
-                                        <th>Qty</th>
-                                        <th>Expiry</th>
                                         <th>Status</th>
                                         <th style={{ width: 180 }}>Actions</th>
                                     </tr>
@@ -123,40 +117,55 @@ export default function Index() {
                                 <tbody>
                                     {filtered.length === 0 ? (
                                         <tr>
-                                            <td colSpan="9">No medicines found.</td>
+                                            <td colSpan="7">No medicines found.</td>
                                         </tr>
                                     ) : (
-                                        filtered.map((m) => (
-                                            <tr key={m.id}>
-                                                <td>{m.id}</td>
-                                                <td>{m.generic_name}</td>
-                                                <td>{m.brand_name}</td>
-                                                <td>{m.dosage_form}</td>
-                                                <td>{m.strength}</td>
-                                                <td>{m.quantity}</td>
-                                                <td>{String(m.expiry_date ?? "").slice(0, 10)}</td>
-                                                <td>
-                                                    {Number(m.quantity ?? 0) <= 0 ? (
-                                                        <span className="badge bg-danger">Out</span>
-                                                    ) : String(m.expiry_date ?? "").slice(0, 10) &&
-                                                        String(m.expiry_date).slice(0, 10) < new Date().toISOString().slice(0, 10) ? (
-                                                        <span className="badge bg-warning text-dark">Expired</span>
-                                                    ) : (
-                                                        <span className="badge bg-success">OK</span>
-                                                    )}
-                                                </td>
-                                                <td>
-                                                    <div className="d-flex gap-2">
-                                                        <Link className="btn btn-sm btn-outline-primary" to={`/medicines/${m.id}/edit`}>
-                                                            Edit
-                                                        </Link>
-                                                        <button className="btn btn-sm btn-outline-danger" onClick={() => onDelete(m.id)}>
-                                                            Delete
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
+                                        filtered.map((m) => {
+                                            // Calculate the availability of the medicine
+                                            let availability = "OK";
+                                            const currentDate = new Date();
+
+                                            // Calculate total quantity of the medicine across all batches
+                                            const totalQuantity = m.batches.reduce((total, batch) => {
+                                                return total + batch.quantity;
+                                            }, 0);
+
+                                            // Check if the medicine is expired
+                                            const isExpired = m.batches.some(batch => new Date(batch.expiry_date) < currentDate);
+
+                                            if (totalQuantity === 0) {
+                                                availability = "Out of Stock";
+                                            } else if (isExpired) {
+                                                availability = "Expired";
+                                            } else if (totalQuantity < 10) {
+                                                availability = "Low Stock";
+                                            }
+
+                                            return (
+                                                <tr key={m.id}>
+                                                    <td>{m.id}</td>
+                                                    <td>{m.generic_name}</td>
+                                                    <td>{m.brand_name}</td>
+                                                    <td>{m.dosage_form}</td>
+                                                    <td>{m.strength}</td>
+                                                    <td>
+                                                        <span className={`badge ${availability === "Expired" ? "bg-warning text-dark" : availability === "Out of Stock" ? "bg-danger" : availability === "Low Stock" ? "bg-secondary" : "bg-success"}`}>
+                                                            {availability}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <div className="d-flex gap-2">
+                                                            <Link className="btn btn-sm btn-outline-primary" to={`/medicines/${m.id}/edit`}>
+                                                                Edit
+                                                            </Link>
+                                                            <button className="btn btn-sm btn-outline-danger" onClick={() => onDelete(m.id)}>
+                                                                Delete
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
                                     )}
                                 </tbody>
                             </table>

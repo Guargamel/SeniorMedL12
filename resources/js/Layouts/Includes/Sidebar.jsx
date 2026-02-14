@@ -1,5 +1,4 @@
-// resources/js/Includes/Sidebar.jsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
     LayoutDashboard,
@@ -54,7 +53,15 @@ const menu = [
                     { label: "Out of Stock", to: "/medicines/outstock" },
                 ],
             },
-            { label: "Stock Management", to: "/stock", icon: Boxes },
+            {
+                label: "Stock Management",
+                to: "/stock",  // Link to the stock management page
+                icon: Boxes,
+                children: [
+                    { label: "Stock List", to: "/stock/index" },  // View all stock
+                    { label: "Create Stock", to: "/stock/create" }, // Add new stock
+                ]
+            },
         ],
     },
     {
@@ -140,7 +147,7 @@ export default function Sidebar() {
                                             <ChevronDown
                                                 size={16}
                                                 style={{
-                                                    transition: "transform 120ms ease",
+                                                    transition: "transform 0.2s",
                                                     transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
                                                 }}
                                             />
