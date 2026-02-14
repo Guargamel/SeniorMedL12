@@ -1,4 +1,3 @@
-// resources/js/Layouts/SeniorLayout.jsx
 import React from "react";
 import { Outlet } from "react-router-dom";
 import Header from "./Includes/Header.jsx";
@@ -11,10 +10,10 @@ import "../../css/style.css";
 import "../../css/mc-dashboard.css";
 
 export default function SeniorLayout({
-    user = {},
+    user = {},  // user data containing avatar
     notifications = [],
     appLogo = "",
-    handleLogout = () => {},
+    handleLogout = () => { },
     errors = [],
     pageHeader = null,
 }) {
@@ -24,7 +23,7 @@ export default function SeniorLayout({
 
             <div className="mc-main">
                 <Header
-                    user={user}
+                    user={user}  // Pass user to the Header component, which contains avatar
                     notifications={notifications}
                     appLogo={appLogo}
                     onLogout={handleLogout}
