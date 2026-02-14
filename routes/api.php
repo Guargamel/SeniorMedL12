@@ -129,4 +129,6 @@ Route::middleware('auth:sanctum')->group(function () {
     // ---- Medicine Batches ----
     // ---- Medicine Batches ----
     Route::get('/medicine-batches', [MedicineBatchController::class, 'index']);
+    Route::post('/medicine-batches/create', [MedicineBatchController::class, 'store']);
+    Route::middleware('auth:sanctum')->get('/notifications', [NotificationController::class, 'index']);
 });

@@ -35,4 +35,10 @@ class Medicine extends Model
     {
         return $this->hasMany(MedicineBatch::class, 'medicine_id');
     }
+
+    // In the MedicineBatch model
+    public function medicine()
+    {
+        return $this->belongsTo(Medicine::class);
+    }
 }

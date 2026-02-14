@@ -52,7 +52,8 @@ const Index = () => {
                             <th className="py-3 px-6 text-left text-sm font-medium text-black">Expiry Date</th>
                             <th className="py-3 px-6 text-left text-sm font-medium text-black">Cost</th>
                             <th className="py-3 px-6 text-left text-sm font-medium text-black">Supplier</th>
-                            <th className="py-3 px-6 text-left text-sm font-medium text-black">Medicine Type</th>
+                            <th className="py-3 px-6 text-left text-sm font-medium text-black">Generic Name</th>
+                            <th className="py-3 px-6 text-left text-sm font-medium text-black">Brand Name</th>
                             <th className="py-3 px-6 text-left text-sm font-medium text-black">Actions</th>
                         </tr>
                     </thead>
@@ -70,9 +71,12 @@ const Index = () => {
                                     {batch.supplier ? batch.supplier.name : "N/A"}
                                 </td>
                                 <td className="py-4 px-6 text-sm text-gray-900">
-                                    {batch.medicine ? batch.medicine.type : "N/A"}
+                                    {batch.medicine ? batch.medicine.generic_name : "N/A"}
                                 </td>
-                                <td className="py-4 px-6 text-sm">
+                                <td className="py-4 px-6 text-sm text-gray-900">
+                                    {batch.medicine ? batch.medicine.brand_name : "N/A"}
+                                </td>
+                                <td className="py-4 px-6 text-sm text-center">
                                     <a
                                         href={`/medicine-batches/${batch.id}/edit`}
                                         className="text-blue-600 hover:underline"
@@ -87,7 +91,6 @@ const Index = () => {
             </div>
         </div>
     );
-
 };
 
 export default Index;

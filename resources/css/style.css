@@ -5639,3 +5639,36 @@ table.table-inbox tbody tr.checked {
 .header .user-menu {
     overflow: visible !important;
 }
+
+/* Add to your Tailwind config or your global styles */
+.react-select__control {
+    height: 36px;
+    font-size: 0.875rem;
+    /* Smaller font size */
+}
+
+.react-select__menu {
+    font-size: 0.875rem;
+    /* Smaller font size for menu items */
+}
+
+/* styles.css */
+
+.notification-section {
+    margin-bottom: 20px;
+}
+
+.notification-section h3 {
+    color: #2b6cb0;
+    font-size: 1.5rem;
+}
+
+.notification-section ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.notification-section li {
+    padding: 5px 0;
+    font-size: 1rem;
+}

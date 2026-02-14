@@ -19,18 +19,29 @@ class MedicineBatchController extends Controller
     // Create a new batch
     public function store(Request $request)
     {
-        $validatedData = $request->validate([
+        // Validate the incoming data
+        $validated = $request->validate([
+            'medicine_id' => 'required|exists:medicines,id', // Ensure this is an ID reference
             'batch_no' => 'required|string',
             'quantity' => 'required|integer',
             'expiry_date' => 'required|date',
+            'supplier_id' => 'required|exists:suppliers,id',
             'cost' => 'required|numeric',
-            'supplier' => 'required|string',
         ]);
 
-        $batch = MedicineBatch::create($validatedData);
+        // Create the new medicine batch
+        $medicineBatch = MedicineBatch::create([
+            'medicine_id' => $validated['medicine_id'],
+            'batch_no' => $validated['batch_no'],
+            'quantity' => $validated['quantity'],
+            'expiry_date' => $validated['expiry_date'],
+            'supplier_id' => $validated['supplier_id'],
+            'cost' => $validated['cost'],
+        ]);
 
-        return response()->json($batch, 201);
+        return response()->json($medicineBatch, 201); // Return the created batch with status code 201
     }
+
 
     // Fetch a specific batch by ID
     public function show($id)

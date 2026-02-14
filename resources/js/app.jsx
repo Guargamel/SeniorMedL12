@@ -44,6 +44,8 @@ import BatchCreate from "./Medicine_Batches/Create.jsx";
 import BatchIndex from "./Medicine_Batches/Index.jsx";
 import BatchEdit from "./Medicine_Batches/Edit.jsx";
 
+import Notifications from "./Notifications/Notifications.jsx";
+
 // Main App Route Setup
 const container = document.getElementById("app");
 
@@ -94,6 +96,8 @@ createRoot(container).render(
                 <Route path="/medicine-batches/index" element={<BatchIndex />} />
                 <Route path="/medicine-batches/create" element={<BatchCreate />} />
                 <Route path="/medicine-batches/:id/edit" element={<BatchEdit />} />
+
+                <Route path="/notifications" element={<Notifications />} />
             </Route>
 
             {/* 404 - Page not found */}

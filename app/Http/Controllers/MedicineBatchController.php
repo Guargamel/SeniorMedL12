@@ -29,6 +29,12 @@ class MedicineBatchController extends Controller
             'cost' => $validated['cost'],
         ]);
 
-        return response()->json(['message' => 'Batch added successfully', 'batch' => $batch], 201);
+        // Eager load the medicine relationship for the newly created batch
+        $batchWithMedicine = MedicineBatch::with('medicine')->find($batch->id);
+
+        return response()->json([
+            'message' => 'Batch added successfully',
+            'batch' => $batchWithMedicine, // Return the batch along with its associated medicine
+        ], 201);
     }
 }
