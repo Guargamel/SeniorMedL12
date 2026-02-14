@@ -10,7 +10,7 @@ const Create = () => {
     const [loading, setLoading] = useState(false);
     const [medicines, setMedicines] = useState([]);
     const navigate = useNavigate();
-    const { register, control, handleSubmit, formState: { errors } } = useForm();
+    const { register, control, handleSubmit, formState: { errors }, setValue } = useForm();
 
     useEffect(() => {
         async function fetchMedicines() {
@@ -21,12 +21,19 @@ const Create = () => {
                     label: `${medicine.generic_name} (${medicine.brand_name || 'Generic'})`,
                 }));
                 setMedicines(medicineOptions);
+
+                // Check if medicine_id is in URL query params
+                const urlParams = new URLSearchParams(window.location.search);
+                const medicineId = urlParams.get('medicine_id');
+                if (medicineId) {
+                    setValue('medicine_id', parseInt(medicineId));
+                }
             } catch (err) {
                 toast.error("Failed to load medicines");
             }
         }
         fetchMedicines();
-    }, []);
+    }, [setValue]);
 
     const onSubmit = async (data) => {
         setLoading(true);

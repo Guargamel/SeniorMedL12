@@ -34,26 +34,50 @@ export default function RequireAuthLayout() {
         setErrors([]);
         try {
             await apiLogout();
+            setUser(null);
+            navigate("/login", { replace: true });
         } catch (e) {
-            // Even if backend errors, force UI logout so you can continue
+            console.error("Logout error:", e);
             setErrors([e?.message || "Logout failed"]);
-        } finally {
+            // Force logout even if API fails
             setUser(null);
             navigate("/login", { replace: true });
         }
     };
 
-    if (loading) return <div className="p-4">Loading...</div>;
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading...</p>
+                </div>
+            </div>
+        );
+    }
 
     if (!user) {
         return <Navigate to="/login" replace state={{ from: location.pathname }} />;
     }
 
-    // Check if user is a senior citizen
-    const isSeniorCitizen = user?.roles?.some(role => role.name === 'senior-citizen');
+    // Check user roles using the specified logic
+    const isSeniorCitizen = !user?.role_id || (Array.isArray(user?.roles) && user.roles.some(role => role.name === 'senior-citizen'));
+    const isAdminOrStaff = Array.isArray(user?.roles)
+        ? user.roles.some(role => [1, 2].includes(role.id) || ['super-admin', 'staff'].includes(role.name))
+        : [1, 2].includes(user?.role_id);
 
-    // Use SeniorLayout for senior citizens, regular Layout for staff/admin
-    const LayoutComponent = isSeniorCitizen ? SeniorLayout : Layout;
+    // Debug logging
+    console.log('User:', user);
+    console.log('isSeniorCitizen:', isSeniorCitizen);
+    console.log('isAdminOrStaff:', isAdminOrStaff);
+
+    // If user is neither admin/staff nor senior citizen, redirect to unauthorized
+    if (!isAdminOrStaff && !isSeniorCitizen) {
+        return <Navigate to="/unauthorized" replace />;
+    }
+
+    // Use SeniorLayout for senior citizens, regular Layout for admin/staff
+    const LayoutComponent = isAdminOrStaff ? Layout : SeniorLayout;
 
     return <LayoutComponent user={user} errors={errors} handleLogout={handleLogout} />;
 }

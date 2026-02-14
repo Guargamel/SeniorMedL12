@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { apiFetch } from "../utils/api";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
-import AlertBanner from "../Components/AlertBanner";
 import "../../css/style.css";
 
 const SeniorDashboard = () => {
@@ -61,9 +60,6 @@ const SeniorDashboard = () => {
     return (
         <div className="min-h-screen bg-gray-50 p-6">
             <div className="max-w-7xl mx-auto">
-                {/* Alert Banner */}
-                <AlertBanner />
-
                 {/* Welcome Header */}
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back!</h1>

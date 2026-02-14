@@ -11,7 +11,9 @@ import Login from "./Auth/Login.jsx";
 
 // Dashboard
 import DashboardRouter from "./Pages/DashboardRouter.jsx";
-import SeniorDashboard from "./Pages/SeniorDashboard.jsx";
+
+// Unauthorized
+import Unauthorized from "./Pages/Unauthorized.jsx";
 
 // Staff (Users)
 import UsersIndex from "./Staff/Index.jsx";
@@ -50,6 +52,7 @@ import RequestsIndex from "./Request/Index.jsx";
 import RequestCreate from "./Request/Create.jsx";
 import BrowseMedicines from "./Request/BrowseMedicines.jsx";
 
+// Notifications
 import Notifications from "./Notifications/Notifications.jsx";
 
 // Main App Route Setup
@@ -66,9 +69,12 @@ createRoot(container).render(
                 <Route path="/login" element={<Login />} />
             </Route>
 
+            {/* Unauthorized */}
+            <Route path="/unauthorized" element={<Unauthorized />} />
+
             {/* Protected Routes */}
             <Route element={<RequireAuthLayout />}>
-                {/* Dashboard */}
+                {/* Dashboard - Role-based */}
                 <Route path="/dashboard" element={<DashboardRouter />} />
 
                 {/* Users Routes */}
@@ -108,6 +114,7 @@ createRoot(container).render(
                 <Route path="/medicine-requests/create" element={<RequestCreate />} />
                 <Route path="/browse-medicines" element={<BrowseMedicines />} />
 
+                {/* Notifications */}
                 <Route path="/notifications" element={<Notifications />} />
             </Route>
 

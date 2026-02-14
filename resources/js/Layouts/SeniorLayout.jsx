@@ -14,7 +14,7 @@ export default function SeniorLayout({
     user = {},
     notifications = [],
     appLogo = "",
-    handleLogout = () => { },
+    handleLogout = () => {},
     errors = [],
     pageHeader = null,
 }) {
