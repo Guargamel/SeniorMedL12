@@ -17,7 +17,7 @@ class MedicineRequestController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-
+        
         // If senior citizen, show only their requests
         if ($user->hasRole('senior-citizen')) {
             $requests = MedicineRequest::with(['medicine', 'reviewer'])
@@ -37,72 +37,36 @@ class MedicineRequestController extends Controller
     /**
      * Store a new medicine request (Senior Citizens only)
      */
-    // In app/Http/Controllers/Api/MedicineRequestController.php
-
     public function store(Request $request)
     {
-        try {
-            $user = Auth::user();
+        $validated = $request->validate([
+            'medicine_id' => 'required|exists:medicines,id',
+            'quantity' => 'required|integer|min:1',
+            'reason' => 'nullable|string|max:500'
+        ]);
 
-            // If user is not authenticated, return an error
-            if (!$user) {
-                return response()->json(['error' => 'User not authenticated'], 401);
-            }
+        $user = Auth::user();
 
-            // Validate the incoming data
-            $validated = $request->validate([
-                'medicine_id' => 'required|exists:medicines,id',
-                'quantity' => 'required|integer|min:1',
-                'reason' => 'nullable|string|max:500'
-            ]);
+        // Create the request
+        $medicineRequest = MedicineRequest::create([
+            'user_id' => $user->id,
+            'medicine_id' => $validated['medicine_id'],
+            'quantity' => $validated['quantity'],
+            'reason' => $validated['reason'] ?? null,
+            'status' => 'pending'
+        ]);
 
-            // Create the request in the database
-            $medicineRequest = MedicineRequest::create([
-                'user_id' => $user->id, // Assuming 'user_id' is the requester of the medicine
-                'medicine_id' => $validated['medicine_id'],
-                'quantity' => $validated['quantity'],
-                'reason' => $validated['reason'] ?? null,
-                'status' => 'pending' // Default status
-            ]);
+        // Load relationships
+        $medicineRequest->load('medicine', 'user');
 
-            // Load the relationships
-            $medicineRequest->load('medicine', 'user');
+        // Notify all staff and super-admins
+        $this->notifyStaffAndAdmins($medicineRequest);
 
-            // Now notify staff and admin about this request
-            $this->notifyStaffAndAdmins($medicineRequest);
-
-            return response()->json([
-                'message' => 'Medicine request submitted successfully',
-                'request' => $medicineRequest
-            ], 201);
-        } catch (\Exception $e) {
-            // Handle any errors
-            return response()->json(['error' => 'An unexpected error occurred'], 500);
-        }
+        return response()->json([
+            'message' => 'Medicine request submitted successfully',
+            'request' => $medicineRequest
+        ], 201);
     }
-    public function notifyStaffAndAdmins($medicineRequest)
-    {
-        $staffAndAdmins = User::role(['staff', 'super-admin'])->get();
-
-        foreach ($staffAndAdmins as $staff) {
-            Notification::create([
-                'user_id' => $staff->id,
-                'type' => 'medicine_request',
-                'title' => 'New Medicine Request',
-                'message' => $medicineRequest->user->name . ' requested ' . $medicineRequest->quantity . ' units of ' . $medicineRequest->medicine->generic_name,
-                'data' => json_encode([
-                    'request_id' => $medicineRequest->id,
-                    'medicine_name' => $medicineRequest->medicine->generic_name,
-                    'quantity' => $medicineRequest->quantity
-                ]),
-                'read_at' => null,
-                'notifiable_type' => 'MedicineRequest',
-                'notifiable_id' => $medicineRequest->id,
-            ]);
-        }
-    }
-
-
 
     /**
      * Display a specific medicine request
@@ -110,7 +74,7 @@ class MedicineRequestController extends Controller
     public function show($id)
     {
         $user = Auth::user();
-
+        
         $request = MedicineRequest::with(['medicine', 'user.seniorProfile', 'reviewer'])->findOrFail($id);
 
         // Senior citizens can only view their own requests
@@ -192,6 +156,31 @@ class MedicineRequestController extends Controller
     }
 
     /**
+     * Notify staff and super-admins about new request
+     */
+    private function notifyStaffAndAdmins($medicineRequest)
+    {
+        $staffAndAdmins = User::role(['staff', 'super-admin'])->get();
+
+        foreach ($staffAndAdmins as $staff) {
+            Notification::create([
+                'user_id' => $staff->id,
+                'type' => 'medicine_request',
+                'title' => 'New Medicine Request',
+                'message' => $medicineRequest->user->name . ' requested ' . 
+                            $medicineRequest->quantity . ' units of ' . 
+                            $medicineRequest->medicine->generic_name,
+                'data' => json_encode([
+                    'request_id' => $medicineRequest->id,
+                    'medicine_name' => $medicineRequest->medicine->generic_name,
+                    'quantity' => $medicineRequest->quantity
+                ]),
+                'read_at' => null
+            ]);
+        }
+    }
+
+    /**
      * Notify senior citizen about request decision
      */
     private function notifySeniorCitizen($medicineRequest)
@@ -200,8 +189,8 @@ class MedicineRequestController extends Controller
             'user_id' => $medicineRequest->user_id,
             'type' => 'request_' . $medicineRequest->status,
             'title' => 'Request ' . ucfirst($medicineRequest->status),
-            'message' => 'Your request for ' . $medicineRequest->medicine->generic_name .
-                ' has been ' . $medicineRequest->status,
+            'message' => 'Your request for ' . $medicineRequest->medicine->generic_name . 
+                        ' has been ' . $medicineRequest->status,
             'data' => json_encode([
                 'request_id' => $medicineRequest->id,
                 'medicine_name' => $medicineRequest->medicine->generic_name,

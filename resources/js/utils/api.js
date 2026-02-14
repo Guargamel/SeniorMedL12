@@ -67,14 +67,12 @@ export async function apiFetch(path, options = {}) {
         if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
     }
 
-    fetch(url, options)
-        .then((res) => res.json())
-        .then((data) => {
-            console.log("Response Data: ", data);
-        })
-        .catch((err) => {
-            console.error("API Error: ", err);
-        });
+    const res = await fetch(url, {
+        ...options,
+        method,
+        headers,
+        credentials: "include",
+    });
 
     if (res.status === 204) return null;
 
