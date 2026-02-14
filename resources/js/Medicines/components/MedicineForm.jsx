@@ -1,10 +1,3 @@
-/**
- * Medicines module pages for React Router.
- * Assumes you have an apiFetch helper at: resources/js/api.js
- *   export async function apiFetch(url, options) { ... }
- * And the SPA is authenticated via Laravel Sanctum cookie/session auth.
- */
-
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../../utils/api";
@@ -17,7 +10,7 @@ const emptyModel = {
     category_id: "",
     unit: "",
     description: "",
-    is_active: true,
+    is_active: true,  // Default to true for active medicine
     expiry_date: "",
     quantity: 0,
     picture: null,
@@ -54,7 +47,6 @@ export default function MedicineForm({
                 const data = await apiFetch("/api/medicine-categories");
                 if (!cancelled) setCategories(Array.isArray(data) ? data : (data.data ?? []));
             } catch (e) {
-                // Non-fatal; keep form usable
                 console.error("Failed to load categories:", e);
             }
         }
@@ -70,7 +62,7 @@ export default function MedicineForm({
                         ...prev,
                         ...src,
                         category_id: src?.category_id ?? "",
-                        is_active: src?.is_active ?? true,
+                        is_active: src?.is_active ?? true,  // Ensure it's true/false
                         expiry_date: toDateInputValue(src?.expiry_date),
                         quantity: Number(src?.quantity ?? 0),
                         picture: null, // upload only when chosen
@@ -95,6 +87,7 @@ export default function MedicineForm({
         const { name, type, value, checked, files } = e.target;
 
         if (type === "checkbox") {
+            // Ensure `is_active` is a boolean
             setModel((m) => ({ ...m, [name]: checked }));
             return;
         }
@@ -112,12 +105,16 @@ export default function MedicineForm({
         setSaving(true);
         setErrors({});
 
+        // Log the form data to ensure `is_active` is boolean
+        console.log("Form Data being submitted:", model);
+
         try {
             const form = new FormData();
             Object.entries(model).forEach(([k, v]) => {
+                // Skip undefined or null values
                 if (v === null || typeof v === "undefined") return;
                 if (k === "category_id" && (v === "" || v === null)) return;
-                form.append(k, v);
+                form.append(k, v);  // Append form data, including `is_active`
             });
 
             const url = mode === "edit" ? `/api/medicines/${id}` : "/api/medicines";
@@ -139,15 +136,6 @@ export default function MedicineForm({
         }
     }
 
-    if (loading) {
-        return (
-            <div className="content">
-                <h4 className="page-title">{title}</h4>
-                <p>Loading...</p>
-            </div>
-        );
-    }
-
     return (
         <div className="content">
             <div className="d-flex align-items-center justify-content-between mb-3">
@@ -161,6 +149,7 @@ export default function MedicineForm({
                 <div className="card-body">
                     <form onSubmit={onSubmit} encType="multipart/form-data">
                         <div className="row">
+                            {/* Generic Name */}
                             <div className="col-md-6 mb-3">
                                 <label className="form-label">Generic Name</label>
                                 <input
@@ -173,6 +162,7 @@ export default function MedicineForm({
                                 {errors.generic_name ? <div className="text-danger small">{errors.generic_name[0]}</div> : null}
                             </div>
 
+                            {/* Brand Name */}
                             <div className="col-md-6 mb-3">
                                 <label className="form-label">Brand Name</label>
                                 <input
@@ -184,6 +174,7 @@ export default function MedicineForm({
                                 {errors.brand_name ? <div className="text-danger small">{errors.brand_name[0]}</div> : null}
                             </div>
 
+                            {/* Dosage Form */}
                             <div className="col-md-4 mb-3">
                                 <label className="form-label">Dosage Form</label>
                                 <input
@@ -196,6 +187,7 @@ export default function MedicineForm({
                                 {errors.dosage_form ? <div className="text-danger small">{errors.dosage_form[0]}</div> : null}
                             </div>
 
+                            {/* Strength */}
                             <div className="col-md-4 mb-3">
                                 <label className="form-label">Strength</label>
                                 <input
@@ -208,6 +200,7 @@ export default function MedicineForm({
                                 {errors.strength ? <div className="text-danger small">{errors.strength[0]}</div> : null}
                             </div>
 
+                            {/* Unit */}
                             <div className="col-md-4 mb-3">
                                 <label className="form-label">Unit</label>
                                 <input
@@ -220,6 +213,7 @@ export default function MedicineForm({
                                 {errors.unit ? <div className="text-danger small">{errors.unit[0]}</div> : null}
                             </div>
 
+                            {/* Category */}
                             <div className="col-md-6 mb-3">
                                 <label className="form-label">Category</label>
                                 <select
@@ -238,6 +232,7 @@ export default function MedicineForm({
                                 {errors.category_id ? <div className="text-danger small">{errors.category_id[0]}</div> : null}
                             </div>
 
+                            {/* Quantity */}
                             <div className="col-md-3 mb-3">
                                 <label className="form-label">Quantity</label>
                                 <input
@@ -251,6 +246,7 @@ export default function MedicineForm({
                                 {errors.quantity ? <div className="text-danger small">{errors.quantity[0]}</div> : null}
                             </div>
 
+                            {/* Expiry Date */}
                             <div className="col-md-3 mb-3">
                                 <label className="form-label">Expiry Date</label>
                                 <input
@@ -263,6 +259,7 @@ export default function MedicineForm({
                                 {errors.expiry_date ? <div className="text-danger small">{errors.expiry_date[0]}</div> : null}
                             </div>
 
+                            {/* Description */}
                             <div className="col-md-12 mb-3">
                                 <label className="form-label">Description</label>
                                 <textarea
@@ -275,18 +272,20 @@ export default function MedicineForm({
                                 {errors.description ? <div className="text-danger small">{errors.description[0]}</div> : null}
                             </div>
 
+                            {/* Picture */}
                             <div className="col-md-6 mb-3">
                                 <label className="form-label">Picture (optional)</label>
                                 <input className="form-control" type="file" name="picture" accept="image/*" onChange={onChange} />
                                 {errors.picture ? <div className="text-danger small">{errors.picture[0]}</div> : null}
                             </div>
 
+                            {/* Active Status */}
                             <div className="col-md-6 mb-3 d-flex align-items-center gap-2">
                                 <input
                                     className="form-check-input"
                                     type="checkbox"
                                     name="is_active"
-                                    checked={!!model.is_active}
+                                    checked={!!model.is_active}  // Ensuring it's true or false
                                     onChange={onChange}
                                     id="is_active"
                                 />
@@ -295,6 +294,7 @@ export default function MedicineForm({
                                 </label>
                                 {errors.is_active ? <div className="text-danger small ms-2">{errors.is_active[0]}</div> : null}
                             </div>
+
                         </div>
 
                         <button className="btn btn-primary" type="submit" disabled={saving}>

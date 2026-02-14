@@ -3,11 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Medicine extends Model
 {
+    protected $table = 'medicines';
+
     protected $fillable = [
         'generic_name',
         'brand_name',
@@ -18,14 +18,20 @@ class Medicine extends Model
         'description',
         'is_active',
         'picture',
+
     ];
 
-    public function category(): BelongsTo
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
+    public function category()
     {
         return $this->belongsTo(MedicineCategory::class, 'category_id');
     }
 
-    public function batches(): HasMany
+    // If you have medicine_batches table
+    public function batches()
     {
         return $this->hasMany(MedicineBatch::class, 'medicine_id');
     }
