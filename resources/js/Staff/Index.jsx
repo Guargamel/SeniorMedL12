@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { apiFetch, normalizeList } from "../utils/api";
 
-export default function StaffIndex() {
+export default function BatchIndex() {
     const [q, setQ] = useState("");
     const [loading, setLoading] = useState(true);
     const [rows, setRows] = useState([]);

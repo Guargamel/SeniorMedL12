@@ -34,7 +34,7 @@ const Create = () => {
 
     return (
         <div>
-            <h2>Create Stock Batch</h2>
+            <h2>Add Stock Batch</h2>
             {error && <div>{error}</div>}
             <form onSubmit={handleSubmit}>
                 <div>

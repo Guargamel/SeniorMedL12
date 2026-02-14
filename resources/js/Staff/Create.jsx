@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../utils/api";
 
-export default function StaffCreate() {
+export default function BatchCreate() {
     const navigate = useNavigate();
     const [saving, setSaving] = useState(false);
     const [errors, setErrors] = useState({});

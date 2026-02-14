@@ -12,23 +12,23 @@ import Login from "./Auth/Login.jsx";
 // Dashboard
 import Dashboard from "./Pages/Dashboard.jsx";
 
-/* STAFF (USERS) */
+// Staff (Users)
 import UsersIndex from "./Staff/Index.jsx";
 import UsersCreate from "./Staff/Create.jsx";
 import UsersEdit from "./Staff/Edit.jsx";
-import UserProfile from "./Users/Profile.jsx";
 
-/* SENIORS */
+// Seniors
 import SeniorsIndex from "./Seniors/Index.jsx";
 import SeniorCreate from "./Seniors/Create.jsx";
 import SeniorEdit from "./Seniors/Edit.jsx";
 
-/* ROLES / PERMISSIONS */
+// Roles / Permissions
 import RolesIndex from "./Roles/Index.jsx";
 import RolesCreate from "./Roles/Create.jsx";
 import RolesEdit from "./Roles/Edit.jsx";
 import Permissions from "./Roles/Permissions.jsx";
 
+// Medicines
 import MedicinesIndex from "./Medicines/Index.jsx";
 import MedicinesCreate from "./Medicines/Create.jsx";
 import MedicinesEdit from "./Medicines/Edit.jsx";
@@ -36,49 +36,50 @@ import MedicinesExpired from "./Medicines/Expired.jsx";
 import MedicinesOutstock from "./Medicines/Outstock.jsx";
 import MedicinesCategories from "./Medicines/Categories.jsx";
 
+// Distribute Stock
 import DistributeStock from "./Distribute/DistributeStock.jsx";
-import StockCreate from "./Stock/Create.jsx"; // Add create route component
-import StockIndex from "./Stock/Index.jsx"; // Add index route component
-import StockEdit from "./Stock/Edit.jsx"; // Add edit route component
 
+// Stock Management Routes
+import BatchCreate from "./Medicine_Batches/Create.jsx";
+import BatchIndex from "./Medicine_Batches/Index.jsx";
+import BatchEdit from "./Medicine_Batches/Edit.jsx";
+
+// Main App Route Setup
 const container = document.getElementById("app");
 
 createRoot(container).render(
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <BrowserRouter>
         <Routes>
             {/* Default landing */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-            {/* Public */}
+            {/* Public Routes */}
             <Route element={<PlainLayout />}>
                 <Route path="/login" element={<Login />} />
             </Route>
 
-            {/* Protected */}
+            {/* Protected Routes */}
             <Route element={<RequireAuthLayout />}>
                 {/* Dashboard */}
                 <Route path="/dashboard" element={<Dashboard />} />
 
-                {/* Staff */}
+                {/* Users Routes */}
                 <Route path="/users" element={<UsersIndex />} />
                 <Route path="/users/create" element={<UsersCreate />} />
                 <Route path="/users/:id/edit" element={<UsersEdit />} />
 
-                {/* Seniors */}
+                {/* Seniors Routes */}
                 <Route path="/seniors" element={<SeniorsIndex />} />
                 <Route path="/seniors/create" element={<SeniorCreate />} />
                 <Route path="/seniors/:id/edit" element={<SeniorEdit />} />
 
-                {/* Users Profile */}
-                <Route path="/profile" index element={<UserProfile />} />
-
-                {/* Roles / Permissions */}
+                {/* Roles and Permissions Routes */}
                 <Route path="/roles" element={<RolesIndex />} />
                 <Route path="/roles/create" element={<RolesCreate />} />
                 <Route path="/roles/:id/edit" element={<RolesEdit />} />
                 <Route path="/permissions" element={<Permissions />} />
 
-                {/* Medicines */}
+                {/* Medicines Routes */}
                 <Route path="/medicines" element={<MedicinesIndex />} />
                 <Route path="/medicines/create" element={<MedicinesCreate />} />
                 <Route path="/medicines/:id/edit" element={<MedicinesEdit />} />
@@ -86,17 +87,16 @@ createRoot(container).render(
                 <Route path="/medicines/outstock" element={<MedicinesOutstock />} />
                 <Route path="/medicines/categories" element={<MedicinesCategories />} />
 
-                {/* Distribute Stock */}
+                {/* Distribute Stock Route */}
                 <Route path="/distributions" element={<DistributeStock />} />
 
                 {/* Stock Management Routes */}
-                <Route path="/stock/index" element={<StockIndex />} /> {/* Stock Index Route */}
-                <Route path="/stock/create" element={<StockCreate />} /> {/* Stock Create Route */}
-                <Route path="/stock/:id/edit" element={<StockEdit />} /> {/* Stock Edit Route */}
-
+                <Route path="/medicine-batches/index" element={<BatchIndex />} />
+                <Route path="/medicine-batches/create" element={<BatchCreate />} />
+                <Route path="/medicine-batches/:id/edit" element={<BatchEdit />} />
             </Route>
 
-            {/* 404 */}
+            {/* 404 - Page not found */}
             <Route path="*" element={<div className="p-4">Page not found</div>} />
         </Routes>
     </BrowserRouter>

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { apiFetch } from "../utils/api";
 import { useNavigate, useParams } from "react-router-dom";
 
-export default function StaffEdit() {
+export default function BatchEdit() {
     const { id } = useParams(); // Get staff ID from URL params
     const navigate = useNavigate();
 

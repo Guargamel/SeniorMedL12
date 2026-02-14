@@ -58,8 +58,8 @@ const menu = [
                 to: "/stock",  // Link to the stock management page
                 icon: Boxes,
                 children: [
-                    { label: "Stock List", to: "/stock/index" },  // View all stock
-                    { label: "Create Stock", to: "/stock/create" }, // Add new stock
+                    { label: "Stock List", to: "/medicine-batches/index" },  // View all stock
+                    { label: "Create Stock", to: "/medicine-batches/create" }, // Add new stock
                 ]
             },
         ],
