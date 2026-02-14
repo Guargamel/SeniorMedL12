@@ -72,10 +72,10 @@ const menu = [
         ],
     },
     {
-        title: "REPORTS",
+        title: "REQUESTS",
         items: [
             { label: "Analytics", to: "/analytics", icon: BarChart3 },
-            { label: "Reports", to: "/reports", icon: FileText },
+            { label: "Requests", to: "/requests", icon: FileText },
         ],
     },
     {

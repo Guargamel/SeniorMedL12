@@ -5672,3 +5672,26 @@ table.table-inbox tbody tr.checked {
     padding: 5px 0;
     font-size: 1rem;
 }
+
+/* resources/css/style.css */
+
+.notification-section {
+    margin-bottom: 20px;
+}
+
+.notification-section h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.notification-section .notification-card {
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: #fef3c7;
+    margin-bottom: 10px;
+}
+
+.notification-card .icon {
+    margin-right: 10px;
+}

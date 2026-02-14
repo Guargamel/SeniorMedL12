@@ -44,6 +44,10 @@ import BatchCreate from "./Medicine_Batches/Create.jsx";
 import BatchIndex from "./Medicine_Batches/Index.jsx";
 import BatchEdit from "./Medicine_Batches/Edit.jsx";
 
+// Medicine Requests
+import RequestsIndex from "./Request/Index.jsx";
+import RequestCreate from "./Request/Create.jsx";
+
 import Notifications from "./Notifications/Notifications.jsx";
 
 // Main App Route Setup
@@ -96,6 +100,10 @@ createRoot(container).render(
                 <Route path="/medicine-batches/index" element={<BatchIndex />} />
                 <Route path="/medicine-batches/create" element={<BatchCreate />} />
                 <Route path="/medicine-batches/:id/edit" element={<BatchEdit />} />
+
+                {/* Medicine Requests Routes */}
+                <Route path="/medicine-requests" element={<RequestsIndex />} />
+                <Route path="/medicine-requests/create" element={<RequestCreate />} />
 
                 <Route path="/notifications" element={<Notifications />} />
             </Route>
