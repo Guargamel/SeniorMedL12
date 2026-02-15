@@ -66,11 +66,6 @@ export default function RequireAuthLayout() {
         ? user.roles.some(role => [1, 2].includes(role.id) || ['super-admin', 'staff'].includes(role.name))
         : [1, 2].includes(user?.role_id);
 
-    // Debug logging
-    console.log('User:', user);
-    console.log('isSeniorCitizen:', isSeniorCitizen);
-    console.log('isAdminOrStaff:', isAdminOrStaff);
-
     // If user is neither admin/staff nor senior citizen, redirect to unauthorized
     if (!isAdminOrStaff && !isSeniorCitizen) {
         return <Navigate to="/unauthorized" replace />;

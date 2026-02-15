@@ -85,14 +85,10 @@ class DashboardController extends Controller
         return response()->json($alerts);
     }
 
-    /**
-     * GET /api/dashboard/recent-distributions
-     * If you don't have a distributions table yet, we map fulfilled requests as "recent distributions".
-     */
     public function recentDistributions(Request $request)
     {
         $rows = DB::table('medicine_requests as mr')
-            ->join('users as u', 'u.id', '=', 'mr.requester_user_id')
+            ->join('users as u', 'u.id', '=', 'mr.user_id')
             ->join('medicines as m', 'm.id', '=', 'mr.medicine_id')
             ->whereIn('mr.status', ['fulfilled', 'approved'])
             ->orderByDesc('mr.updated_at')
@@ -102,7 +98,7 @@ class DashboardController extends Controller
                 DB::raw("DATE_FORMAT(mr.updated_at, '%Y-%m-%d %H:%i') as time"),
                 'u.name as name',
                 DB::raw("CONCAT(m.generic_name, IF(m.brand_name IS NULL OR m.brand_name = '', '', CONCAT(' (', m.brand_name, ')'))) as medicine"),
-                'mr.qty_requested as quantity',
+                'mr.quantity as quantity',  // Changed from 'qty_requested' to 'quantity'
             ]);
 
         return response()->json($rows);

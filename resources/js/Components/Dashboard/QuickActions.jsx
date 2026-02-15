@@ -6,11 +6,11 @@ export default function QuickActions() {
 
     const actions = [
         { icon: "➕", title: "Register Senior", description: "Create senior account", to: "/seniors/create" },
-        { icon: "📦", title: "Record Stock", description: "Add medicine batch", to: "/batches/create" },
-        { icon: "💊", title: "Process Distribution", description: "Dispense medicine", to: "/distributions/create" },
-        { icon: "🔔", title: "Send Notification", description: "Notify users", to: "/notifications" },
-        { icon: "📊", title: "Generate Report", description: "View analytics", to: "/reports" },
-        { icon: "👁️", title: "View Alerts", description: "Review warnings", to: "/alerts" },
+        { icon: "📦", title: "Check Stock", description: "Show Stocks", to: "/medicine-batches/index" },
+        { icon: "💊", title: "Process Distribution", description: "Dispense medicine", to: "/distributions" },
+        { icon: "🔔", title: "Notifications", description: "Check Requests", to: "/notifications" },
+        // { icon: "📊", title: "Generate Report", description: "View analytics", to: "/reports" },
+        // { icon: "👁️", title: "View Alerts", description: "Review warnings", to: "/alerts" },
     ];
 
     return (
