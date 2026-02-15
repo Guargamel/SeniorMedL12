@@ -1,7 +1,7 @@
 // resources/js/Products/Create.jsx
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { apiFetch } from "../../utils/api";
+import { apiFetch } from "../utils/api";
 
 export default function ProductsCreate() {
     const navigate = useNavigate();

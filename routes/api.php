@@ -90,7 +90,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:super-admin')->prefix('roles')->group(function () {
         Route::get('/', [RoleController::class, 'index']);
         Route::post('/', [RoleController::class, 'store']);
-        Route::get('/{role}', [RoleController::class, 'show']);
+        Route::get('/{role}', [RoleController::class, 'show']); 
         Route::put('/{role}', [RoleController::class, 'update']);
         Route::delete('/{role}', [RoleController::class, 'destroy']);
     });
