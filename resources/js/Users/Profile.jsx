@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { apiFetch } from "../utils/api";
 
 export default function Profile() {
@@ -186,7 +186,13 @@ export default function Profile() {
                                 fontWeight: 800,
                                 margin: '0 auto 12px',
                             }}>
-                                {avatarUrl ? (
+                                {form.avatar ? (
+                                    <img
+                                        src={URL.createObjectURL(form.avatar)}
+                                        alt="Avatar Preview"
+                                        style={{ width: "100%", height: "100%", borderRadius: "50%" }}
+                                    />
+                                ) : avatarUrl ? (
                                     <img
                                         src={avatarUrl}
                                         alt="Avatar"
@@ -216,6 +222,16 @@ export default function Profile() {
                                 onChange={(v) => set('email', v)}
                                 error={err('email')}
                             />
+                            {/* Avatar Upload */}
+                            <div style={{ marginTop: 20 }}>
+                                <label htmlFor="avatar" className="form-label">Change Avatar</label>
+                                <input
+                                    type="file"
+                                    id="avatar"
+                                    className="form-control"
+                                    onChange={(e) => set('avatar', e.target.files[0])}
+                                />
+                            </div>
                             <div style={{ marginTop: 20 }}>
                                 <button
                                     type="submit"
@@ -229,79 +245,7 @@ export default function Profile() {
                         </form>
                     </div>
                 </div>
-
-                {/* Right Column - Security */}
-                <div className="mc-card">
-                    <div className="mc-card-header">
-                        <h3 className="mc-card-title" style={{ fontSize: 16 }}>Security</h3>
-                    </div>
-                    <div className="mc-card-body">
-                        <form onSubmit={handlePasswordChange}>
-                            <Field
-                                label="Current Password"
-                                type="password"
-                                value={form.currentPassword}
-                                onChange={(v) => set('currentPassword', v)}
-                                error={err('current_password')}
-                            />
-                            <Field
-                                label="New Password"
-                                type="password"
-                                value={form.newPassword}
-                                onChange={(v) => set('newPassword', v)}
-                                error={err('password')}
-                            />
-                            <Field
-                                label="Confirm New Password"
-                                type="password"
-                                value={form.newPasswordConfirm}
-                                onChange={(v) => set('newPasswordConfirm', v)}
-                                error={err('newPassword')}
-                            />
-                            <div style={{ marginTop: 20 }}>
-                                <button
-                                    type="submit"
-                                    className="btn btn-warning"
-                                    disabled={saving}
-                                    style={{ width: '100%' }}
-                                >
-                                    {saving ? 'Updating...' : 'Change Password'}
-                                </button>
-                            </div>
-                        </form>
-
-                        <div style={{
-                            marginTop: 20,
-                            padding: 12,
-                            background: 'var(--mc-bg)',
-                            borderRadius: 8,
-                            fontSize: 12,
-                            color: 'var(--mc-muted)'
-                        }}>
-                            <strong>Password requirements:</strong>
-                            <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
-                                <li>Minimum 8 characters</li>
-                                <li>Mix of letters and numbers recommended</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
             </div>
-        </div>
-    );
-}
-
-function Field({ label, error, type = "text", value, onChange }) {
-    return (
-        <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 6 }}>{label}</div>
-            <input
-                className="form-control"
-                type={type}
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-            />
-            {error && <div style={{ color: "#c0392b", fontSize: 12, marginTop: 4 }}>{error}</div>}
         </div>
     );
 }

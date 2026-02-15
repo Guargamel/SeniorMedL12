@@ -118,17 +118,17 @@ class MedicineController extends Controller
         return response()->json($medicine);
     }
 
-
     public function destroy($id)
     {
-        $medicine = Medicine::findOrFail($id);
+        try {
+            // Find the medicine by ID and delete it
+            $medicine = Medicine::findOrFail($id);
+            $medicine->delete();
 
-        if ($medicine->picture) {
-            Storage::disk('public')->delete($medicine->picture);
+            return response()->json(['message' => 'Medicine deleted successfully'], 200);
+        } catch (\Exception $e) {
+            // Return a response if something goes wrong
+            return response()->json(['error' => 'Failed to delete medicine'], 500);
         }
-
-        $medicine->delete();
-
-        return response()->json(['message' => 'Deleted']);
     }
 }
