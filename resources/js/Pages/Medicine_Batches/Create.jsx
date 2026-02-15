@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form"; // Use Controller for React Select
-import { apiFetch } from "../utils/api"; // Assuming apiFetch is your utility for fetching data
+import { apiFetch } from "../../utils/api"; // Assuming apiFetch is your utility for fetching data
 import Select from "react-select";
 import { toast } from "react-toastify"; // For Toastify notifications
-import "../../css/style.css"; // Import your custom styles
+import "../../../css/style.css"; // Import your custom styles
 
 const Create = () => {
     const [loading, setLoading] = useState(false);

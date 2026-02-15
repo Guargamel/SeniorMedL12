@@ -1,26 +1,18 @@
-// resources/js/Pages/Notifications.jsx
-
 import React, { useState, useEffect } from 'react';
-import { apiFetch } from '../utils/api';
-import AlertBanner from '../Components/AlertBanner';
+import { apiFetch } from '../utils/api'; // Assuming this utility helps with API calls
+import { Link } from 'react-router-dom'; // To create links to the medicine request detail page
 import "../../css/style.css";
 
 const Notifications = () => {
-    const [notifications, setNotifications] = useState({
-        expiring_medicines: [],
-        low_stock_medicines: [],
-    });
+    const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        async function fetchNotifications() {
+        async function fetchUnapprovedRequests() {
             try {
-                // Use the same endpoint as Dashboard alerts
-                const response = await apiFetch('/api/dashboard/alerts');
-                setNotifications({
-                    expiring_medicines: response.expiring_medicines || [],
-                    low_stock_medicines: response.low_stock_medicines || []
-                });
+                // Fetching only unapproved requests from the backend
+                const response = await apiFetch('/api/notifications/unapproved');
+                setNotifications(response.notifications || []); // The backend response contains the unapproved requests
             } catch (error) {
                 console.error('Error fetching notifications:', error);
             } finally {
@@ -28,8 +20,32 @@ const Notifications = () => {
             }
         }
 
-        fetchNotifications();
+        fetchUnapprovedRequests();
     }, []);
+
+    const handleApprove = async (requestId) => {
+        try {
+            // Make an API request to approve the medicine request
+            const response = await apiFetch(`/api/notifications/approve/${requestId}`, { method: 'POST' });
+            console.log(response.message);
+            // Reload notifications or update state to reflect change
+            setNotifications(notifications.filter((notification) => notification.id !== requestId));
+        } catch (error) {
+            console.error('Error approving request:', error);
+        }
+    };
+
+    const handleDecline = async (requestId) => {
+        try {
+            // Make an API request to decline the medicine request
+            const response = await apiFetch(`/api/notifications/decline/${requestId}`, { method: 'POST' });
+            console.log(response.message);
+            // Reload notifications or update state to reflect change
+            setNotifications(notifications.filter((notification) => notification.id !== requestId));
+        } catch (error) {
+            console.error('Error declining request:', error);
+        }
+    };
 
     if (loading) {
         return (
@@ -42,115 +58,62 @@ const Notifications = () => {
         );
     }
 
-    const totalNotifications = notifications.expiring_medicines.length + notifications.low_stock_medicines.length;
-    const getDaysUntilExpiry = (expiryDate) => {
-        const today = new Date();
-        const expiry = new Date(expiryDate);
-        const diffTime = expiry - today;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays;
-    };
-
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4">
             <div className="max-w-5xl mx-auto">
-                {/* Alert Banner */}
-                <AlertBanner />
-
                 {/* Header */}
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Notifications</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Unapproved Medicine Requests</h1>
                     <p className="text-gray-600">
-                        {totalNotifications > 0
-                            ? `You have ${totalNotifications} active notification${totalNotifications > 1 ? 's' : ''}`
-                            : 'No active notifications'}
+                        {notifications.length > 0 ? `You have ${notifications.length} unapproved request${notifications.length > 1 ? 's' : ''}` : 'No unapproved requests'}
                     </p>
                 </div>
 
-                {totalNotifications === 0 ? (
+                {notifications.length === 0 ? (
                     <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-                        <p className="text-gray-500 text-lg">No notifications at this time.</p>
+                        <p className="text-gray-500 text-lg">No unapproved requests at this time.</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
-                        {/* Expiring Medicines */}
-                        {notifications.expiring_medicines.map((medicine) => {
-                            const daysLeft = getDaysUntilExpiry(medicine.expiry_date);
-                            return (
-                                <div
-                                    key={`expiring-${medicine.id}`}
-                                    className="bg-white border-l-4 border-amber-500 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
-                                >
-                                    <div className="p-5 flex items-center justify-between">
-                                        <div className="flex items-center space-x-4">
-                                            <div className="flex-shrink-0">
-                                                <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
-                                                    <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                    </svg>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <h3 className="text-lg font-semibold text-gray-900">
-                                                    {medicine.generic_name}
-                                                </h3>
-                                                <p className="text-sm text-gray-600 mt-1">
-                                                    Expires on {new Date(medicine.expiry_date).toLocaleDateString('en-US', {
-                                                        month: 'short',
-                                                        day: 'numeric',
-                                                        year: 'numeric'
-                                                    })}
-                                                    {daysLeft > 0 && (
-                                                        <span className="ml-2 text-amber-600 font-medium">
-                                                            ({daysLeft} day{daysLeft !== 1 ? 's' : ''} left)
-                                                        </span>
-                                                    )}
-                                                    {daysLeft <= 0 && (
-                                                        <span className="ml-2 text-red-600 font-medium">
-                                                            (Expired)
-                                                        </span>
-                                                    )}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="flex-shrink-0">
-                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800">
-                                                Expiring Soon
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-
-                        {/* Low Stock Medicines */}
-                        {notifications.low_stock_medicines.map((medicine) => (
-                            <div
-                                key={`low-stock-${medicine.id}`}
-                                className="bg-white border-l-4 border-red-500 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
-                            >
+                        {notifications.map((notification) => (
+                            <div key={notification.id} className="bg-white border-l-4 border-blue-500 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
                                 <div className="p-5 flex items-center justify-between">
                                     <div className="flex items-center space-x-4">
                                         <div className="flex-shrink-0">
-                                            <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                                                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                {/* Medicine Request Icon */}
+                                                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6H6L10 4M12 14V6m3 4V6m6 12V6M12 14V6" />
                                                 </svg>
                                             </div>
                                         </div>
                                         <div>
-                                            <h3 className="text-lg font-semibold text-gray-900">
-                                                {medicine.generic_name}
-                                            </h3>
-                                            <p className="text-sm text-gray-600 mt-1">
-                                                Only <span className="font-semibold text-red-600">{medicine.quantity} units</span> remaining in stock
-                                            </p>
+                                            <h3 className="text-lg font-semibold text-gray-900">{notification.medicine_name} - {notification.quantity} units</h3>
+                                            <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
                                         </div>
                                     </div>
                                     <div className="flex-shrink-0">
-                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                                            Low Stock
-                                        </span>
+                                        {/* Action buttons for approval */}
+                                        <button
+                                            onClick={() => handleApprove(notification.id)}
+                                            className="btn btn-success approve-btn"  // Apply the custom class here
+                                            style={{ color: 'black' }}  // Set text color to black
+                                        >
+                                            Approve
+                                        </button>
+                                        <button
+                                            onClick={() => handleDecline(notification.id)}
+                                            className="btn btn-danger decline-btn"  // Apply the custom class here
+                                            style={{ color: 'black' }}  // Set text color to black
+                                        >
+                                            Decline
+                                        </button>
+                                        <Link
+                                            to={`/medicine-requests/${notification.id}`}
+                                            className="text-blue-500 ml-2"
+                                        >
+                                            View Request
+                                        </Link>
                                     </div>
                                 </div>
                             </div>

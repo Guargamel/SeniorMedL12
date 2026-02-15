@@ -55,6 +55,17 @@ html {
     height: 100%;
 }
 
+/* Custom background color for status badges */
+.bg-green-custom {
+    background-color: #d1fae5 !important;
+    /* Tailwind's bg-green-100 equivalent */
+    color: #16a34a !important;
+    /* Tailwind's text-green-800 equivalent */
+    border: 1px solid #6ee7b7 !important;
+    /* Tailwind's border-green-300 equivalent */
+}
+
+
 body {
     background-color: #f8f9fa;
     color: #333;

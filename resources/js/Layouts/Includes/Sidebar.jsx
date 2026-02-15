@@ -74,14 +74,14 @@ const menu = [
     {
         title: "REQUESTS",
         items: [
-            { label: "Analytics", to: "/analytics", icon: BarChart3 },
-            { label: "Requests", to: "/requests", icon: FileText },
+            // { label: "Analytics", to: "/analytics", icon: BarChart3 },
+            { label: "Requests", to: "/medicine-requests", icon: FileText },
         ],
     },
-    {
-        title: "SYSTEM",
-        items: [{ label: "Settings", to: "/settings", icon: Settings }],
-    },
+    // {
+    //     title: "SYSTEM",
+    //     items: [{ label: "Settings", to: "/settings", icon: Settings }],
+    // },
 ];
 
 function isPathActive(pathname, to) {

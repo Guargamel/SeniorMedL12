@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { apiFetch, safeArray } from "../utils/api"; // Assuming apiFetch is your utility for fetching data
+import { apiFetch, safeArray } from "../../utils/api"; // Assuming apiFetch is your utility for fetching data
 
 const Edit = () => {
     const { id } = useParams();

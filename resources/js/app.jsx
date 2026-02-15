@@ -43,14 +43,14 @@ import MedicinesCategories from "./Medicines/Categories.jsx";
 import DistributeStock from "./Distribute/DistributeStock.jsx";
 
 // Stock Management Routes
-import BatchCreate from "./Medicine_Batches/Create.jsx";
-import BatchIndex from "./Medicine_Batches/Index.jsx";
-import BatchEdit from "./Medicine_Batches/Edit.jsx";
+import BatchCreate from "./Pages/Medicine_Batches/Create.jsx";
+import BatchIndex from "./Pages/Medicine_Batches/Index.jsx";
+import BatchEdit from "./Pages/Medicine_Batches/Edit.jsx";
 
 // Medicine Requests
 import RequestsIndex from "./Request/Index.jsx";
 import RequestCreate from "./Request/Create.jsx";
-import BrowseMedicines from "./Request/BrowseMedicines.jsx";
+import BrowseMedicines from "./Seniors/BrowseMedicines.jsx";
 
 // Notifications
 import Notifications from "./Notifications/Notifications.jsx";

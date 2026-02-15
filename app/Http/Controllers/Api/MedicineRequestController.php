@@ -101,7 +101,7 @@ class MedicineRequestController extends Controller
     {
         try {
             $user = Auth::user();
-            
+
             $request = MedicineRequest::with(['medicine', 'user.seniorProfile', 'reviewer'])->findOrFail($id);
 
             // Senior citizens can only view their own requests
@@ -220,7 +220,7 @@ class MedicineRequestController extends Controller
     private function notifyStaffAndAdmins($medicineRequest)
     {
         // Get staff and super-admins using proper Spatie query
-        $staffAndAdmins = User::whereHas('roles', function($query) {
+        $staffAndAdmins = User::whereHas('roles', function ($query) {
             $query->whereIn('name', ['staff', 'super-admin']);
         })->get();
 
@@ -229,9 +229,9 @@ class MedicineRequestController extends Controller
                 'user_id' => $staff->id,
                 'type' => 'medicine_request',
                 'title' => 'New Medicine Request',
-                'message' => $medicineRequest->user->name . ' requested ' . 
-                            $medicineRequest->quantity . ' units of ' . 
-                            $medicineRequest->medicine->generic_name,
+                'message' => $medicineRequest->user->name . ' requested ' .
+                    $medicineRequest->quantity . ' units of ' .
+                    $medicineRequest->medicine->generic_name,
                 'data' => json_encode([
                     'request_id' => $medicineRequest->id,
                     'medicine_name' => $medicineRequest->medicine->generic_name,
@@ -251,8 +251,8 @@ class MedicineRequestController extends Controller
             'user_id' => $medicineRequest->user_id,
             'type' => 'request_' . $medicineRequest->status,
             'title' => 'Request ' . ucfirst($medicineRequest->status),
-            'message' => 'Your request for ' . $medicineRequest->medicine->generic_name . 
-                        ' has been ' . $medicineRequest->status,
+            'message' => 'Your request for ' . $medicineRequest->medicine->generic_name .
+                ' has been ' . $medicineRequest->status,
             'data' => json_encode([
                 'request_id' => $medicineRequest->id,
                 'medicine_name' => $medicineRequest->medicine->generic_name,

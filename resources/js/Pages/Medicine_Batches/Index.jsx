@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { apiFetch, safeArray } from "../utils/api"; // Assuming apiFetch is your utility for fetching data
+import { apiFetch, safeArray } from "../../utils/api"; // Assuming apiFetch is your utility for fetching data
 
 const Index = () => {
     const [medicineBatches, setMedicineBatches] = useState([]);

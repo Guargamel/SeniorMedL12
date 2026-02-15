@@ -9,6 +9,7 @@ const Index = () => {
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
     const [filter, setFilter] = useState('all'); // all, pending, approved, declined
+    const [pendingActions, setPendingActions] = useState({}); // Track pending actions for each request
 
     useEffect(() => {
         async function fetchData() {
@@ -17,7 +18,6 @@ const Index = () => {
                     apiFetch("/api/medicine-requests"),
                     apiFetch("/api/user")
                 ]);
-                console.log(requestsData);  // Log this to check the structure of the data
                 setRequests(requestsData);
                 setUser(userData.user);
             } catch (error) {
@@ -30,8 +30,8 @@ const Index = () => {
         fetchData();
     }, []);
 
-
     const handleStatusUpdate = async (id, status, reviewNotes = '') => {
+        setPendingActions((prev) => ({ ...prev, [id]: true })); // Start the loading state for this request
         try {
             await apiFetch(`/api/medicine-requests/${id}/review`, {
                 method: "PUT",
@@ -45,6 +45,8 @@ const Index = () => {
         } catch (error) {
             console.error("Failed to update request:", error);
             toast.error("Failed to update request");
+        } finally {
+            setPendingActions((prev) => ({ ...prev, [id]: false })); // End the loading state for this request
         }
     };
 
@@ -125,7 +127,7 @@ const Index = () => {
                     <button
                         onClick={() => setFilter('all')}
                         className={`px-4 py-2 rounded-lg font-medium transition-all ${filter === 'all'
-                            ? 'bg-blue-600 text-white'
+                            ? 'bg-blue-600 text-black'
                             : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
                             }`}
                     >
@@ -134,7 +136,7 @@ const Index = () => {
                     <button
                         onClick={() => setFilter('pending')}
                         className={`px-4 py-2 rounded-lg font-medium transition-all ${filter === 'pending'
-                            ? 'bg-yellow-500 text-white'
+                            ? 'bg-yellow-500 text-black'
                             : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
                             }`}
                     >
@@ -143,7 +145,7 @@ const Index = () => {
                     <button
                         onClick={() => setFilter('approved')}
                         className={`px-4 py-2 rounded-lg font-medium transition-all ${filter === 'approved'
-                            ? 'bg-green-500 text-white'
+                            ? 'bg-green-500 text-black'
                             : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
                             }`}
                     >
@@ -152,7 +154,7 @@ const Index = () => {
                     <button
                         onClick={() => setFilter('declined')}
                         className={`px-4 py-2 rounded-lg font-medium transition-all ${filter === 'declined'
-                            ? 'bg-red-500 text-white'
+                            ? 'bg-red-500 text-black'
                             : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
                             }`}
                     >
@@ -247,7 +249,7 @@ const Index = () => {
                                                                 handleStatusUpdate(request.id, 'approved', notes);
                                                             }
                                                         }}
-                                                        className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                                                        className="px-4 py-2 bg-green-600 text-black text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
                                                     >
                                                         Approve
                                                     </button>
@@ -258,7 +260,7 @@ const Index = () => {
                                                                 handleStatusUpdate(request.id, 'declined', notes);
                                                             }
                                                         }}
-                                                        className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                                                        className="px-4 py-2 bg-red-600 text-black text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
                                                     >
                                                         Decline
                                                     </button>
