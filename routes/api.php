@@ -97,10 +97,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     // ---- Suppliers (Admin only) ----
-    Route::middleware('role:super-admin')->get('/suppliers', fn() => Supplier::all());
+    Route::middleware('role:super-admin|staff')->get('/suppliers', fn() => Supplier::all());
 
     // ---- Distributions (Admin only) ----
-    Route::middleware('role:super-admin')->prefix('distributions')->group(function () {
+    Route::middleware('role:super-admin|staff')->prefix('distributions')->group(function () {
         Route::post('/', [DistributionController::class, 'store']);
         Route::post('/notifications', [NotificationController::class, 'store']);
     });
