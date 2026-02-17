@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use App\Models\SeniorProfile;
 
 class User extends Authenticatable
 {
@@ -42,7 +43,7 @@ class User extends Authenticatable
     {
         if (empty($this->avatar)) return null;
         // stored in /storage/... via public disk
-        return Storage::disk('public')->url($this->avatar);
+        return Storage::url('public/' . $this->avatar);
     }
 
     /**
@@ -66,5 +67,10 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function seniorProfile()
+    {
+        return $this->hasOne(SeniorProfile::class, 'user_id');
     }
 }

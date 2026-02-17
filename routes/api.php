@@ -3,65 +3,141 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\Api\ProductController;
-use App\Http\Controllers\Api\RoleController;
-use App\Http\Controllers\Api\PermissionController;
-use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\{
+    RoleController,
+    StaffController,
+    ProfileController,
+    DashboardController,
+    SeniorController,
+    DistributionController,
+    MedicineController,
+    MedicineCategoryController,
+    MedicineBatchController,
+    MedicineRequestController,
+    NotificationController,
+    AnalyticsController,
+    ReportController
+};
+
+use App\Models\Supplier;
 
 /*
-|--------------------------------------------------------------------------
+|---------------------------------------------------------------------------
 | API Routes
-|--------------------------------------------------------------------------
+|---------------------------------------------------------------------------
 | All routes below require Sanctum auth (session/cookie auth for SPA).
 */
 
 Route::middleware('auth:sanctum')->group(function () {
-
     // ---- Auth / Profile ----
-    // Primary "who am I" endpoint for your app
     Route::get('/me', [ProfileController::class, 'me']);
-
-    // Compatibility alias (so frontend checks like /api/user work)
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
-
-    Route::put('/profile', [ProfileController::class, 'update']); // multipart (avatar)
+    Route::get('/user', fn(Request $request) => response()->json(['user' => $request->user()->load('roles')]));
+    Route::put('/profile', [ProfileController::class, 'update']);
     Route::put('/profile/password', [ProfileController::class, 'updatePassword']);
-
-    // API logout (recommended; avoids /logout web-route confusion)
     Route::post('/logout', function (Request $request) {
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
         return response()->json(['message' => 'Logged out']);
     });
-    // ---- Products ----
-    Route::get('/products', [ProductController::class, 'index']);
-    Route::post('/products', [ProductController::class, 'store']);
-    Route::put('/products/{product}', [ProductController::class, 'update']);
-    Route::delete('/products/{product}', [ProductController::class, 'destroy']);
-    Route::get('/products/expired', [ProductController::class, 'expired']);
-    Route::get('/products/outstock', [ProductController::class, 'outstock']);
 
-    // ---- Admin-only: Roles / Permissions / Users ----
-    Route::middleware('role:super-admin')->group(function () {
-        // Roles & permissions
-        Route::get('/roles', [RoleController::class, 'index']);
-        Route::post('/roles', [RoleController::class, 'store']);
-        Route::get('/roles/{role}', [RoleController::class, 'show']);
-        Route::put('/roles/{role}', [RoleController::class, 'update']);
-        Route::delete('/roles/{role}', [RoleController::class, 'destroy']);
-
-        Route::get('/permissions', [PermissionController::class, 'index']);
-
-        // Users
-        Route::get('/users', [UserController::class, 'index']);
-        Route::post('/users', [UserController::class, 'store']);
-        Route::get('/users/{user}', [UserController::class, 'show']);
-        Route::put('/users/{user}', [UserController::class, 'update']);
-        Route::delete('/users/{user}', [UserController::class, 'destroy']);
+    // ---- Dashboard ----
+    Route::prefix('dashboard')->group(function () {
+        Route::get('/summary', [DashboardController::class, 'summary']);
+        Route::get('/alerts', [DashboardController::class, 'alerts']);
+        Route::get('/recent-distributions', [DashboardController::class, 'recentDistributions']);
     });
+
+    // ---- Notifications ----
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+        Route::delete('/{id}', [NotificationController::class, 'destroy']);
+    });
+
+    // ---- Analytics ----
+    Route::prefix('analytics')->group(function () {
+        Route::get('/dashboard', [AnalyticsController::class, 'dashboard']);
+        Route::get('/expiring-medicines', [AnalyticsController::class, 'expiringMedicines']);
+        Route::get('/low-stock', [AnalyticsController::class, 'lowStock']);
+    });
+
+    // ---- Reports ----
+    Route::prefix('reports')->group(function () {
+        Route::get('/inventory', [ReportController::class, 'inventory']);
+        Route::get('/distributions', [ReportController::class, 'distributions']);
+        Route::get('/expiry', [ReportController::class, 'expiry']);
+        Route::get('/seniors', [ReportController::class, 'seniors']);
+        Route::get('/usage', [ReportController::class, 'usage']);
+    });
+
+    // ---- Seniors ----
+    Route::apiResource('seniors', SeniorController::class);
+
+    // ---- Staff (Admin only) ----
+    Route::middleware('role:super-admin')->prefix('staff')->group(function () {
+        Route::get('/', [StaffController::class, 'index']);
+        Route::post('/', [StaffController::class, 'store']);
+        Route::get('/{user}', [StaffController::class, 'show']);
+        Route::put('/{user}', [StaffController::class, 'update']);
+        Route::delete('/{user}', [StaffController::class, 'destroy']);
+        Route::post('/{id}/avatar', [StaffController::class, 'updateAvatar']);
+    });
+
+    // ---- Roles & Permissions (Admin only) ----
+    Route::middleware('role:super-admin')->prefix('roles')->group(function () {
+        Route::get('/', [RoleController::class, 'index']);
+        Route::post('/', [RoleController::class, 'store']);
+        Route::get('/{role}', [RoleController::class, 'show']);
+        Route::put('/{role}', [RoleController::class, 'update']);
+        Route::delete('/{role}', [RoleController::class, 'destroy']);
+    });
+
+
+    // ---- Suppliers (Admin only) ----
+    Route::middleware('role:super-admin|staff')->get('/suppliers', fn() => Supplier::all());
+
+    // ---- Distributions (Admin only) ----
+    Route::middleware('role:super-admin|staff')->prefix('distributions')->group(function () {
+        Route::post('/', [DistributionController::class, 'store']);
+        Route::post('/notifications', [NotificationController::class, 'store']);
+    });
+
+    // ---- Medicine Requests ----
+    Route::prefix('medicine-requests')->group(function () {
+        Route::get('/', [MedicineRequestController::class, 'index']); // All users see their requests
+        Route::post('/', [MedicineRequestController::class, 'store']); // Senior citizens create requests
+        Route::get('/pending-count', [MedicineRequestController::class, 'pendingCount']); // Count pending
+        Route::get('/{id}', [MedicineRequestController::class, 'show']); // View specific request
+        Route::delete('/{id}', [MedicineRequestController::class, 'destroy']); // Delete own pending request
+
+        // Staff and Super-Admin only routes
+        Route::middleware('role:super-admin|staff')->group(function () {
+            Route::put('/{id}/review', [MedicineRequestController::class, 'review']); // Approve/Decline
+        });
+    });
+
+    // ---- Medicines ----
+    Route::prefix('medicines')->group(function () {
+        // Allow all authenticated users to see medicines
+        Route::get('/', [MedicineController::class, 'index']); // Show all medicines
+        Route::get('/{medicine}', [MedicineController::class, 'show']); // Show specific medicine
+        Route::get('/expired', [MedicineController::class, 'expired']);
+        Route::get('/outstock', [MedicineController::class, 'outstock']);
+        Route::apiResource('/', MedicineController::class);
+    });
+    Route::delete('/medicines/{id}', [MedicineController::class, 'destroy']);
+
+    // ---- Medicine Categories ----
+    Route::apiResource('medicine-categories', MedicineCategoryController::class);
+
+    // ---- Medicine Batches ----
+    Route::middleware('role:super-admin|staff')->prefix('medicine-batches')->group(function () {
+        Route::get('/', [MedicineBatchController::class, 'index']);
+        Route::post('/create', [MedicineBatchController::class, 'store']);
+    });
+
+    Route::get('/medicine-batches/{id}', [MedicineBatchController::class, 'show']);
 });

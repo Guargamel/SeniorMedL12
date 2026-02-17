@@ -12,16 +12,22 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function index(Request $request)
     {
         $q = trim((string) $request->query('q', ''));
 
-        $query = User::query()->with('roles')->orderByDesc('id');
+        $query = User::query()
+            ->with('roles')
+            ->whereHas('roles', fn($r) => $r->whereIn('name', ['staff', 'super-admin']));
+
         if ($q !== '') {
-            $query->where('name', 'like', "%{$q}%")->orWhere('email', 'like', "%{$q}%");
+            $query->where(function ($w) use ($q) {
+                $w->where('name', 'like', "%{$q}%")
+                    ->orWhere('email', 'like', "%{$q}%");
+            });
         }
 
-        return response()->json(['data' => $query->paginate(20)]);
+        return $query->orderBy('name')->paginate(10);
     }
 
     public function store(Request $request): JsonResponse
@@ -96,5 +102,34 @@ class UserController extends Controller
     {
         $user->delete();
         return response()->json(['message' => 'User deleted']);
+    }
+
+    /**
+     * Autocomplete for senior citizens (for distributions)
+     */
+    public function autocompleteEmail(Request $request)
+    {
+        $search = $request->query('email', $request->query('search', ''));
+
+        // Only return senior citizens
+        $query = User::query()
+            ->whereHas('roles', function($q) {
+                $q->where('name', 'senior_citizen');
+            });
+
+        // Search by email or name
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('email', 'like', "%{$search}%")
+                  ->orWhere('name', 'like', "%{$search}%");
+            });
+        }
+
+        $users = $query
+            ->orderBy('name')
+            ->limit(20)
+            ->get(['id', 'name', 'email']);
+
+        return response()->json($users);
     }
 }

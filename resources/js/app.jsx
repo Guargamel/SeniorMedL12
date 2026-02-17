@@ -8,72 +8,122 @@ import RequireAuthLayout from "./Layouts/RequireAuthLayout.jsx";
 
 // Auth
 import Login from "./Auth/Login.jsx";
-import Register from "./Auth/Register.jsx";
 
 // Dashboard
-import Dashboard from "./Pages/Dashboard.jsx";
+import DashboardRouter from "./Pages/DashboardRouter.jsx";
 
-/* PRODUCTS */
-import ProductsIndex from "./Medicines/Index.jsx";
-import ProductsCreate from "./Medicines/Create.jsx";
-import ProductsEdit from "./Medicines/Edit.jsx";
-import ProductsExpired from "./Medicines/Expired.jsx";
-import ProductsOutstock from "./Medicines/Outstock.jsx";
-import Categories from "./Medicines/Categories.jsx";
+// Unauthorized
+import Unauthorized from "./Pages/Unauthorized.jsx";
 
-/* PURCHASES */
-import PurchasesIndex from "./Purchases/Index.jsx";
-import PurchasesCreate from "./Purchases/Create.jsx";
-import PurchasesEdit from "./Purchases/Edit.jsx";
-import PurchasesReport from "./Purchases/Reports.jsx";
+// Staff (Users)
+import UsersIndex from "./Staff/Index.jsx";
+import UsersCreate from "./Staff/Create.jsx";
+import UsersEdit from "./Staff/Edit.jsx";
 
-/* USERS */
-import UsersIndex from "./Users/Index.jsx";
-import UsersCreate from "./Users/Create.jsx";
-import UsersEdit from "./Users/Edit.jsx";
-import Profile from "./Users/Profile.jsx";
+// Seniors
+import SeniorsIndex from "./Seniors/Index.jsx";
+import SeniorCreate from "./Seniors/Create.jsx";
+import SeniorEdit from "./Seniors/Edit.jsx";
 
-/* ROLES / PERMISSIONS */
+// Roles / Permissions
 import RolesIndex from "./Roles/Index.jsx";
 import RolesCreate from "./Roles/Create.jsx";
 import RolesEdit from "./Roles/Edit.jsx";
 import Permissions from "./Roles/Permissions.jsx";
 
+// Medicines
+import MedicinesIndex from "./Medicines/Index.jsx";
+import MedicinesCreate from "./Medicines/Create.jsx";
+import MedicinesEdit from "./Medicines/Edit.jsx";
+import MedicinesExpired from "./Medicines/Expired.jsx";
+import MedicinesOutstock from "./Medicines/Outstock.jsx";
+import MedicinesCategories from "./Medicines/Categories.jsx";
+
+// Distribute Stock
+import DistributeStock from "./Distribute/DistributeStock.jsx";
+
+// Stock Management Routes
+import BatchCreate from "./Pages/Medicine_Batches/Create.jsx";
+import BatchIndex from "./Pages/Medicine_Batches/Index.jsx";
+import BatchEdit from "./Pages/Medicine_Batches/Edit.jsx";
+
+// Medicine Requests
+import RequestsIndex from "./MedicineRequest/Index.jsx";
+import RequestCreate from "./MedicineRequest/Create.jsx";
+import BrowseMedicines from "./Seniors/BrowseMedicines.jsx";
+
+// Notifications
+import Notifications from "./Notifications/Notifications.jsx";
+
+import Profile from "./Users/Profile.jsx";
+
+// Main App Route Setup
 const container = document.getElementById("app");
 
 createRoot(container).render(
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <BrowserRouter>
         <Routes>
             {/* Default landing */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-            {/* Public */}
+            {/* Public Routes */}
             <Route element={<PlainLayout />}>
                 <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
             </Route>
 
-            {/* Protected */}
+            {/* Unauthorized */}
+            <Route path="/unauthorized" element={<Unauthorized />} />
+
+            {/* Protected Routes */}
             <Route element={<RequireAuthLayout />}>
-                <Route path="/dashboard" element={<Dashboard />} />
+                {/* Dashboard - Role-based */}
+                <Route path="/dashboard" element={<DashboardRouter />} />
 
-                <Route path="/categories" element={<Categories />} />
+                {/* Users Routes */}
+                <Route path="/users" element={<UsersIndex />} />
+                <Route path="/users/create" element={<UsersCreate />} />
+                <Route path="/users/:id/edit" element={<UsersEdit />} />
 
-                <Route path="/products" element={<ProductsIndex />} />
-                <Route path="/products/create" element={<ProductsCreate />} />
-                <Route path="/products/:id/edit" element={<ProductsEdit />} />
-                <Route path="/expired" element={<ProductsExpired />} />
-                <Route path="/outstock" element={<ProductsOutstock />} />
+                {/* Seniors Routes */}
+                <Route path="/seniors" element={<SeniorsIndex />} />
+                <Route path="/seniors/create" element={<SeniorCreate />} />
+                <Route path="/seniors/:id/edit" element={<SeniorEdit />} />
 
-                <Route path="/profile" element={<Profile />} />
-
+                {/* Roles and Permissions Routes */}
                 <Route path="/roles" element={<RolesIndex />} />
                 <Route path="/roles/create" element={<RolesCreate />} />
                 <Route path="/roles/:id/edit" element={<RolesEdit />} />
                 <Route path="/permissions" element={<Permissions />} />
+
+                {/* Medicines Routes */}
+                <Route path="/medicines" element={<MedicinesIndex />} />
+                <Route path="/medicines/create" element={<MedicinesCreate />} />
+                <Route path="/medicines/:id/edit" element={<MedicinesEdit />} />
+                <Route path="/medicines/expired" element={<MedicinesExpired />} />
+                <Route path="/medicines/outstock" element={<MedicinesOutstock />} />
+                <Route path="/medicines/categories" element={<MedicinesCategories />} />
+
+                {/* Distribute Stock Route */}
+                <Route path="/distributions" element={<DistributeStock />} />
+
+                {/* Stock Management Routes */}
+                <Route path="/medicine-batches/index" element={<BatchIndex />} />
+                <Route path="/medicine-batches/create" element={<BatchCreate />} />
+                <Route path="/medicine-batches/:id/edit" element={<BatchEdit />} />
+
+                {/* Medicine Requests Routes */}
+                <Route path="/medicine-requests" element={<RequestsIndex />} />
+                <Route path="/medicine-requests/create" element={<RequestCreate />} />
+                <Route path="/browse-medicines" element={<BrowseMedicines />} />
+
+                {/* Notifications */}
+                <Route path="/notifications" element={<Notifications />} />
+
+                {/* Profile Route */}
+                <Route path="/profile" element={<Profile />} /> {/* Add this line */}
             </Route>
 
-            {/* 404 */}
+            {/* 404 - Page not found */}
             <Route path="*" element={<div className="p-4">Page not found</div>} />
         </Routes>
     </BrowserRouter>

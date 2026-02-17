@@ -55,6 +55,17 @@ html {
     height: 100%;
 }
 
+/* Custom background color for status badges */
+.bg-green-custom {
+    background-color: #d1fae5 !important;
+    /* Tailwind's bg-green-100 equivalent */
+    color: #16a34a !important;
+    /* Tailwind's text-green-800 equivalent */
+    border: 1px solid #6ee7b7 !important;
+    /* Tailwind's border-green-300 equivalent */
+}
+
+
 body {
     background-color: #f8f9fa;
     color: #333;
@@ -5638,4 +5649,60 @@ table.table-inbox tbody tr.checked {
 .header .nav,
 .header .user-menu {
     overflow: visible !important;
+}
+
+/* Add to your Tailwind config or your global styles */
+.react-select__control {
+    height: 36px;
+    font-size: 0.875rem;
+    /* Smaller font size */
+}
+
+.react-select__menu {
+    font-size: 0.875rem;
+    /* Smaller font size for menu items */
+}
+
+/* styles.css */
+
+.notification-section {
+    margin-bottom: 20px;
+}
+
+.notification-section h3 {
+    color: #2b6cb0;
+    font-size: 1.5rem;
+}
+
+.notification-section ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.notification-section li {
+    padding: 5px 0;
+    font-size: 1rem;
+}
+
+/* resources/css/style.css */
+
+.notification-section {
+    margin-bottom: 20px;
+}
+
+.notification-section h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.notification-section .notification-card {
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: #fef3c7;
+    margin-bottom: 10px;
+}
+
+.notification-card .icon {
+    margin-right: 10px;
 }

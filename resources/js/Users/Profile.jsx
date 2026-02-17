@@ -1,240 +1,251 @@
-// resources/js/Pages/Users/Profile.jsx
-import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { apiFetch, normalizeList, safeArray } from "../utils/api";
+import React, { useState, useEffect } from 'react';
+import { apiFetch } from "../utils/api";
 
-const Profile = () => {
+export default function Profile() {
     const [user, setUser] = useState(null);
-    const [roles, setRoles] = useState([]);
-    const [activeTab, setActiveTab] = useState("about");
+    const [loading, setLoading] = useState(true);
+    const [errors, setErrors] = useState({});
+    const [successMessage, setSuccessMessage] = useState('');
 
-    const [profileForm, setProfileForm] = useState({ name: "", email: "", role: "", avatar: null });
-    const [pwForm, setPwForm] = useState({ current_password: "", password: "", password_confirmation: "" });
+    // For editable fields
+    const [form, setForm] = useState({
+        name: "",
+        email: "",
+        currentPassword: "",
+        newPassword: "",
+        newPasswordConfirm: "",
+        avatar: null, // Avatar file (for upload)
+    });
 
-    const [err, setErr] = useState("");
-    const [msg, setMsg] = useState("");
-    const [savingProfile, setSavingProfile] = useState(false);
-    const [savingPw, setSavingPw] = useState(false);
+    const [saving, setSaving] = useState(false);
 
+    const set = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+    const err = (field) => errors?.[field]?.[0] || '';
+
+    // Fetch user data
     useEffect(() => {
         let alive = true;
+
         (async () => {
+            setLoading(true);
+            setErrors({});
+
             try {
-                // expected: { user: {...} } or just user
-                const me = await apiFetch("/api/me");
-                const u = me.user || me;
+                const data = await apiFetch('/api/user');
+
                 if (!alive) return;
-                setUser(u);
-                setProfileForm({
-                    name: u.name || "",
-                    email: u.email || "",
-                    role: u.role?.name || u.role || "",
-                    avatar: null,
-                });
-            } catch (e) {
-                if (alive) setErr(e.message || "Failed to load profile");
+
+                setUser(data.user);
+                setForm(prev => ({
+                    ...prev,
+                    name: data.user.name || "",
+                    email: data.user.email || "",
+                    avatar: data.user.avatar || "", // Set avatar from the backend
+                }));
+            } catch (err) {
+                if (!alive) return;
+                setErrors({ general: ["Failed to load profile"] });
+            } finally {
+                if (alive) setLoading(false);
             }
         })();
+
         return () => { alive = false; };
     }, []);
 
-    useEffect(() => {
-        (async () => {
-            try {
-                const data = await apiFetch("/api/roles");
-                setRoles(normalizeList(data, ["roles"]));
-            } catch {
-                // ignore
-            }
-        })();
-    }, []);
-
-    const pageHeader = useMemo(() => (
-        <div className="col">
-            <h3 className="page-title">Profile</h3>
-            <ul className="breadcrumb">
-                <li className="breadcrumb-item"><Link to="/dashboard">Dashboard</Link></li>
-                <li className="breadcrumb-item active">Profile</li>
-            </ul>
-        </div>
-    ), []);
-
-    const avatarUrl = user?.avatar_url || "/assets/img/avatar_1nn.png";
-
-    const onProfileChange = (e) => {
-        const { name, value, files } = e.target;
-        if (name === "avatar") setProfileForm((f) => ({ ...f, avatar: files?.[0] || null }));
-        else setProfileForm((f) => ({ ...f, [name]: value }));
-    };
-
-    const onPwChange = (e) => {
-        const { name, value } = e.target;
-        setPwForm((f) => ({ ...f, [name]: value }));
-    };
-
-    const saveProfile = async (e) => {
+    // Handle profile info update
+    const handleProfileUpdate = async (e) => {
         e.preventDefault();
-        setErr(""); setMsg("");
-        const fd = new FormData();
-        fd.append("name", profileForm.name);
-        fd.append("email", profileForm.email);
-        if (profileForm.role) fd.append("role", profileForm.role);
-        if (profileForm.avatar) fd.append("avatar", profileForm.avatar);
-        fd.append("_method", "PUT");
+        setSaving(true);
+        setErrors({});
+        setSuccessMessage('');
 
-        try {
-            setSavingProfile(true);
-            const updated = await apiFetch("/api/profile", { method: "POST", body: fd });
-            const u = updated.user || updated;
-            setUser(u);
-            setMsg("Profile updated");
-        } catch (e2) {
-            setErr(e2.message || "Update failed");
-        } finally {
-            setSavingProfile(false);
+        const formData = new FormData();
+        formData.append('name', form.name);
+        formData.append('email', form.email);
+
+        if (form.avatar) {
+            formData.append('avatar', form.avatar); // Append avatar file
         }
-    };
 
-    const savePassword = async (e) => {
-        e.preventDefault();
-        setErr(""); setMsg("");
         try {
-            setSavingPw(true);
-            await apiFetch("/api/profile/password", {
-                method: "PUT",
-                body: JSON.stringify(pwForm),
+            const response = await apiFetch('/api/profile', {
+                method: 'PUT',
+                body: formData,
             });
-            setMsg("Password updated");
-            setPwForm({ current_password: "", password: "", password_confirmation: "" });
-        } catch (e2) {
-            setErr(e2.message || "Password update failed");
+
+            setUser(response.user);
+            setSuccessMessage('Profile updated successfully!');
+
+            // Clear success message after 3 seconds
+            setTimeout(() => setSuccessMessage(''), 3000);
+        } catch (err) {
+            setErrors(err?.data?.errors || { general: ["Failed to update profile"] });
         } finally {
-            setSavingPw(false);
+            setSaving(false);
         }
     };
 
-    return (
-        <>
-            {err && <div className="alert alert-danger">{err}</div>}
-            {msg && <div className="alert alert-success">{msg}</div>}
+    // Handle password change
+    const handlePasswordChange = async (e) => {
+        e.preventDefault();
 
-            <div className="row">
-                <div className="col-md-12">
-                    <div className="profile-header">
-                        <div className="row align-items-center">
-                            <div className="col-auto profile-image">
-                                <a href="#">
-                                    <img className="rounded-circle" alt="User" src={avatarUrl} />
-                                </a>
-                            </div>
-                            <div className="col ml-md-n2 profile-user-info">
-                                <h4 className="user-name mb-0">{user?.name || ""}</h4>
-                                <h6 className="text-muted">{user?.email || ""}</h6>
-                            </div>
-                        </div>
-                    </div>
+        if (form.newPassword !== form.newPasswordConfirm) {
+            setErrors({ newPassword: ["Passwords do not match"] });
+            return;
+        }
 
-                    <div className="profile-menu">
-                        <ul className="nav nav-tabs nav-tabs-solid">
-                            <li className="nav-item">
-                                <button type="button" className={"nav-link " + (activeTab === "about" ? "active" : "")} onClick={() => setActiveTab("about")}>
-                                    About
-                                </button>
-                            </li>
-                            <li className="nav-item">
-                                <button type="button" className={"nav-link " + (activeTab === "password" ? "active" : "")} onClick={() => setActiveTab("password")}>
-                                    Change Password
-                                </button>
-                            </li>
-                        </ul>
-                    </div>
+        setSaving(true);
+        setErrors({});
+        setSuccessMessage('');
 
-                    <div className="tab-content profile-tab-cont">
-                        {activeTab === "about" && (
-                            <div className="tab-pane fade show active">
-                                <div className="card">
-                                    <div className="card-body">
-                                        <h5 className="card-title d-flex justify-content-between">
-                                            <span>Personal Details</span>
-                                        </h5>
+        try {
+            await apiFetch('/api/profile/password', {
+                method: 'PUT',
+                body: JSON.stringify({
+                    current_password: form.currentPassword,
+                    password: form.newPassword,
+                    password_confirmation: form.newPasswordConfirm,
+                }),
+            });
 
-                                        <form onSubmit={saveProfile} encType="multipart/form-data">
-                                            <div className="row form-row">
-                                                <div className="col-12">
-                                                    <div className="form-group">
-                                                        <label>Full Name</label>
-                                                        <input className="form-control" name="name" type="text" value={profileForm.name} onChange={onProfileChange} required />
-                                                    </div>
-                                                </div>
+            setForm(prev => ({
+                ...prev,
+                currentPassword: "",
+                newPassword: "",
+                newPasswordConfirm: "",
+            }));
 
-                                                <div className="col-12">
-                                                    <div className="form-group">
-                                                        <label>Email</label>
-                                                        <input className="form-control" name="email" type="text" value={profileForm.email} onChange={onProfileChange} required />
-                                                    </div>
-                                                </div>
+            setSuccessMessage('Password updated successfully!');
+            setTimeout(() => setSuccessMessage(''), 3000);
+        } catch (err) {
+            setErrors(err?.data?.errors || { general: ["Failed to update password"] });
+        } finally {
+            setSaving(false);
+        }
+    };
 
-                                                <div className="col-12">
-                                                    <div className="form-group">
-                                                        <label>Role</label>
-                                                        <select className="form-control" name="role" value={profileForm.role} onChange={onProfileChange}>
-                                                            <option value="">(unchanged)</option>
-                                                            {(Array.isArray(roles)?roles:[]).map((r) => (
-                                                                <option key={r.id || r.name} value={r.name}>{r.name}</option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                <div className="col-12">
-                                                    <div className="form-group">
-                                                        <label>User Avatar</label>
-                                                        <input type="file" className="form-control" name="avatar" onChange={onProfileChange} accept="image/*" />
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <button disabled={savingProfile} className="btn btn-success" type="submit">
-                                                {savingProfile ? "Saving..." : "Save Changes"}
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === "password" && (
-                            <div className="tab-pane fade show active">
-                                <div className="card">
-                                    <div className="card-body">
-                                        <h5 className="card-title">Change Password</h5>
-                                        <form onSubmit={savePassword}>
-                                            <div className="form-group">
-                                                <label>Current Password</label>
-                                                <input type="password" name="current_password" className="form-control" value={pwForm.current_password} onChange={onPwChange} placeholder="enter your current password" required />
-                                            </div>
-                                            <div className="form-group">
-                                                <label>New Password</label>
-                                                <input type="password" name="password" className="form-control" value={pwForm.password} onChange={onPwChange} placeholder="enter your new password" required />
-                                            </div>
-                                            <div className="form-group">
-                                                <label>Confirm Password</label>
-                                                <input type="password" name="password_confirmation" className="form-control" value={pwForm.password_confirmation} onChange={onPwChange} placeholder="repeat your new password" required />
-                                            </div>
-                                            <button disabled={savingPw} className="btn btn-success" type="submit">
-                                                {savingPw ? "Saving..." : "Save Changes"}
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
+    if (loading) {
+        return (
+            <div className="mc-card">
+                <div className="mc-card-body" style={{ padding: 40, textAlign: 'center' }}>
+                    Loading profile...
                 </div>
             </div>
-        </>
-    );
-};
+        );
+    }
 
-export default Profile;
+    const initials = (user?.name || "NA")
+        .split(" ")
+        .slice(0, 2)
+        .map((s) => s[0]?.toUpperCase())
+        .join("");
+
+    const roleName = user?.roles?.[0]?.name || "user";
+    const roleDisplay = roleName.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+
+    // Avatar URL (using storage link for public access)
+    const avatarUrl = user?.avatar ? `http://127.0.0.1:8000/storage/${user.avatar}` : null;
+
+    return (
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+            <div className="mc-card-header" style={{ marginBottom: 20 }}>
+                <h2 className="mc-card-title">My Profile</h2>
+            </div>
+
+            {successMessage && (
+                <div className="alert alert-success" style={{ marginBottom: 20 }}>
+                    {successMessage}
+                </div>
+            )}
+
+            {errors.general && (
+                <div className="alert alert-danger" style={{ marginBottom: 20 }}>
+                    {errors.general[0]}
+                </div>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                {/* Left Column - Profile Info */}
+                <div className="mc-card">
+                    <div className="mc-card-header">
+                        <h3 className="mc-card-title" style={{ fontSize: 16 }}>Account Information</h3>
+                    </div>
+                    <div className="mc-card-body">
+                        {/* User Avatar & Info */}
+                        <div style={{ textAlign: 'center', marginBottom: 24, paddingBottom: 24, borderBottom: '1px solid var(--mc-border)' }}>
+                            <div style={{
+                                width: 80,
+                                height: 80,
+                                borderRadius: 20,
+                                background: '#1e6f4f',
+                                color: '#fff',
+                                display: 'grid',
+                                placeItems: 'center',
+                                fontSize: 28,
+                                fontWeight: 800,
+                                margin: '0 auto 12px',
+                            }}>
+                                {form.avatar ? (
+                                    <img
+                                        src={URL.createObjectURL(form.avatar)}
+                                        alt="Avatar Preview"
+                                        style={{ width: "100%", height: "100%", borderRadius: "50%" }}
+                                    />
+                                ) : avatarUrl ? (
+                                    <img
+                                        src={avatarUrl}
+                                        alt="Avatar"
+                                        style={{ width: "100%", height: "100%", borderRadius: "50%" }}
+                                    />
+                                ) : initials}
+                            </div>
+                            <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>
+                                {user?.name}
+                            </div>
+                            <div style={{ fontSize: 13, color: 'var(--mc-muted)' }}>
+                                {roleDisplay}
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleProfileUpdate}>
+                            <Field
+                                label="Full Name"
+                                value={form.name}
+                                onChange={(v) => set('name', v)}
+                                error={err('name')}
+                            />
+                            <Field
+                                label="Email Address"
+                                type="email"
+                                value={form.email}
+                                onChange={(v) => set('email', v)}
+                                error={err('email')}
+                            />
+                            {/* Avatar Upload */}
+                            <div style={{ marginTop: 20 }}>
+                                <label htmlFor="avatar" className="form-label">Change Avatar</label>
+                                <input
+                                    type="file"
+                                    id="avatar"
+                                    className="form-control"
+                                    onChange={(e) => set('avatar', e.target.files[0])}
+                                />
+                            </div>
+                            <div style={{ marginTop: 20 }}>
+                                <button
+                                    type="submit"
+                                    className="btn btn-success"
+                                    disabled={saving}
+                                    style={{ width: '100%' }}
+                                >
+                                    {saving ? 'Saving...' : 'Save Changes'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
