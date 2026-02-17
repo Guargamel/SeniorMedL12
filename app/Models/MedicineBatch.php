@@ -29,6 +29,6 @@ class MedicineBatch extends Model
 
     public function supplier()
     {
-        return $this->belongsTo(Supplier::class); // Define the relationship to the Supplier model
+        return $this->belongsTo(Supplier::class, 'supplier_id'); // Define the relationship to the Supplier model
     }
 }

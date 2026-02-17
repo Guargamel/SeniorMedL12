@@ -46,14 +46,16 @@ class MedicineBatchController extends Controller
     // Fetch a specific batch by ID
     public function show($id)
     {
-        $batch = MedicineBatch::find($id);
+        // Eager load the medicine relationship
+        $batch = MedicineBatch::with('medicine', 'supplier')->find($id);
 
         if (!$batch) {
-            return response()->json(['message' => 'Batch not found'], 404);
+            return response()->json(['error' => 'Medicine batch not found'], 404);
         }
 
         return response()->json($batch);
     }
+
 
     // Update a specific batch
     public function update(Request $request, $id)

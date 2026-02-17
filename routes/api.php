@@ -138,4 +138,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [MedicineBatchController::class, 'index']);
         Route::post('/create', [MedicineBatchController::class, 'store']);
     });
+
+    Route::get('/medicine-batches/{id}', [MedicineBatchController::class, 'show']);
 });

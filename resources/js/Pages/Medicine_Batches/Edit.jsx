@@ -11,10 +11,11 @@ const Edit = () => {
     const [batchNo, setBatchNo] = useState("");
     const [quantity, setQuantity] = useState("");
     const [expiryDate, setExpiryDate] = useState("");
-    const [supplier, setSupplier] = useState("");
+    const [supplier, setSupplier] = useState(""); // Store selected supplier
     const [cost, setCost] = useState("");
     const [selectedMedicine, setSelectedMedicine] = useState(null);
     const [medicines, setMedicines] = useState([]); // Store list of medicines
+    const [suppliers, setSuppliers] = useState([]); // Store list of suppliers
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
@@ -25,11 +26,25 @@ const Edit = () => {
                 const data = await apiFetch("/api/medicines");
                 const medicineOptions = data.map(medicine => ({
                     value: medicine.id,
-                    label: medicine.generic_name, // Use generic name as label
+                    label: medicine.generic_name,
                 }));
                 setMedicines(medicineOptions);
             } catch (err) {
                 toast.error("Failed to load medicines");
+            }
+        }
+
+        // Fetch suppliers to populate dropdown
+        async function fetchSuppliers() {
+            try {
+                const data = await apiFetch("/api/suppliers");
+                const supplierOptions = data.map(supplier => ({
+                    value: supplier.id,
+                    label: supplier.name, // Assuming the supplier model has a 'name' field
+                }));
+                setSuppliers(supplierOptions);
+            } catch (err) {
+                toast.error("Failed to load suppliers");
             }
         }
 
@@ -39,8 +54,12 @@ const Edit = () => {
                 const data = await apiFetch(`/api/medicine-batches/${id}`);
                 setBatchNo(data.batch_no);
                 setQuantity(data.quantity);
-                setExpiryDate(data.expiry_date);
-                setSupplier(data.supplier);
+
+                // Convert expiry_date to yyyy-MM-dd format
+                const formattedExpiryDate = new Date(data.expiry_date).toISOString().split('T')[0];
+                setExpiryDate(formattedExpiryDate); // Set the formatted date
+
+                setSupplier(data.supplier ? { value: data.supplier.id, label: data.supplier.name } : null);
                 setCost(data.cost);
 
                 // Set the selected medicine from batch
@@ -49,12 +68,15 @@ const Edit = () => {
                 );
                 setSelectedMedicine(selectedMedicine); // Pre-select medicine
             } catch (err) {
+                console.error("Error fetching batch data:", err);
                 setError("Failed to load medicine batch data");
             }
         }
 
         fetchMedicines(); // Fetch medicines on component mount
+        fetchSuppliers(); // Fetch suppliers on component mount
         fetchStock(); // Fetch the specific batch on component mount
+
     }, [id, medicines]); // Re-fetch when medicines are loaded or id changes
 
     const handleSubmit = async (e) => {
@@ -66,7 +88,7 @@ const Edit = () => {
             batch_no: batchNo,
             quantity,
             expiry_date: expiryDate,
-            supplier,
+            supplier_id: supplier ? supplier.value : null, // Submit the selected supplier ID
             cost,
             medicine_id: selectedMedicine ? selectedMedicine.value : null, // Submit the selected medicine ID
         };
@@ -120,7 +142,7 @@ const Edit = () => {
                         type="date"
                         id="expiryDate"
                         className="form-control"
-                        value={expiryDate}
+                        value={expiryDate}  // This is being set from the API response
                         onChange={(e) => setExpiryDate(e.target.value)}
                         required
                     />
@@ -128,13 +150,12 @@ const Edit = () => {
 
                 <div className="form-group mb-3">
                     <label htmlFor="supplier" className="form-label">Supplier</label>
-                    <input
-                        type="text"
-                        id="supplier"
-                        className="form-control"
+                    <Select
+                        options={suppliers}
                         value={supplier}
-                        onChange={(e) => setSupplier(e.target.value)}
-                        required
+                        onChange={setSupplier} // Update selected supplier
+                        className="form-control"
+                        placeholder="Select Supplier"
                     />
                 </div>
 

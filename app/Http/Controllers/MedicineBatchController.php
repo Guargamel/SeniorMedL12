@@ -37,4 +37,14 @@ class MedicineBatchController extends Controller
             'batch' => $batchWithMedicine, // Return the batch along with its associated medicine
         ], 201);
     }
+
+    public function show($id)
+    {
+        // Assuming the MedicineBatch model has a relationship with the Medicine model
+        $batch = MedicineBatch::with('medicine')->find($id); // Eager load the associated medicine
+        if (!$batch) {
+            return response()->json(['error' => 'Medicine batch not found'], 404);
+        }
+        return response()->json($batch);
+    }
 }
