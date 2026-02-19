@@ -6,9 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Spatie\Permission\Models\Role;
 
 class ProfileController extends Controller
 {
@@ -36,39 +34,28 @@ class ProfileController extends Controller
 
     public function update(Request $request)
     {
-        // Validate input data
-        $validated = $request->validate([
-            'name' => 'nullable|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+        $user = $request->user();
+
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'avatar' => ['nullable', 'image', 'max:2048'],
         ]);
 
-        // Get the currently authenticated user
-        $user = auth()->user();
+        // update ONLY text fields
+        $user->name = $request->name;
+        $user->email = $request->email;
 
-        // Update user fields
-        if (isset($validated['name'])) {
-            $user->name = $validated['name'];
-        }
-
-        if (isset($validated['email'])) {
-            $user->email = $validated['email'];
-        }
-
-        // Handle avatar upload
+        // update avatar ONLY if a file was uploaded
         if ($request->hasFile('avatar')) {
-            // Store the avatar in the 'avatars' folder, and make it publicly accessible
-            $avatarPath = $request->file('avatar')->store('avatars', 'public');
-            $user->avatar = $avatarPath;
+            $path = $request->file('avatar')->store('avatars', 'public'); // avatars/xxxx.jpg
+            $user->avatar = $path;
         }
 
-        // Save the updated user data
         $user->save();
 
-        // Return the updated user data, including the avatar
-        return response()->json(['user' => $user]);
+        return response()->json(['user' => $user->load('roles')]);
     }
-
 
 
     /**

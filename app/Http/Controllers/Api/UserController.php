@@ -54,6 +54,7 @@ class UserController extends Controller
             if ($role) $user->syncRoles([$role]);
         }
 
+
         return response()->json(['message' => 'User created', 'user' => $user->load('roles')], 201);
     }
 
@@ -113,15 +114,15 @@ class UserController extends Controller
 
         // Only return senior citizens
         $query = User::query()
-            ->whereHas('roles', function($q) {
-                $q->where('name', 'senior_citizen');
+            ->whereHas('roles', function ($q) {
+                $q->where('name', 'senior-citizen');
             });
 
         // Search by email or name
         if ($search) {
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('email', 'like', "%{$search}%")
-                  ->orWhere('name', 'like', "%{$search}%");
+                    ->orWhere('name', 'like', "%{$search}%");
             });
         }
 

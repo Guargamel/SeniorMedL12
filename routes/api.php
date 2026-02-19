@@ -105,7 +105,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::prefix('medicine-batches')->group(function () {
             Route::get('/', [MedicineBatchController::class, 'index']);
             Route::post('/create', [MedicineBatchController::class, 'store']);
-            Route::get('/{id}', [MedicineBatchController::class, 'show']); // protect this too
+            Route::put('/{id}', [MedicineBatchController::class, 'update']);
+            Route::delete('/{id}', [MedicineBatchController::class, 'destroy']);
         });
 
         Route::apiResource('medicine-categories', MedicineCategoryController::class);

@@ -72,7 +72,7 @@ export default function BrowseMedicines() {
         <div className="content">
             <div className="d-flex align-items-center justify-content-between mb-3">
                 <h4 className="page-title mb-0">All Medicines</h4>
-                {userRole !== "senior_citizen" && (
+                {userRole !== "senior-citizen" && (
                     <Link className="btn btn-primary" to="/medicines/create">
                         Add Medicine
                     </Link>
@@ -150,7 +150,7 @@ export default function BrowseMedicines() {
                                                     </td>
                                                     <td>
                                                         <div className="d-flex gap-2">
-                                                            {userRole !== "senior_citizen" && (
+                                                            {userRole !== "senior-citizen" && (
                                                                 <>
                                                                     <Link className="btn btn-sm btn-outline-primary" to={`/medicines/${m.id}/edit`}>
                                                                         Edit

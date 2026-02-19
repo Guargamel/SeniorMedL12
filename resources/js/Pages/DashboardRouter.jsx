@@ -58,9 +58,6 @@ const DashboardRouter = () => {
         return <Dashboard />;
     } else if (isSeniorCitizen) {
         return <SeniorDashboard />;
-    } else {
-        // No recognized role - show unauthorized
-        //  return <Navigate to="/unauthorized" replace />;
     }
 };
 

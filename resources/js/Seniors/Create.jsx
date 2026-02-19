@@ -171,7 +171,7 @@ export default function SeniorCreate() {
                 </form>
 
                 <div style={{ fontSize: 12, color: "var(--mc-muted)", marginTop: 10 }}>
-                    This creates a <b>User</b> and assigns the <b>senior_citizen</b> role automatically.
+                    This creates a <b>User</b> and assigns the <b>senior-citizen</b> role automatically.
                 </div>
             </div>
         </div>
