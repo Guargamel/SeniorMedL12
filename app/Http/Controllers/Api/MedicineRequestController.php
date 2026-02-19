@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class MedicineRequestController extends Controller
 {
@@ -172,6 +173,11 @@ class MedicineRequestController extends Controller
                 return response()->json(['message' => 'Cannot delete reviewed requests'], 400);
             }
 
+            // ✅ Delete prescription image file if it exists
+            if ($request->prescription_path && Storage::disk('public')->exists($request->prescription_path)) {
+                Storage::disk('public')->delete($request->prescription_path);
+            }
+
             $request->delete();
 
             return response()->json(['message' => 'Request deleted successfully']);
@@ -183,6 +189,7 @@ class MedicineRequestController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * Get pending requests count

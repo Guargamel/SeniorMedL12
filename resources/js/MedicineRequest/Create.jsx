@@ -82,7 +82,7 @@ const Create = () => {
             fd.append("reason", data.reason ?? "");
 
             // ✅ File key name must match backend validation: receipt_image
-            if (receiptFile) fd.append("prescriptions", receiptFile);
+            if (receiptFile) fd.append("prescription_path", receiptFile);
 
             const response = await apiFetch("/api/medicine-requests", {
                 method: "POST",
