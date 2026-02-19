@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\SeniorProfile;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class SeniorController extends Controller
@@ -19,6 +18,7 @@ class SeniorController extends Controller
         $q = trim((string) $request->query('q', ''));
 
         $query = User::query()
+            ->with('seniorProfile') // eager load senior profile
             ->with(['seniorProfile.bloodType'])
             ->whereHas('seniorProfile') // ensures only seniors
             ->orderByDesc('id');
@@ -30,7 +30,7 @@ class SeniorController extends Controller
             });
         }
 
-        $data = $query->paginate(20);
+        $data = $query->orderByDesc('id')->paginate(20);
 
         return response()->json($data);
     }
@@ -62,6 +62,8 @@ class SeniorController extends Controller
             'address' => $request->address,
         ]);
 
+        $user->assignRole('senior-citizen');
+
         // 2️⃣ Create Senior Profile linked to that user
         SeniorProfile::create([
             'user_id' => $user->id, // 🔥 THIS IS THE FIX
@@ -79,6 +81,7 @@ class SeniorController extends Controller
             'blood_pressure_diastolic' => $request->blood_pressure_diastolic,
             'blood_type_id' => $request->blood_type_id,
         ]);
+
 
         return response()->json(['message' => 'Senior created successfully']);
     }

@@ -11,7 +11,9 @@ const Create = () => {
     const [suppliers, setSuppliers] = useState([]);
     const [medicines, setMedicines] = useState([]);
     const navigate = useNavigate();
-    const { register, control, handleSubmit, formState: { errors } } = useForm();
+    const { register, control, handleSubmit, setValue, watch, formState: { errors } } = useForm();
+    const [previewUrl, setPreviewUrl] = useState(null);
+    const prescriptionFile = watch("prescriptionFile");
 
     // Fetching suppliers and medicines from the API
     useEffect(() => {
@@ -36,27 +38,36 @@ const Create = () => {
         fetchSuppliersAndMedicines();
     }, []);
 
-    const onSubmit = async (data) => {
+    async function onSubmit(values) {
         setLoading(true);
-
-        // Debug: Check what data is being sent
-        console.log("Form data being submitted:", data);
-
         try {
-            // Match the route defined in api.php: /api/medicine-batches/create
-            const response = await apiFetch("/api/medicine-batches/create", {
-                method: "POST",
-                body: JSON.stringify(data),
-            });
-            toast.success("Medicine batch created successfully!");
-            navigate("/medicine-batches/index");
+            const fd = new FormData();
+            fd.append("medicine_id", values.medicine_id);
+            fd.append("quantity", values.quantity);
+            fd.append("reason", values.reason || "");
+
+            // include other fields ONLY if your API expects them:
+            // fd.append("batch_no", values.batch_no);
+            // fd.append("expiry_date", values.expiry_date);
+            // fd.append("supplier_id", values.supplier_id);
+            // fd.append("cost", values.cost);
+
+            if (values.prescriptionFile) {
+                fd.append("prescription", values.prescriptionFile); // must match backend validation key
+            }
+
+            await apiFetch("/api/medicine-requests", { method: "POST", body: fd });
+
+            toast.success("Request submitted!");
+            navigate("/requests"); // change to your route
         } catch (err) {
-            toast.error("Failed to create medicine batch");
-            console.error("Error creating batch:", err);
+            console.error(err);
+            toast.error(err?.message || "Failed to submit request");
         } finally {
             setLoading(false);
         }
-    };
+    }
+
 
     return (
         <div className="p-6 max-w-lg mx-auto">
@@ -152,6 +163,40 @@ const Create = () => {
                         className="mt-1 p-2 w-1/2 border border-gray-300 rounded-md"
                     />
                     {errors.cost && <span className="text-red-500 text-sm">{errors.cost.message}</span>}
+                </div>
+
+                {/* Prescription Image */}
+                <div className="form-group">
+                    <label className="block text-sm font-medium text-gray-700">Prescription Image</label>
+
+                    <input
+                        type="file"
+                        accept="image/*"
+                        className="mt-1 p-2 w-full border border-gray-300 rounded-md"
+                        onChange={(e) => {
+                            const file = e.target.files?.[0] || null;
+                            setValue("prescriptionFile", file, { shouldValidate: true });
+
+                            if (previewUrl) URL.revokeObjectURL(previewUrl);
+                            setPreviewUrl(file ? URL.createObjectURL(file) : null);
+                        }}
+                    />
+
+                    {prescriptionFile && (
+                        <div className="mt-2">
+                            <p className="text-xs text-gray-600">
+                                Selected: {prescriptionFile.name} ({Math.round(prescriptionFile.size / 1024)} KB)
+                            </p>
+                        </div>
+                    )}
+
+                    {previewUrl && (
+                        <img
+                            src={previewUrl}
+                            alt="Prescription preview"
+                            className="mt-2 max-h-48 rounded border"
+                        />
+                    )}
                 </div>
 
                 {/* Submit Button */}

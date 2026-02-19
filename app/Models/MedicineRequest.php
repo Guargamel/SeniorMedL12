@@ -15,6 +15,7 @@ class MedicineRequest extends Model
         'quantity',
         'reason',
         'status',
+        'prescription_img',
         'reviewed_by',
         'reviewed_at',
         'review_notes'
@@ -70,5 +71,14 @@ class MedicineRequest extends Model
     public function scopeDeclined($query)
     {
         return $query->where('status', 'declined');
+    }
+
+    protected $appends = ['prescription_url'];
+
+    public function getPrescriptionUrlAttribute()
+    {
+        return $this->prescription_path
+            ? asset('storage/' . $this->prescription_path)
+            : null;
     }
 }
