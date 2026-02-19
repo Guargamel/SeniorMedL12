@@ -16,7 +16,8 @@ use App\Http\Controllers\Api\{
     MedicineRequestController,
     NotificationController,
     AnalyticsController,
-    ReportController
+    ReportController,
+    BloodTypeController
 };
 
 use App\Models\Supplier;
@@ -129,6 +130,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('/', MedicineController::class);
     });
     Route::delete('/medicines/{id}', [MedicineController::class, 'destroy']);
+
+    // ---- Blood Types ----
+    Route::get('/blood-types', [BloodTypeController::class, 'index']);
 
     // ---- Medicine Categories ----
     Route::apiResource('medicine-categories', MedicineCategoryController::class);

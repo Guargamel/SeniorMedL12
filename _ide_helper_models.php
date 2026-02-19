@@ -14,6 +14,27 @@
 namespace App\Models{
 /**
  * @property int $id
+ * @property string $type
+ * @property string|null $description
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SeniorProfile> $seniorProfiles
+ * @property-read int|null $senior_profiles_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BloodType newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BloodType newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BloodType query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BloodType whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BloodType whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BloodType whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BloodType whereType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BloodType whereUpdatedAt($value)
+ */
+	class BloodType extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $id
  * @property int $user_id
  * @property int $medicine_id
  * @property int $quantity
@@ -221,20 +242,32 @@ namespace App\Models{
  * @property string|null $notes
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property int|null $blood_type_id
+ * @property int|null $weight_kilos
+ * @property int|null $blood_pressure_systolic
+ * @property int|null $blood_pressure_diastolic
+ * @property int|null $age
+ * @property int|null $height_cm
  * @property-read \App\Models\User $user
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile whereAddress($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile whereAge($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile whereBarangay($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile whereBirthdate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile whereBloodPressureDiastolic($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile whereBloodPressureSystolic($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile whereBloodTypeId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile whereContactNo($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile whereHeightCm($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile whereNotes($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile whereSex($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile whereUserId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile whereWeightKilos($value)
  */
 	class SeniorProfile extends \Eloquent {}
 }
