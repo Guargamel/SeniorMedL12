@@ -50,7 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/medicines/{medicine}', [MedicineController::class, 'show']);
 
     // Seniors only
-    Route::middleware('role:senior-citizen')->group(function () {
+    Route::middleware('role:senior-citizen|super-admin|staff')->group(function () {
         Route::prefix('medicine-requests')->group(function () {
             Route::get('/', [MedicineRequestController::class, 'index']);     // their own
             Route::post('/', [MedicineRequestController::class, 'store']);    // create
@@ -105,9 +105,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::prefix('medicine-batches')->group(function () {
             Route::get('/', [MedicineBatchController::class, 'index']);
             Route::post('/create', [MedicineBatchController::class, 'store']);
+            Route::get('/{id}', [MedicineBatchController::class, 'show']); // ✅ ADD THIS
             Route::put('/{id}', [MedicineBatchController::class, 'update']);
             Route::delete('/{id}', [MedicineBatchController::class, 'destroy']);
         });
+
 
         Route::apiResource('medicine-categories', MedicineCategoryController::class);
 

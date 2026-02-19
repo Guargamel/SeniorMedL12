@@ -52,13 +52,13 @@ class MedicineRequestController extends Controller
             'medicine_id'   => ['required', 'integer', 'exists:medicines,id'],
             'quantity'      => ['required', 'integer', 'min:1'],
             'reason'        => ['nullable', 'string'],
-            'prescription'  => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'], // 4MB
+            'prescription_path'  => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'], // 4MB
         ]);
 
         $path = null;
-        if ($request->hasFile('prescription')) {
+        if ($request->hasFile('prescription_path')) {
             // stores under storage/app/public/prescriptions/...
-            $path = $request->file('prescription')->store('prescriptions', 'public');
+            $path = $request->file('prescription_path')->store('prescriptions', 'public');
         }
 
         $req = MedicineRequest::create([

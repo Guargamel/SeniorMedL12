@@ -66,22 +66,6 @@ export default function SeniorSidebar() {
                     </div>
                 ))}
             </nav>
-
-            {/* Help Section */}
-            <div style={{
-                position: "absolute",
-                bottom: "20px",
-                left: "20px",
-                right: "20px",
-                padding: "12px",
-                backgroundColor: "#f1f5f9",
-                borderRadius: "8px",
-                fontSize: "12px",
-                color: "#64748b"
-            }}>
-                <div style={{ fontWeight: "600", marginBottom: "4px" }}>Need Help?</div>
-                <div>Contact staff for assistance</div>
-            </div>
         </aside>
     );
 }

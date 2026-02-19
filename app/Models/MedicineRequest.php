@@ -15,7 +15,7 @@ class MedicineRequest extends Model
         'quantity',
         'reason',
         'status',
-        'prescription_img',
+        'prescription_path',
         'reviewed_by',
         'reviewed_at',
         'review_notes'
