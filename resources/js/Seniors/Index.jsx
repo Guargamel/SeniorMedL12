@@ -2,6 +2,19 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { apiFetch, normalizeList } from "../utils/api";
 
+function calculateAge(birthdate) {
+    if (!birthdate) return "";
+    const d = new Date(birthdate);
+    if (Number.isNaN(d.getTime())) return "";
+    const today = new Date();
+
+    let age = today.getFullYear() - d.getFullYear();
+    const m = today.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+    return age < 0 ? "" : age;
+}
+
+
 export default function SeniorsIndex() {
     const [q, setQ] = useState("");
     const [loading, setLoading] = useState(true);
@@ -112,7 +125,7 @@ export default function SeniorsIndex() {
                                             <td>{p.contact_no || "-"}</td>
 
                                             {/* NEW columns */}
-                                            <td>{p.age ?? "-"}</td>
+                                            <td>{(p.age ?? calculateAge(p.birthdate)) ?? "-"}</td>
                                             <td>{p.height_cm ?? "-"}</td>
                                             <td>{p.weight_kilos ?? "-"}</td>
                                             <td>

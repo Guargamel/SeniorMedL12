@@ -2,6 +2,19 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiFetch } from "../utils/api";
 
+function calculateAge(birthdate) {
+    if (!birthdate) return "";
+    const d = new Date(birthdate);
+    if (Number.isNaN(d.getTime())) return "";
+    const today = new Date();
+
+    let age = today.getFullYear() - d.getFullYear();
+    const m = today.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+    return age < 0 ? "" : age;
+}
+
+
 export default function SeniorEdit() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -26,8 +39,7 @@ export default function SeniorEdit() {
 
         weight_kilos: "",
         height_cm: "",
-        age: "",
-        blood_pressure_systolic: "",
+blood_pressure_systolic: "",
         blood_pressure_diastolic: "",
         blood_type_id: "",
     });
@@ -82,8 +94,7 @@ export default function SeniorEdit() {
 
                     weight_kilos: p?.weight_kilos ?? "",
                     height_cm: p?.height_cm ?? "",
-                    age: p?.age ?? "",
-                    blood_pressure_systolic: p?.blood_pressure_systolic ?? "",
+blood_pressure_systolic: p?.blood_pressure_systolic ?? "",
                     blood_pressure_diastolic: p?.blood_pressure_diastolic ?? "",
                     blood_type_id: p?.blood_type_id ?? "",
 
@@ -111,6 +122,8 @@ export default function SeniorEdit() {
 
         try {
             const payload = { ...form };
+            // age is computed from birthdate; do not send/store it
+            delete payload.age;
             if (!payload.password) delete payload.password;
 
             await apiFetch(`/api/seniors/${id}`, {
@@ -237,7 +250,7 @@ export default function SeniorEdit() {
                         </div>
 
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 10 }}>
-                            <Field label="Age" type="number" value={form.age} onChange={(v) => set("age", v)} error={err("age")} disabled={busy} />
+                            <Field label="Age (auto)" type="number" value={calculateAge(form.birthdate)} onChange={() => {}} error={err("age")} disabled />
                             <Field label="Height (cm)" type="number" value={form.height_cm} onChange={(v) => set("height_cm", v)} error={err("height_cm")} disabled={busy} />
                             <Field label="Weight (kg)" type="number" value={form.weight_kilos} onChange={(v) => set("weight_kilos", v)} error={err("weight_kilos")} disabled={busy} />
                         </div>

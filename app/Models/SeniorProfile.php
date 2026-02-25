@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class SeniorProfile extends Model
 {
@@ -24,6 +25,8 @@ class SeniorProfile extends Model
         'blood_type_id',
     ];
 
+    protected $appends = ['age'];
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -32,5 +35,9 @@ class SeniorProfile extends Model
     public function bloodType()
     {
         return $this->belongsTo(BloodType::class, 'blood_type_id');
+    }
+    public function getAgeAttribute()
+    {
+        return Carbon::parse($this->birthday)->age;
     }
 }

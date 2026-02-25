@@ -2,6 +2,19 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../utils/api";
 
+function calculateAge(birthdate) {
+    if (!birthdate) return "";
+    const d = new Date(birthdate);
+    if (Number.isNaN(d.getTime())) return "";
+    const today = new Date();
+
+    let age = today.getFullYear() - d.getFullYear();
+    const m = today.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+    return age < 0 ? "" : age;
+}
+
+
 export default function SeniorCreate() {
     const navigate = useNavigate();
     const [saving, setSaving] = useState(false);
@@ -25,8 +38,7 @@ export default function SeniorCreate() {
         // NEW medical fields
         weight_kilos: "",
         height_cm: "",
-        age: "",
-        blood_pressure_systolic: "",
+blood_pressure_systolic: "",
         blood_pressure_diastolic: "",
         blood_type_id: "",
     });
@@ -58,9 +70,13 @@ export default function SeniorCreate() {
 
         try {
             // send payload as-is; backend should persist into senior_profiles columns
+            const payload = { ...form };
+            // age is computed from birthdate; do not send/store it
+            delete payload.age;
+
             await apiFetch("/api/seniors", {
                 method: "POST",
-                body: JSON.stringify(form),
+                body: JSON.stringify(payload),
             });
 
             navigate("/seniors");
@@ -111,11 +127,11 @@ export default function SeniorCreate() {
                         {/* NEW medical fields */}
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 10 }}>
                             <Field
-                                label="Age"
+                                label="Age (auto)"
                                 type="number"
-                                value={form.age}
-                                onChange={(v) => set("age", v)}
-                                error={err("age")}
+                                value={calculateAge(form.birthdate)}
+                                onChange={() => {}}
+                                disabled
                             />
                             <Field
                                 label="Height (cm)"
@@ -178,11 +194,11 @@ export default function SeniorCreate() {
     );
 }
 
-function Field({ label, error, type = "text", value, onChange }) {
+function Field({ label, error, type = "text", value, onChange, disabled }) {
     return (
         <div>
             <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 6 }}>{label}</div>
-            <input className="form-control" type={type} value={value ?? ""} onChange={(e) => onChange(e.target.value)} />
+            <input className="form-control" type={type} value={value ?? ""} onChange={(e) => onChange?.(e.target.value)} disabled={disabled} />
             {error && <div style={{ color: "#c0392b", fontSize: 12, marginTop: 4 }}>{error}</div>}
         </div>
     );

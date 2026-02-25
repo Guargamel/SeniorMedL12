@@ -13,8 +13,8 @@
 
 namespace App\Models{
 /**
- * @property int $id
- * @property string $type
+ * @property int|null $id
+ * @property string|null $type
  * @property string|null $description
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -34,14 +34,14 @@ namespace App\Models{
 
 namespace App\Models{
 /**
- * @property int $id
- * @property int $user_id
- * @property int $medicine_id
- * @property int $quantity
- * @property string $distribution_date
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
- * @property-read \App\Models\Medicine $medicine
+ * @property int|null $id
+ * @property int|null $user_id
+ * @property int|null $medicine_id
+ * @property int|null $quantity
+ * @property string|null $distribution_date
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Medicine|null $medicine
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Distribution newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Distribution newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Distribution query()
@@ -58,17 +58,17 @@ namespace App\Models{
 
 namespace App\Models{
 /**
- * @property int $id
- * @property string $generic_name
+ * @property int|null $id
+ * @property string|null $generic_name
  * @property string|null $brand_name
- * @property string $dosage_form
- * @property string $strength
+ * @property string|null $dosage_form
+ * @property string|null $strength
  * @property int|null $category_id
- * @property string $unit
+ * @property string|null $unit
  * @property string|null $description
  * @property bool|null $is_active
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
  * @property string|null $picture
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MedicineBatch> $batches
  * @property-read int|null $batches_count
@@ -95,17 +95,17 @@ namespace App\Models{
 
 namespace App\Models{
 /**
- * @property int $id
- * @property int $medicine_id
- * @property string $batch_no
- * @property \Illuminate\Support\Carbon $expiry_date
- * @property int $quantity
+ * @property int|null $id
+ * @property int|null $medicine_id
+ * @property string|null $batch_no
+ * @property \Illuminate\Support\Carbon|null $expiry_date
+ * @property int|null $quantity
  * @property \Illuminate\Support\Carbon|null $received_at
- * @property int|null $supplier_id
+ * @property string|null $supplier_id
  * @property numeric|null $cost
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Medicine $medicine
+ * @property-read \App\Models\Medicine|null $medicine
  * @property-read \App\Models\Supplier|null $supplier
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MedicineBatch newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MedicineBatch newQuery()
@@ -126,10 +126,10 @@ namespace App\Models{
 
 namespace App\Models{
 /**
- * @property int $id
- * @property string $name
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property int|null $id
+ * @property string|null $name
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
  * @property string|null $description
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Medicine> $medicines
  * @property-read int|null $medicines_count
@@ -147,21 +147,23 @@ namespace App\Models{
 
 namespace App\Models{
 /**
- * @property int $id
- * @property int $user_id
- * @property int $medicine_id
- * @property int $quantity
+ * @property int|null $id
+ * @property string|null $user_id
+ * @property string|null $medicine_id
+ * @property string|null $quantity
  * @property string|null $reason
- * @property string $status
+ * @property string|null $prescription_path
+ * @property string|null $status
  * @property string|null $notes
- * @property int|null $reviewed_by
+ * @property string|null $reviewed_by
  * @property \Illuminate\Support\Carbon|null $reviewed_at
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
  * @property string|null $review_notes
- * @property-read \App\Models\Medicine $medicine
+ * @property-read mixed $prescription_url
+ * @property-read \App\Models\Medicine|null $medicine
  * @property-read \App\Models\User|null $reviewer
- * @property-read \App\Models\User $user
+ * @property-read \App\Models\User|null $user
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MedicineRequest approved()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MedicineRequest declined()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MedicineRequest newModelQuery()
@@ -172,6 +174,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MedicineRequest whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MedicineRequest whereMedicineId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MedicineRequest whereNotes($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MedicineRequest wherePrescriptionPath($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MedicineRequest whereQuantity($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MedicineRequest whereReason($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MedicineRequest whereReviewNotes($value)
@@ -197,17 +200,17 @@ namespace App\Models{
 
 namespace App\Models{
 /**
- * @property int $id
- * @property string $type
- * @property string $notifiable_type
- * @property string $title
- * @property string $message
- * @property int $notifiable_id
- * @property array<array-key, mixed> $data
+ * @property int|null $id
+ * @property string|null $type
+ * @property string|null $notifiable_type
+ * @property string|null $title
+ * @property string|null $message
+ * @property string|null $notifiable_id
+ * @property array<array-key, mixed>|null $data
  * @property \Illuminate\Support\Carbon|null $read_at
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property int|null $user_id
+ * @property string|null $user_id
  * @property-read \App\Models\User|null $user
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification newQuery()
@@ -232,8 +235,8 @@ namespace App\Models{
 
 namespace App\Models{
 /**
- * @property int $id
- * @property int $user_id
+ * @property int|null $id
+ * @property int|null $user_id
  * @property string|null $birthdate
  * @property string|null $sex
  * @property string|null $contact_no
@@ -242,18 +245,18 @@ namespace App\Models{
  * @property string|null $notes
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property int|null $blood_type_id
- * @property int|null $weight_kilos
- * @property int|null $blood_pressure_systolic
- * @property int|null $blood_pressure_diastolic
- * @property int|null $age
- * @property int|null $height_cm
- * @property-read \App\Models\User $user
+ * @property string|null $blood_type_id
+ * @property string|null $weight_kilos
+ * @property string|null $blood_pressure_systolic
+ * @property string|null $blood_pressure_diastolic
+ * @property string|null $height_cm
+ * @property-read \App\Models\BloodType|null $bloodType
+ * @property-read mixed $age
+ * @property-read \App\Models\User|null $user
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile whereAddress($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile whereAge($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile whereBarangay($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile whereBirthdate($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile whereBloodPressureDiastolic($value)
@@ -274,8 +277,8 @@ namespace App\Models{
 
 namespace App\Models{
 /**
- * @property int $id
- * @property string $name
+ * @property int|null $id
+ * @property string|null $name
  * @property string|null $email
  * @property string|null $phone
  * @property string|null $company
@@ -303,12 +306,12 @@ namespace App\Models{
 
 namespace App\Models{
 /**
- * @property int $id
- * @property int|null $role_id
- * @property string $name
- * @property string $email
+ * @property int|null $id
+ * @property string|null $role_id
+ * @property string|null $name
+ * @property string|null $email
  * @property \Illuminate\Support\Carbon|null $email_verified_at
- * @property string $password
+ * @property string|null $password
  * @property string|null $remember_token
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -316,6 +319,7 @@ namespace App\Models{
  * @property string|null $phone
  * @property string|null $address
  * @property string|null $bio
+ * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property-read string|null $avatar_url
  * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
  * @property-read int|null $notifications_count
@@ -328,6 +332,7 @@ namespace App\Models{
  * @property-read int|null $tokens_count
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User permission($permissions, $without = false)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User role($roles, $guard = null, $without = false)
@@ -335,6 +340,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereAvatar($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereBio($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereDeletedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereEmail($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereEmailVerifiedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereId($value)
@@ -344,8 +350,10 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereRememberToken($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereRoleId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User withoutPermission($permissions)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User withoutRole($roles, $guard = null)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User withoutTrashed()
  */
 	class User extends \Eloquent {}
 }
