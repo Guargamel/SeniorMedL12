@@ -9,7 +9,23 @@ export default function SeniorsIndex() {
     const [meta, setMeta] = useState(null);
     const [pageUrl, setPageUrl] = useState("/api/seniors");
 
+    // blood type mapping: id -> type
+    const [bloodTypeMap, setBloodTypeMap] = useState({});
+
     const queryString = useMemo(() => `q=${encodeURIComponent(q.trim())}`, [q]);
+
+    const loadBloodTypes = async () => {
+        try {
+            const res = await apiFetch("/api/blood-types");
+            const list = Array.isArray(res) ? res : (res?.data ?? []);
+            const map = {};
+            for (const bt of list) map[String(bt.id)] = bt.type;
+            setBloodTypeMap(map);
+        } catch (e) {
+            console.error("Failed to load blood types:", e);
+            setBloodTypeMap({});
+        }
+    };
 
     const load = async (url = "/api/seniors") => {
         setLoading(true);
@@ -17,11 +33,9 @@ export default function SeniorsIndex() {
             const join = url.includes("?") ? "&" : "?";
             const res = await apiFetch(`${url}${join}${queryString}`);
 
-            // Supports Laravel paginator, data wrapper, etc.
             const list = normalizeList(res, ["users", "seniors"]);
             setRows(list);
 
-            // meta for paginator
             setMeta(res?.meta || res?.data?.meta || null);
             setPageUrl(url);
         } finally {
@@ -30,11 +44,17 @@ export default function SeniorsIndex() {
     };
 
     useEffect(() => {
+        loadBloodTypes();
         load("/api/seniors");
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const profileOf = (u) => u?.seniorProfile || u?.senior_profile || {};
+
+    const btLabel = (blood_type_id) => {
+        if (!blood_type_id) return "-";
+        return bloodTypeMap[String(blood_type_id)] || `ID:${blood_type_id}`;
+    };
 
     return (
         <div className="mc-card">
@@ -68,8 +88,15 @@ export default function SeniorsIndex() {
                                     <th>Name</th>
                                     <th>Email</th>
                                     <th>Barangay</th>
-                                    <th>Address</th>
                                     <th>Contact</th>
+
+                                    {/* NEW columns */}
+                                    <th>Age</th>
+                                    <th>Height (cm)</th>
+                                    <th>Weight (kg)</th>
+                                    <th>BP</th>
+                                    <th>Blood Type</th>
+
                                     <th>Notes</th>
                                     <th style={{ width: 140 }}></th>
                                 </tr>
@@ -79,13 +106,22 @@ export default function SeniorsIndex() {
                                     const p = profileOf(u);
                                     return (
                                         <tr key={u.id}>
-                                            <td>
-                                                <strong>{u.name}</strong>
-                                            </td>
+                                            <td><strong>{u.name}</strong></td>
                                             <td>{u.email}</td>
                                             <td>{p.barangay || "-"}</td>
-                                            <td>{p.address || "-"}</td>
                                             <td>{p.contact_no || "-"}</td>
+
+                                            {/* NEW columns */}
+                                            <td>{p.age ?? "-"}</td>
+                                            <td>{p.height_cm ?? "-"}</td>
+                                            <td>{p.weight_kilos ?? "-"}</td>
+                                            <td>
+                                                {(p.blood_pressure_systolic || p.blood_pressure_diastolic)
+                                                    ? `${p.blood_pressure_systolic ?? ""}/${p.blood_pressure_diastolic ?? ""}`
+                                                    : "-"}
+                                            </td>
+                                            <td>{btLabel(p.blood_type_id)}</td>
+
                                             <td style={{ maxWidth: 200, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                                                 {p.notes || "-"}
                                             </td>
@@ -93,7 +129,6 @@ export default function SeniorsIndex() {
                                                 <Link className="btn btn-sm btn-outline-primary" to={`/seniors/${u.id}/edit`}>
                                                     Edit
                                                 </Link>
-
                                             </td>
                                         </tr>
                                     );
@@ -101,7 +136,7 @@ export default function SeniorsIndex() {
 
                                 {rows.length === 0 && (
                                     <tr>
-                                        <td colSpan={7} style={{ padding: 12, color: "var(--mc-muted)" }}>
+                                        <td colSpan={11} style={{ padding: 12, color: "var(--mc-muted)" }}>
                                             No seniors found.
                                         </td>
                                     </tr>
@@ -109,7 +144,6 @@ export default function SeniorsIndex() {
                             </tbody>
                         </table>
 
-                        {/* Simple pagination (optional) */}
                         {meta?.links?.length > 0 && (
                             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
                                 {meta.links.map((l, idx) => (

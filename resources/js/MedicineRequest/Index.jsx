@@ -275,6 +275,27 @@ const Index = () => {
                                                 </button>
                                             )}
                                         </div>
+                                        {/* Prescription Image */}
+                                        {request.prescription_url && (
+                                            <div className="mb-4">
+                                                <p className="text-sm text-gray-600">Prescription:</p>
+
+                                                <a
+                                                    href={request.prescription_url}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="inline-block mt-2"
+                                                    title="Open full image"
+                                                >
+                                                    <img
+                                                        src={request.prescription_url}
+                                                        alt="Prescription"
+                                                        className="w-full max-w-sm rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition"
+                                                        loading="lazy"
+                                                    />
+                                                </a>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

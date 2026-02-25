@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class MedicineRequestController extends Controller
 {
@@ -48,50 +49,34 @@ class MedicineRequestController extends Controller
      */
     public function store(Request $request)
     {
-        try {
-            $validated = $request->validate([
-                'medicine_id' => 'required|exists:medicines,id',
-                'quantity' => 'required|integer|min:1',
-                'reason' => 'nullable|string|max:500'
-            ]);
+        $validated = $request->validate([
+            'medicine_id'   => ['required', 'integer', 'exists:medicines,id'],
+            'quantity'      => ['required', 'integer', 'min:1'],
+            'reason'        => ['nullable', 'string'],
+            'prescription_path'  => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'], // 4MB
+        ]);
 
-            $user = Auth::user();
-
-            // Create the request
-            $medicineRequest = MedicineRequest::create([
-                'user_id' => $user->id,
-                'medicine_id' => $validated['medicine_id'],
-                'quantity' => $validated['quantity'],
-                'reason' => $validated['reason'] ?? null,
-                'status' => 'pending'
-            ]);
-
-            // Load relationships
-            $medicineRequest->load('medicine', 'user');
-
-            // Notify all staff and super-admins (don't break if this fails)
-            try {
-                $this->notifyStaffAndAdmins($medicineRequest);
-            } catch (\Exception $e) {
-                Log::error('Failed to send notifications: ' . $e->getMessage());
-            }
-
-            return response()->json([
-                'message' => 'Medicine request submitted successfully',
-                'request' => $medicineRequest
-            ], 201);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $e->errors()
-            ], 422);
-        } catch (\Exception $e) {
-            Log::error('Medicine request creation failed: ' . $e->getMessage());
-            return response()->json([
-                'message' => 'Failed to create medicine request',
-                'error' => $e->getMessage()
-            ], 500);
+        $path = null;
+        if ($request->hasFile('prescription_path')) {
+            // stores under storage/app/public/prescriptions/...
+            $path = $request->file('prescription_path')->store('prescriptions', 'public');
         }
+
+        $req = MedicineRequest::create([
+            'user_id' => auth()->id(),
+            'medicine_id' => $validated['medicine_id'],
+            'quantity' => $validated['quantity'],
+            'reason' => $validated['reason'] ?? null,
+            'prescription_path' => $path,
+            'status' => 'pending',
+        ]);
+
+        // optional: include a URL right away
+        $req->prescription_url = $req->prescription_path
+            ? asset('storage/' . $req->prescription_path)
+            : null;
+
+        return response()->json($req, 201);
     }
 
     /**
@@ -188,6 +173,11 @@ class MedicineRequestController extends Controller
                 return response()->json(['message' => 'Cannot delete reviewed requests'], 400);
             }
 
+            // ✅ Delete prescription image file if it exists
+            if ($request->prescription_path && Storage::disk('public')->exists($request->prescription_path)) {
+                Storage::disk('public')->delete($request->prescription_path);
+            }
+
             $request->delete();
 
             return response()->json(['message' => 'Request deleted successfully']);
@@ -199,6 +189,7 @@ class MedicineRequestController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * Get pending requests count

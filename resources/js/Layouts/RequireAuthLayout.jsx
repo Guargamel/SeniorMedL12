@@ -18,7 +18,7 @@ export default function RequireAuthLayout() {
             setLoading(true);
             setErrors([]);
 
-            const u = await fetchCurrentUser(); // never throws on 401
+            const u = await fetchCurrentUser();
             if (!alive) return;
 
             setUser(u);
@@ -61,7 +61,7 @@ export default function RequireAuthLayout() {
     }
 
     // Ensure roles are loaded before checking
-    const isSeniorCitizen = Array.isArray(user?.roles) && user.roles.some(role => role.name === 'senior_citizen');
+    const isSeniorCitizen = Array.isArray(user?.roles) && user.roles.some(role => role.name === 'senior-citizen');
     const isAdminOrStaff = Array.isArray(user?.roles)
         ? user.roles.some(role => [1, 2].includes(role.id) || ['super-admin', 'staff'].includes(role.name))
         : [1, 2].includes(user?.role_id);

@@ -199,6 +199,12 @@ export default function Profile() {
                                         style={{ width: "100%", height: "100%", borderRadius: "50%" }}
                                     />
                                 ) : initials}
+
+                                <div style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>
+                                    avatar in DB: {String(user?.avatar)}
+                                    <br />
+                                    avatarUrl: {String(avatarUrl)}
+                                </div>
                             </div>
                             <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>
                                 {user?.name}
@@ -246,6 +252,23 @@ export default function Profile() {
                     </div>
                 </div>
             </div>
+        </div>
+    );
+}
+
+
+function Field({ label, type = "text", value, onChange, error, disabled = false }) {
+    return (
+        <div style={{ marginBottom: 14 }}>
+            <label className="form-label">{label}</label>
+            <input
+                type={type}
+                className={`form-control ${error ? "is-invalid" : ""}`}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                disabled={disabled}
+            />
+            {error ? <div className="invalid-feedback">{error}</div> : null}
         </div>
     );
 }

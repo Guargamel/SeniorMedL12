@@ -56,7 +56,11 @@ export async function apiFetch(path, options = {}) {
     };
 
     const isFormData = options.body instanceof FormData;
-    if (options.body && !isFormData && !headers["Content-Type"]) {
+
+    if (isFormData) {
+        // Let the browser set multipart boundary automatically
+        if (headers["Content-Type"]) delete headers["Content-Type"];
+    } else if (options.body && !headers["Content-Type"]) {
         headers["Content-Type"] = "application/json";
     }
 

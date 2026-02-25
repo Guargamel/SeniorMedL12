@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\SeniorProfile;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class SeniorController extends Controller
@@ -19,8 +18,10 @@ class SeniorController extends Controller
         $q = trim((string) $request->query('q', ''));
 
         $query = User::query()
-            ->with('seniorProfile')
-            ->whereHas('seniorProfile'); // ensures only seniors
+            ->with('seniorProfile') // eager load senior profile
+            ->with(['seniorProfile.bloodType'])
+            ->whereHas('seniorProfile') // ensures only seniors
+            ->orderByDesc('id');
 
         if ($q !== '') {
             $query->where(function ($w) use ($q) {
@@ -35,6 +36,7 @@ class SeniorController extends Controller
     }
 
 
+
     public function show($id)
     {
         $user = User::with('seniorProfile')->findOrFail($id);
@@ -42,48 +44,48 @@ class SeniorController extends Controller
     }
 
 
-
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:6'],
-
-            // senior fields (optional)
-            'birthdate' => ['nullable', 'date'],
-            'sex' => ['nullable', 'in:Male,Female'],
-            'contact_no' => ['nullable', 'string', 'max:50'],
-            'barangay' => ['nullable', 'string', 'max:120'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'notes' => ['nullable', 'string'],
+        $request->validate([
+            'name' => 'required|string',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:6',
         ]);
 
-        return DB::transaction(function () use ($data) {
-            $user = User::create([
-                'name' => $data['name'],
-                'email' => $data['email'],
-                'password' => Hash::make($data['password']),
-            ]);
+        // 1️⃣ Create User first
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+            'role_id' => 3, // <-- put the correct role_id for senior
+            'phone' => $request->contact_no,
+            'address' => $request->address,
+        ]);
 
-            $user->assignRole('senior_citizen'); // automatically assign "senior_citizen" role
+        $user->assignRole('senior-citizen');
 
-            SeniorProfile::create([
-                'user_id' => $user->id,
-                'birthdate' => $data['birthdate'] ?? null,
-                'sex' => $data['sex'] ?? null,
-                'contact_no' => $data['contact_no'] ?? null,
-                'barangay' => $data['barangay'] ?? null,
-                'address' => $data['address'] ?? null,
-                'notes' => $data['notes'] ?? null,
-            ]);
+        // 2️⃣ Create Senior Profile linked to that user
+        SeniorProfile::create([
+            'user_id' => $user->id, // 🔥 THIS IS THE FIX
+            'birthdate' => $request->birthdate,
+            'sex' => $request->sex,
+            'contact_no' => $request->contact_no,
+            'barangay' => $request->barangay,
+            'address' => $request->address,
+            'notes' => $request->notes,
 
-            return response()->json([
-                'message' => 'Senior registered',
-                'user' => $user->fresh('seniorProfile')
-            ], 201);
-        });
+            'weight_kilos' => $request->weight_kilos,
+            'height_cm' => $request->height_cm,
+            'age' => $request->age,
+            'blood_pressure_systolic' => $request->blood_pressure_systolic,
+            'blood_pressure_diastolic' => $request->blood_pressure_diastolic,
+            'blood_type_id' => $request->blood_type_id,
+        ]);
+
+
+        return response()->json(['message' => 'Senior created successfully']);
     }
+
 
     public function update(Request $request, $id)
     {
@@ -123,6 +125,19 @@ class SeniorController extends Controller
         return response()->json([
             'message' => 'Updated',
             'user' => $user->fresh('seniorProfile')
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        $user = User::findOrFail($id);
+
+        // This will automatically delete the senior_profile
+        // IF your FK is ON DELETE CASCADE
+        $user->delete();
+
+        return response()->json([
+            'message' => 'Senior deleted successfully'
         ]);
     }
 }

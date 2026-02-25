@@ -1,122 +1,142 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { apiFetch } from "../../utils/api"; // Assuming apiFetch is your utility for fetching data
-import Select from "react-select"; // Import react-select for dropdown
-import { toast } from "react-toastify"; // For Toastify notifications
+import { apiFetch } from "../../utils/api";
+import Select from "react-select";
+import { toast } from "react-toastify";
 
-const Edit = () => {
+function toDateInputValue(v) {
+    // Accepts: "2026-02-19", "2026-02-19T00:00:00.000000Z", Date, null
+    if (!v) return "";
+
+    // If already yyyy-mm-dd
+    if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toISOString().slice(0, 10);
+}
+
+export default function Edit() {
     const { id } = useParams();
     const navigate = useNavigate();
 
     const [batchNo, setBatchNo] = useState("");
     const [quantity, setQuantity] = useState("");
     const [expiryDate, setExpiryDate] = useState("");
-    const [supplier, setSupplier] = useState(""); // Store selected supplier
+    const [supplier, setSupplier] = useState(null);
     const [cost, setCost] = useState("");
     const [selectedMedicine, setSelectedMedicine] = useState(null);
-    const [medicines, setMedicines] = useState([]); // Store list of medicines
-    const [suppliers, setSuppliers] = useState([]); // Store list of suppliers
+
+    const [medicines, setMedicines] = useState([]);
+    const [suppliers, setSuppliers] = useState([]);
+
     const [loading, setLoading] = useState(false);
+    const [pageLoading, setPageLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        // Fetch medicines to populate dropdown
-        async function fetchMedicines() {
+        let alive = true;
+
+        (async () => {
+            setPageLoading(true);
+            setError(null);
+
             try {
-                const data = await apiFetch("/api/medicines");
-                const medicineOptions = data.map(medicine => ({
-                    value: medicine.id,
-                    label: medicine.generic_name,
+                const [medsData, supsData, batch] = await Promise.all([
+                    apiFetch("/api/medicines"),
+                    apiFetch("/api/suppliers"),
+                    apiFetch(`/api/medicine-batches/${id}`),
+                ]);
+
+                if (!alive) return;
+
+                const medOptions = (Array.isArray(medsData) ? medsData : []).map((m) => ({
+                    value: m.id,
+                    label: m.generic_name,
                 }));
-                setMedicines(medicineOptions);
-            } catch (err) {
-                toast.error("Failed to load medicines");
-            }
-        }
 
-        // Fetch suppliers to populate dropdown
-        async function fetchSuppliers() {
-            try {
-                const data = await apiFetch("/api/suppliers");
-                const supplierOptions = data.map(supplier => ({
-                    value: supplier.id,
-                    label: supplier.name, // Assuming the supplier model has a 'name' field
+                const supOptions = (Array.isArray(supsData) ? supsData : []).map((s) => ({
+                    value: s.id,
+                    label: s.name,
                 }));
-                setSuppliers(supplierOptions);
-            } catch (err) {
-                toast.error("Failed to load suppliers");
-            }
-        }
 
-        // Fetch the medicine batch data
-        async function fetchStock() {
-            try {
-                const data = await apiFetch(`/api/medicine-batches/${id}`);
-                setBatchNo(data.batch_no);
-                setQuantity(data.quantity);
+                setMedicines(medOptions);
+                setSuppliers(supOptions);
 
-                // Convert expiry_date to yyyy-MM-dd format
-                const formattedExpiryDate = new Date(data.expiry_date).toISOString().split('T')[0];
-                setExpiryDate(formattedExpiryDate); // Set the formatted date
+                // Defaults to avoid controlled/uncontrolled warnings
+                setBatchNo(batch?.batch_no ?? "");
+                setQuantity(batch?.quantity != null ? String(batch.quantity) : "");
+                setCost(batch?.cost != null ? String(batch.cost) : "");
+                setExpiryDate(toDateInputValue(batch?.expiry_date));
 
-                setSupplier(data.supplier ? { value: data.supplier.id, label: data.supplier.name } : null);
-                setCost(data.cost);
+                // supplier_id might be returned as supplier_id OR supplier.id
+                const supplierId = batch?.supplier_id ?? batch?.supplier?.id ?? null;
+                setSupplier(supplierId ? supOptions.find((o) => o.value === supplierId) || null : null);
 
-                // Set the selected medicine from batch
-                const selectedMedicine = medicines.find(
-                    (medicine) => medicine.label === data.medicine.generic_name
-                );
-                setSelectedMedicine(selectedMedicine); // Pre-select medicine
+                // medicine_id might be returned as medicine_id OR medicine.id
+                const medicineId = batch?.medicine_id ?? batch?.medicine?.id ?? null;
+                setSelectedMedicine(medicineId ? medOptions.find((o) => o.value === medicineId) || null : null);
             } catch (err) {
                 console.error("Error fetching batch data:", err);
+                toast.error("Failed to load medicine batch data");
                 setError("Failed to load medicine batch data");
+            } finally {
+                if (alive) setPageLoading(false);
             }
-        }
+        })();
 
-        fetchMedicines(); // Fetch medicines on component mount
-        fetchSuppliers(); // Fetch suppliers on component mount
-        fetchStock(); // Fetch the specific batch on component mount
-
-    }, [id, medicines]); // Re-fetch when medicines are loaded or id changes
+        return () => {
+            alive = false;
+        };
+    }, [id]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
 
-        const data = {
+        const payload = {
             batch_no: batchNo,
-            quantity,
-            expiry_date: expiryDate,
-            supplier_id: supplier ? supplier.value : null, // Submit the selected supplier ID
-            cost,
-            medicine_id: selectedMedicine ? selectedMedicine.value : null, // Submit the selected medicine ID
+            quantity: quantity === "" ? 0 : Number(quantity),
+            expiry_date: expiryDate, // yyyy-mm-dd
+            supplier_id: supplier ? supplier.value : null,
+            cost: cost === "" ? 0 : Number(cost),
+            medicine_id: selectedMedicine ? selectedMedicine.value : null,
         };
 
         try {
             await apiFetch(`/api/medicine-batches/${id}`, {
                 method: "PUT",
-                body: JSON.stringify(data),
+                body: JSON.stringify(payload),
             });
+
+            toast.success("Stock batch updated!");
             navigate("/medicine-batches/index");
+
         } catch (err) {
-            setError("Failed to update stock batch");
+            console.error(err);
+            setError(err?.message || "Failed to update stock batch");
+            toast.error(err?.message || "Failed to update stock batch");
         } finally {
             setLoading(false);
         }
     };
 
+    if (pageLoading) {
+        return <div className="container mt-5">Loading...</div>;
+    }
+
     return (
         <div className="container mt-5">
             <h2 className="mb-4">Edit Stock Batch</h2>
+
             {error && <div className="alert alert-danger">{error}</div>}
 
             <form onSubmit={handleSubmit} className="form-card">
                 <div className="form-group mb-3">
-                    <label htmlFor="batchNo" className="form-label">Batch Number</label>
+                    <label className="form-label">Batch Number</label>
                     <input
                         type="text"
-                        id="batchNo"
                         className="form-control"
                         value={batchNo}
                         onChange={(e) => setBatchNo(e.target.value)}
@@ -125,10 +145,9 @@ const Edit = () => {
                 </div>
 
                 <div className="form-group mb-3">
-                    <label htmlFor="quantity" className="form-label">Quantity</label>
+                    <label className="form-label">Quantity</label>
                     <input
                         type="number"
-                        id="quantity"
                         className="form-control"
                         value={quantity}
                         onChange={(e) => setQuantity(e.target.value)}
@@ -137,33 +156,31 @@ const Edit = () => {
                 </div>
 
                 <div className="form-group mb-3">
-                    <label htmlFor="expiryDate" className="form-label">Expiry Date</label>
+                    <label className="form-label">Expiry Date</label>
                     <input
                         type="date"
-                        id="expiryDate"
                         className="form-control"
-                        value={expiryDate}  // This is being set from the API response
+                        value={expiryDate}
                         onChange={(e) => setExpiryDate(e.target.value)}
                         required
                     />
                 </div>
 
                 <div className="form-group mb-3">
-                    <label htmlFor="supplier" className="form-label">Supplier</label>
+                    <label className="form-label">Supplier</label>
                     <Select
                         options={suppliers}
                         value={supplier}
-                        onChange={setSupplier} // Update selected supplier
-                        className="form-control"
+                        onChange={setSupplier}
                         placeholder="Select Supplier"
                     />
                 </div>
 
                 <div className="form-group mb-3">
-                    <label htmlFor="cost" className="form-label">Cost</label>
+                    <label className="form-label">Cost</label>
                     <input
                         type="number"
-                        id="cost"
+                        step="0.01"
                         className="form-control"
                         value={cost}
                         onChange={(e) => setCost(e.target.value)}
@@ -172,12 +189,11 @@ const Edit = () => {
                 </div>
 
                 <div className="form-group mb-3">
-                    <label htmlFor="medicine" className="form-label">Generic Name</label>
+                    <label className="form-label">Generic Name</label>
                     <Select
                         options={medicines}
                         value={selectedMedicine}
-                        onChange={setSelectedMedicine} // Update selected medicine
-                        className="form-control"
+                        onChange={setSelectedMedicine}
                         placeholder="Select Medicine"
                     />
                 </div>
@@ -188,6 +204,4 @@ const Edit = () => {
             </form>
         </div>
     );
-};
-
-export default Edit;
+}
