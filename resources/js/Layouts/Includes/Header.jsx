@@ -20,7 +20,8 @@ export default function Header({
     const roleDisplay = roleName.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
 
     // Construct the avatar URL based on the user data
-    const avatarUrl = user?.avatar ? `http://127.0.0.1:8000/storage/${user.avatar}` : null;
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || window.location.origin;
+    const avatarUrl = user?.avatar ? `${API_BASE}/storage/${user.avatar}` : null;
 
     // Close dropdown when clicking outside
     useEffect(() => {

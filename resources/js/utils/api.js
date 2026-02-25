@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || window.location.origin;
 
 function getXsrfToken() {
     const row = document.cookie.split("; ").find((r) => r.startsWith("XSRF-TOKEN="));
