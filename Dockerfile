@@ -15,6 +15,8 @@ COPY . .
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 RUN composer install --no-dev --optimize-autoloader
 
+RUN php artisan config:clear && php artisan route:clear && php artisan view:clear
+
 # Frontend build (Vite -> public/build)
 RUN npm ci && npm run build
 
