@@ -4,7 +4,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || window.location.origin;
 
 function getCookie(name) {
     const match = document.cookie.match(new RegExp("(^|;\\s*)" + name + "=([^;]*)"));
-    return match ? decodeURIComponent(match[2]) : null;
+    return match ? match[2] : null; // <- no decode here
 }
 
 /**
@@ -64,8 +64,9 @@ export async function apiFetch(path, options = {}) {
     }
 
     // Add CSRF header if cookie exists
+    // Add CSRF header if cookie exists (Laravel expects decoded token)
     const xsrf = getCookie("XSRF-TOKEN");
-    if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
+    if (xsrf) headers["X-XSRF-TOKEN"] = decodeURIComponent(xsrf);
 
     const res = await fetch(url, {
         ...options,
