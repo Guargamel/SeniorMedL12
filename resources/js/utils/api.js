@@ -1,102 +1,61 @@
+// resources/js/utils/api.js
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || window.location.origin;
 
-function getXsrfToken() {
-    const row = document.cookie.split("; ").find((r) => r.startsWith("XSRF-TOKEN="));
-    if (!row) return "";
-    return decodeURIComponent(row.split("=")[1] || "");
+function getCookie(name) {
+    const match = document.cookie.match(new RegExp("(^|;\\s*)" + name + "=([^;]*)"));
+    return match ? decodeURIComponent(match[2]) : null;
 }
 
-export async function ensureCsrfCookie() {
+export async function csrf() {
+    // This sets XSRF-TOKEN cookie
     await fetch(`${API_BASE}/sanctum/csrf-cookie`, {
         method: "GET",
         credentials: "include",
-        headers: { Accept: "application/json" },
     });
 }
 
-export function safeArray(v) {
-    return Array.isArray(v) ? v : [];
-}
-
-export function normalizeList(payload, keys = []) {
-    // supports:
-    //  - [...]
-    //  - { data: [...] }
-    //  - { data: { data: [...] } } (Laravel paginator)
-    //  - { roles: [...] }, { roles: { data: [...] } }, etc.
-    if (Array.isArray(payload)) return payload;
-
-    if (payload && typeof payload === "object") {
-        // paginator: { data: { data: [...] } }
-        if (payload.data && typeof payload.data === "object" && Array.isArray(payload.data.data)) {
-            return payload.data.data;
-        }
-        // { data: [...] }
-        if (Array.isArray(payload.data)) return payload.data;
-
-        for (const k of keys) {
-            if (Array.isArray(payload[k])) return payload[k];
-            if (payload[k] && typeof payload[k] === "object" && Array.isArray(payload[k].data)) return payload[k].data;
-        }
-    }
-    return [];
-}
-
-
 export async function apiFetch(path, options = {}) {
     const url = path.startsWith("http") ? path : `${API_BASE}${path}`;
-    const method = (options.method || "GET").toUpperCase();
 
+    const method = (options.method || "GET").toUpperCase();
     const headers = {
         Accept: "application/json",
-        "X-Requested-With": "XMLHttpRequest",
         ...(options.headers || {}),
     };
 
+    // If we're sending JSON, set content-type
     const isFormData = options.body instanceof FormData;
-
-    if (isFormData) {
-        // Let the browser set multipart boundary automatically
-        if (headers["Content-Type"]) delete headers["Content-Type"];
-    } else if (options.body && !headers["Content-Type"]) {
+    if (!isFormData && options.body !== undefined && !headers["Content-Type"]) {
         headers["Content-Type"] = "application/json";
     }
 
-    // CSRF for state-changing requests
-    if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
-        await ensureCsrfCookie();
-        const xsrf = getXsrfToken();
-        if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
-    }
+    // Send CSRF header if present (Laravel reads X-XSRF-TOKEN)
+    const xsrf = getCookie("XSRF-TOKEN");
+    if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
 
     const res = await fetch(url, {
         ...options,
         method,
         headers,
-        credentials: "include",
+        credentials: "include", // <-- REQUIRED
     });
 
+    // 204 No Content
     if (res.status === 204) return null;
 
-    const contentType = res.headers.get("content-type") || "";
-
-    let data;
+    const text = await res.text();
+    let data = null;
     try {
-        if (contentType.includes("application/json")) {
-            data = await res.json();
-        } else {
-            const text = await res.text();
-            data = { message: text?.slice(0, 300) || "Non-JSON response" };
-        }
+        data = text ? JSON.parse(text) : null;
     } catch {
-        data = { message: "Failed to parse server response" };
+        data = text;
     }
 
     if (!res.ok) {
         const msg =
-            (data && typeof data === "object" && typeof data.message === "string" && data.message) ||
+            (data && (data.message || data.error)) ||
             `Request failed (${res.status})`;
-
         const err = new Error(msg);
         err.status = res.status;
         err.data = data;
