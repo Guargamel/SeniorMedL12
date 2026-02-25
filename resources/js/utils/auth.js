@@ -21,6 +21,7 @@ export async function apiFetch(path, options = {}) {
     const method = (options.method || "GET").toUpperCase();
     const headers = {
         Accept: "application/json",
+        "X-Requested-With": "XMLHttpRequest",
         ...(options.headers || {}),
     };
 
@@ -78,17 +79,23 @@ export async function fetchCurrentUser() {
 }
 
 export async function login({ email, password }) {
-    // ✅ MUST get CSRF cookie first or Laravel will return 419
+    // MUST set XSRF-TOKEN cookie first
     await csrf();
 
-    // Laravel's default login route expects form-encoded OR JSON depending on setup.
-    // We'll send JSON; if your backend expects form-data, tell me and I'll switch it.
+    // Many Laravel auth setups are happiest with form-urlencoded for /login
+    const form = new URLSearchParams();
+    form.set("email", email);
+    form.set("password", password);
+
     await apiFetch("/login", {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-Requested-With": "XMLHttpRequest",
+        },
+        body: form.toString(),
     });
 
-    // ✅ Confirm session by loading current user
     return await fetchCurrentUser();
 }
 
