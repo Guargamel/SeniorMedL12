@@ -15,6 +15,13 @@ export async function csrf() {
     });
 }
 
+export function safeArray(x) {
+    if (Array.isArray(x)) return x;
+    if (Array.isArray(x?.data)) return x.data;
+    if (Array.isArray(x?.data?.data)) return x.data.data; // paginator support
+    return [];
+}
+
 export async function apiFetch(path, options = {}) {
     const url = path.startsWith("http") ? path : `${API_BASE}${path}`;
 
