@@ -17,9 +17,10 @@ use App\Http\Controllers\Api\{
     NotificationController,
     AnalyticsController,
     ReportController,
-    BloodTypeController
+    BloodTypeController,
 };
 
+use App\Http\Controllers\Auth\MobileTokenAuthController;
 use App\Models\Supplier;
 
 /*
@@ -28,6 +29,9 @@ use App\Models\Supplier;
 |---------------------------------------------------------------------------
 | All routes below require Sanctum auth (session/cookie auth for SPA).
 */
+
+Route::post('/login', [MobileTokenAuthController::class, 'login']);
+Route::middleware('auth:sanctum')->post('/token-logout', [MobileTokenAuthController::class, 'logout']);
 
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -61,7 +65,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Staff + Admin
     Route::middleware('role:super-admin|staff')->group(function () {
-
         Route::prefix('dashboard')->group(function () {
             Route::get('/summary', [DashboardController::class, 'summary']);
             Route::get('/alerts', [DashboardController::class, 'alerts']);
@@ -109,7 +112,6 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('/{id}', [MedicineBatchController::class, 'update']);
             Route::delete('/{id}', [MedicineBatchController::class, 'destroy']);
         });
-
 
         Route::apiResource('medicine-categories', MedicineCategoryController::class);
 
