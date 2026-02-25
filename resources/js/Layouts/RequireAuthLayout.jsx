@@ -18,8 +18,11 @@ export default function RequireAuthLayout() {
             setLoading(true);
             setErrors([]);
 
-            const u = await fetchCurrentUser();
+            const res = await fetchCurrentUser();
             if (!alive) return;
+
+            // ✅ normalize shape: some endpoints return {user: {...}}
+            const u = res?.user ?? res;
 
             setUser(u);
             setLoading(false);
@@ -39,7 +42,6 @@ export default function RequireAuthLayout() {
         } catch (e) {
             console.error("Logout error:", e);
             setErrors([e?.message || "Logout failed"]);
-            // Force logout even if API fails
             setUser(null);
             navigate("/login", { replace: true });
         }
@@ -60,18 +62,19 @@ export default function RequireAuthLayout() {
         return <Navigate to="/login" replace state={{ from: location.pathname }} />;
     }
 
-    // Ensure roles are loaded before checking
-    const isSeniorCitizen = Array.isArray(user?.roles) && user.roles.some(role => role.name === 'senior-citizen');
-    const isAdminOrStaff = Array.isArray(user?.roles)
-        ? user.roles.some(role => [1, 2].includes(role.id) || ['super-admin', 'staff'].includes(role.name))
-        : [1, 2].includes(user?.role_id);
+    const roles = Array.isArray(user?.roles) ? user.roles : [];
 
-    // If user is neither admin/staff nor senior citizen, redirect to unauthorized
+    const isSeniorCitizen = roles.some((role) => role.name === "senior-citizen" || role.id === 4);
+
+    const isAdminOrStaff =
+        roles.length > 0
+            ? roles.some((role) => role.name === "super-admin" || role.name === "staff" || [1, 2].includes(role.id))
+            : [1, 2].includes(Number(user?.role_id));
+
     if (!isAdminOrStaff && !isSeniorCitizen) {
         return <Navigate to="/unauthorized" replace />;
     }
 
-    // Use SeniorLayout for senior citizens, regular Layout for admin/staff
     const LayoutComponent = isAdminOrStaff ? Layout : SeniorLayout;
 
     return <LayoutComponent user={user} errors={errors} handleLogout={handleLogout} />;

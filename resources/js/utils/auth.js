@@ -68,11 +68,9 @@ export async function apiFetch(path, options = {}) {
 
 export async function fetchCurrentUser() {
     try {
-        // Your backend might expose /api/user or /api/me.
-        // Keep /api/user since your console shows that endpoint.
-        return await apiFetch("/api/user");
+        const res = await apiFetch("/api/user");
+        return res?.user ?? res; // ✅ normalize response
     } catch (e) {
-        // 401 = not logged in
         if (e?.status === 401) return null;
         throw e;
     }
