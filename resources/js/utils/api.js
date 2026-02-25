@@ -7,21 +7,46 @@ function getCookie(name) {
     return match ? decodeURIComponent(match[2]) : null;
 }
 
+/**
+ * Hit Sanctum CSRF cookie endpoint so Laravel sets XSRF-TOKEN cookie.
+ * Required before POST /login, POST /logout, and other state-changing requests
+ * when CSRF middleware is active.
+ */
 export async function csrf() {
-    // This sets XSRF-TOKEN cookie
     await fetch(`${API_BASE}/sanctum/csrf-cookie`, {
         method: "GET",
         credentials: "include",
     });
 }
 
-export function safeArray(x) {
+/**
+ * Normalizes common API response shapes into an array.
+ * Supports:
+ * - []
+ * - { data: [] }
+ * - { data: { data: [] } } (Laravel paginator)
+ */
+export function normalizeList(x) {
     if (Array.isArray(x)) return x;
     if (Array.isArray(x?.data)) return x.data;
-    if (Array.isArray(x?.data?.data)) return x.data.data; // paginator support
+    if (Array.isArray(x?.data?.data)) return x.data.data;
     return [];
 }
 
+/**
+ * Backwards compatible helper (some files import safeArray)
+ */
+export function safeArray(x) {
+    return normalizeList(x);
+}
+
+/**
+ * Fetch helper with:
+ * - base URL support (Render vs local)
+ * - cookies included (Sanctum/session)
+ * - X-XSRF-TOKEN header (from XSRF-TOKEN cookie)
+ * - JSON parsing + useful errors
+ */
 export async function apiFetch(path, options = {}) {
     const url = path.startsWith("http") ? path : `${API_BASE}${path}`;
 
@@ -31,13 +56,14 @@ export async function apiFetch(path, options = {}) {
         ...(options.headers || {}),
     };
 
-    // If we're sending JSON, set content-type
     const isFormData = options.body instanceof FormData;
+
+    // Default JSON content-type if body provided (and not FormData)
     if (!isFormData && options.body !== undefined && !headers["Content-Type"]) {
         headers["Content-Type"] = "application/json";
     }
 
-    // Send CSRF header if present (Laravel reads X-XSRF-TOKEN)
+    // Add CSRF header if cookie exists
     const xsrf = getCookie("XSRF-TOKEN");
     if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
 
@@ -45,14 +71,14 @@ export async function apiFetch(path, options = {}) {
         ...options,
         method,
         headers,
-        credentials: "include", // <-- REQUIRED
+        credentials: "include", // ✅ REQUIRED for Sanctum/session cookies
     });
 
-    // 204 No Content
     if (res.status === 204) return null;
 
     const text = await res.text();
     let data = null;
+
     try {
         data = text ? JSON.parse(text) : null;
     } catch {
