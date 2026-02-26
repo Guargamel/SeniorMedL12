@@ -31,6 +31,13 @@ export default function SeniorCreate() {
         blood_type_id: "",
     });
 
+    const computedAge = form.birthdate
+        ? Math.floor(
+            (new Date() - new Date(form.birthdate)) /
+            (365.25 * 24 * 60 * 60 * 1000)
+        )
+        : "";
+
     const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
     const err = (k) => (errors?.[k]?.[0] ? errors[k][0] : "");
 
@@ -60,7 +67,10 @@ export default function SeniorCreate() {
             // send payload as-is; backend should persist into senior_profiles columns
             await apiFetch("/api/seniors", {
                 method: "POST",
-                body: JSON.stringify(form),
+                body: JSON.stringify({
+                    ...form,
+                    age: computedAge
+                }),
             });
 
             navigate("/seniors");
@@ -113,8 +123,8 @@ export default function SeniorCreate() {
                             <Field
                                 label="Age"
                                 type="number"
-                                value={form.age}
-                                onChange={(v) => set("age", v)}
+                                value={computedAge}
+                                disabled
                                 error={err("age")}
                             />
                             <Field

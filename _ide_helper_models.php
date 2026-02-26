@@ -152,6 +152,7 @@ namespace App\Models{
  * @property int $medicine_id
  * @property int $quantity
  * @property string|null $reason
+ * @property string|null $prescription_path
  * @property string $status
  * @property string|null $notes
  * @property int|null $reviewed_by
@@ -159,6 +160,7 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
  * @property string|null $review_notes
+ * @property-read mixed $prescription_url
  * @property-read \App\Models\Medicine $medicine
  * @property-read \App\Models\User|null $reviewer
  * @property-read \App\Models\User $user
@@ -172,6 +174,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MedicineRequest whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MedicineRequest whereMedicineId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MedicineRequest whereNotes($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MedicineRequest wherePrescriptionPath($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MedicineRequest whereQuantity($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MedicineRequest whereReason($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MedicineRequest whereReviewNotes($value)
@@ -248,6 +251,8 @@ namespace App\Models{
  * @property int|null $blood_pressure_diastolic
  * @property int|null $age
  * @property int|null $height_cm
+ * @property-read \App\Models\BloodType|null $bloodType
+ * @property-read mixed $computed_age
  * @property-read \App\Models\User $user
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeniorProfile newQuery()
@@ -316,6 +321,7 @@ namespace App\Models{
  * @property string|null $phone
  * @property string|null $address
  * @property string|null $bio
+ * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property-read string|null $avatar_url
  * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
  * @property-read int|null $notifications_count
@@ -328,6 +334,7 @@ namespace App\Models{
  * @property-read int|null $tokens_count
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User permission($permissions, $without = false)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User role($roles, $guard = null, $without = false)
@@ -335,6 +342,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereAvatar($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereBio($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereDeletedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereEmail($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereEmailVerifiedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereId($value)
@@ -344,8 +352,10 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereRememberToken($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereRoleId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User withoutPermission($permissions)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User withoutRole($roles, $guard = null)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User withoutTrashed()
  */
 	class User extends \Eloquent {}
 }

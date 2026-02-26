@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class SeniorProfile extends Model
 {
@@ -32,5 +33,11 @@ class SeniorProfile extends Model
     public function bloodType()
     {
         return $this->belongsTo(BloodType::class, 'blood_type_id');
+    }
+
+    public function getComputedAgeAttribute()
+    {
+        if (!$this->birthdate) return null;
+        return Carbon::parse($this->birthdate)->age;
     }
 }
