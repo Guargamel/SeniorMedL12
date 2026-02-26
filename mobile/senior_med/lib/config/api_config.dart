@@ -2,7 +2,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiConfig {
   static const _key = 'api_base_url';
-  static const defaultBaseUrl = 'http://192.168.1.10:8000'; // change later
+  static const defaultBaseUrl = 'http://192.168.1.10:8000/api'; // change later // change later
 
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
@@ -11,6 +11,11 @@ class ApiConfig {
     // Remove a trailing slash to avoid double-slash issues with endpoints.
     while (u.endsWith('/')) {
       u = u.substring(0, u.length - 1);
+    }
+    // Ensure the URL points to Laravel's API prefix.
+    // If the user enters just http://host:8000 we auto-convert it to http://host:8000/api
+    if (!u.toLowerCase().endsWith('/api')) {
+      u = "$u/api";
     }
     return u;
   }

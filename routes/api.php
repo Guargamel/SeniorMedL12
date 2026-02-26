@@ -3,6 +3,11 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+
+use App\Models\User;
+use App\Models\Supplier;
+
 use App\Http\Controllers\Api\{
     RoleController,
     StaffController,
@@ -20,22 +25,76 @@ use App\Http\Controllers\Api\{
     BloodTypeController
 };
 
-use App\Models\Supplier;
-
 /*
-|---------------------------------------------------------------------------
+|--------------------------------------------------------------------------
 | API Routes
-|---------------------------------------------------------------------------
-| All routes below require Sanctum auth (session/cookie auth for SPA).
+|--------------------------------------------------------------------------
+| - Web SPA: cookie/session auth via Sanctum
+| - Mobile: Bearer token auth via Sanctum
+|   (same middleware: auth:sanctum, just different client behavior)
 */
 
+/**
+ * ============================================================
+ * MOBILE AUTH (TOKEN-BASED)
+ * ============================================================
+ * Flutter will call /api/mobile/login and receive a token.
+ * Then it must send: Authorization: Bearer {token}
+ */
+Route::post('/mobile/login', function (Request $request) {
+    $request->validate([
+        'email' => ['required', 'email'],
+        'password' => ['required'],
+        'device_name' => ['nullable', 'string', 'max:100'], // optional but nice
+    ]);
+
+    $user = User::where('email', $request->email)->first();
+
+    if (!$user || !Hash::check($request->password, $user->password)) {
+        return response()->json(['message' => 'Invalid credentials'], 401);
+    }
+
+    // (Optional) revoke previous tokens for "single device login" behavior:
+    // $user->tokens()->delete();
+
+    $deviceName = $request->input('device_name', 'mobile');
+
+    $token = $user->createToken($deviceName)->plainTextToken;
+
+    return response()->json([
+        'token' => $token,
+        'user' => $user->load('roles'),
+    ]);
+});
+
+// Mobile logout: revoke current token
+Route::post('/mobile/logout', function (Request $request) {
+    $token = $request->user()?->currentAccessToken();
+    if ($token) $token->delete();
+
+    return response()->json(['message' => 'Token revoked']);
+})->middleware('auth:sanctum');
+
+
+/**
+ * ============================================================
+ * PROTECTED ROUTES (WEB + MOBILE)
+ * ============================================================
+ * Web: cookie auth
+ * Mobile: bearer token auth
+ */
 Route::middleware('auth:sanctum')->group(function () {
 
     // Everyone logged in
     Route::get('/me', [ProfileController::class, 'me']);
-    Route::get('/user', fn(Request $request) => response()->json(['user' => $request->user()->load('roles')]));
+    Route::get('/user', fn(Request $request) => response()->json([
+        'user' => $request->user()->load('roles')
+    ]));
+
     Route::put('/profile', [ProfileController::class, 'update']);
     Route::put('/profile/password', [ProfileController::class, 'updatePassword']);
+
+    // Web SPA logout (session/cookie)
     Route::post('/logout', function (Request $request) {
         Auth::guard('web')->logout();
         $request->session()->invalidate();
@@ -49,13 +108,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/medicines/outstock', [MedicineController::class, 'outstock']);
     Route::get('/medicines/{medicine}', [MedicineController::class, 'show']);
 
-    // Seniors only
+    // Seniors (and staff/admin) - medicine requests
     Route::middleware('role:senior-citizen|super-admin|staff')->group(function () {
         Route::prefix('medicine-requests')->group(function () {
-            Route::get('/', [MedicineRequestController::class, 'index']);     // their own
-            Route::post('/', [MedicineRequestController::class, 'store']);    // create
-            Route::get('/{id}', [MedicineRequestController::class, 'show']);  // must enforce ownership
-            Route::delete('/{id}', [MedicineRequestController::class, 'destroy']); // own pending
+            Route::get('/', [MedicineRequestController::class, 'index']);
+            Route::post('/', [MedicineRequestController::class, 'store']);
+
+            Route::get('/{id}', [MedicineRequestController::class, 'show'])->whereNumber('id');
+            Route::delete('/{id}', [MedicineRequestController::class, 'destroy'])->whereNumber('id');
         });
     });
 
@@ -67,6 +127,8 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/alerts', [DashboardController::class, 'alerts']);
             Route::get('/recent-distributions', [DashboardController::class, 'recentDistributions']);
         });
+
+        Route::get('/medicine-requests/all', [MedicineRequestController::class, 'index']);
 
         Route::prefix('notifications')->group(function () {
             Route::get('/', [NotificationController::class, 'index']);
@@ -105,11 +167,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::prefix('medicine-batches')->group(function () {
             Route::get('/', [MedicineBatchController::class, 'index']);
             Route::post('/create', [MedicineBatchController::class, 'store']);
-            Route::get('/{id}', [MedicineBatchController::class, 'show']); // ✅ ADD THIS
+            Route::get('/{id}', [MedicineBatchController::class, 'show']);
             Route::put('/{id}', [MedicineBatchController::class, 'update']);
             Route::delete('/{id}', [MedicineBatchController::class, 'destroy']);
         });
-
 
         Route::apiResource('medicine-categories', MedicineCategoryController::class);
 
@@ -119,6 +180,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Super-admin only
     Route::middleware('role:super-admin')->group(function () {
+
         Route::prefix('staff')->group(function () {
             Route::get('/', [StaffController::class, 'index']);
             Route::post('/', [StaffController::class, 'store']);
@@ -140,5 +202,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/medicines/{id}', [MedicineController::class, 'destroy']);
     });
 
+    // Everyone logged in can view blood types
     Route::get('/blood-types', [BloodTypeController::class, 'index']);
 });

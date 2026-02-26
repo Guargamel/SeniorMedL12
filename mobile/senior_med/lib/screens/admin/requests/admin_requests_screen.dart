@@ -26,7 +26,7 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
       error = null;
     });
     try {
-      final res = await ApiService.instance.dio.get("/medicine-requests");
+      final res = await ApiService.instance.dio.get("/medicine-requests/all");
       if (res.statusCode != 200) throw Exception("${res.statusCode}: ${res.data}");
       final data = res.data;
       final list = (data is Map && data["data"] is List) ? data["data"] as List : (data is List ? data : []);
