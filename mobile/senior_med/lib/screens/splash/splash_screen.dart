@@ -22,6 +22,9 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _boot() async {
+    // Ensure the app uses the persisted base URL before any requests.
+    await ApiService.instance.loadBaseUrlFromStorage();
+
     final token = await ApiService.instance.getToken();
 
     if (token == null || token.isEmpty) {

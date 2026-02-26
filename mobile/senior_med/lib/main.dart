@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'services/api_service.dart';
 import 'router/app_router.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Load saved base URL into Dio before any API calls
+  await ApiService.instance.loadBaseUrlFromStorage();
+
   runApp(const SeniorMedApp());
 }
 

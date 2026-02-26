@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../screens/splash/splash_screen.dart';
 import '../screens/auth/login_screen.dart';
+import '../screens/common/server_settings_screen.dart';
 import '../screens/common/unauthorized_screen.dart';
 import '../screens/admin/admin_shell.dart';
 import '../screens/senior/senior_shell.dart';
@@ -18,6 +19,10 @@ class AppRouter {
       GoRoute(
         path: "/login",
         builder: (_, __) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: "/server",
+        builder: (_, __) => const ServerSettingsScreen(),
       ),
       GoRoute(
         path: "/unauthorized",

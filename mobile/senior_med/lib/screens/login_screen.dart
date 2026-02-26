@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../settings/api_url_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -102,6 +103,20 @@ class _LoginScreenState extends State<LoginScreen> {
                       labelText: "Password",
                       border: OutlineInputBorder(),
                     ),
+                  ),
+
+                  IconButton(
+                    icon: const Icon(Icons.dns),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const ApiUrlScreen()),
+                      );
+                    },
+                  ),
+
+                  Text(
+                    "Server: ${ApiService.instance.dio.options.baseUrl}",
+                    style: const TextStyle(fontSize: 12),
                   ),
 
                   const SizedBox(height: 14),

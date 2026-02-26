@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/roles.dart';
 import '../../services/auth_service.dart';
+import '../../config/api_config.dart';
+import '../../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,8 +18,35 @@ class _LoginScreenState extends State<LoginScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
 
+  String _baseUrl = ApiConfig.defaultBaseUrl;
+  bool _loadingUrl = true;
+
   bool _loading = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBaseUrl();
+  }
+
+  Future<void> _loadBaseUrl() async {
+    try {
+      await ApiService.instance.loadBaseUrlFromStorage();
+      final url = await ApiConfig.getBaseUrl();
+      if (!mounted) return;
+      setState(() {
+        _baseUrl = url;
+        _loadingUrl = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _baseUrl = ApiConfig.defaultBaseUrl;
+        _loadingUrl = false;
+      });
+    }
+  }
 
   Future<void> _submit() async {
     setState(() {
@@ -85,6 +114,39 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(fontSize: 16),
                   ),
                   const SizedBox(height: 24),
+
+                  // Server indicator + edit button (before login)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.cloud, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _loadingUrl ? 'Server: loading…' : 'Server: $_baseUrl',
+                            style: const TextStyle(fontSize: 13),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        TextButton(
+                          onPressed: () async {
+                            await context.push('/server');
+                            // Refresh after coming back from settings.
+                            await _loadBaseUrl();
+                          },
+                          child: const Text('Edit'),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
                   TextField(
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,
