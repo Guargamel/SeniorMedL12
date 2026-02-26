@@ -38,6 +38,7 @@ class SeniorProfile extends Model
     }
     public function getAgeAttribute()
     {
-        return Carbon::parse($this->birthday)->age;
+        if (!$this->birthdate) return null;
+        return Carbon::parse($this->birthdate)->age;
     }
 }

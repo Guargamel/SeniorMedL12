@@ -95,10 +95,16 @@ class DashboardController extends Controller
             ->limit(10)
             ->get([
                 'mr.id as id',
-                DB::raw("DATE_FORMAT(mr.updated_at, '%Y-%m-%d %H:%i') as time"),
+                DB::raw("to_char(mr.updated_at, 'YYYY-MM-DD HH24:MI') as time"),
                 'u.name as name',
-                DB::raw("CONCAT(m.generic_name, IF(m.brand_name IS NULL OR m.brand_name = '', '', CONCAT(' (', m.brand_name, ')'))) as medicine"),
-                'mr.quantity as quantity',  // Changed from 'qty_requested' to 'quantity'
+                DB::raw("
+    CASE
+      WHEN m.brand_name IS NULL OR m.brand_name = ''
+        THEN m.generic_name
+      ELSE m.generic_name || ' (' || m.brand_name || ')'
+    END as medicine
+  "),
+                'mr.quantity as quantity',
             ]);
 
         return response()->json($rows);
