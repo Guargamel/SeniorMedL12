@@ -15,7 +15,7 @@ export default defineConfig({
         port: 5173,
         strictPort: true,
         hmr: {
-            host: "192.168.1.10", // <-- your PC LAN IP
+            host: "localhost", // <-- your PC LAN IP
             port: 5173,
         },
         cors: true,
