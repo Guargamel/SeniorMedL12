@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
     LayoutDashboard,
@@ -6,10 +6,7 @@ import {
     Pill,
     Boxes,
     Target,
-    Bell,
-    BarChart3,
     FileText,
-    Settings,
     ChevronDown,
 } from "lucide-react";
 
@@ -19,7 +16,6 @@ const menu = [
         items: [
             { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
 
-            // ✅ Staff dropdown
             {
                 label: "Staff",
                 icon: Users,
@@ -29,7 +25,6 @@ const menu = [
                 ],
             },
 
-            // ✅ Seniors dropdown
             {
                 label: "Senior Citizens",
                 icon: Users,
@@ -55,12 +50,12 @@ const menu = [
             },
             {
                 label: "Stock Management",
-                to: "/stock",  // Link to the stock management page
+                to: "/stock",
                 icon: Boxes,
                 children: [
-                    { label: "Stock List", to: "/medicine-batches/index" },  // View all stock
-                    { label: "Create Stock", to: "/medicine-batches/create" }, // Add new stock
-                ]
+                    { label: "Stock List", to: "/medicine-batches/index" },
+                    { label: "Create Stock", to: "/medicine-batches/create" },
+                ],
             },
         ],
     },
@@ -68,29 +63,86 @@ const menu = [
         title: "OPERATIONS",
         items: [
             { label: "Distributions", to: "/distributions", icon: Target },
-            { label: "Notifications", to: "/notifications", icon: Bell },
+            // ✅ removed Notifications
+            // { label: "Notifications", to: "/notifications", icon: Bell },
         ],
     },
     {
         title: "REQUESTS",
         items: [
-            // { label: "Analytics", to: "/analytics", icon: BarChart3 },
-            { label: "Requests", to: "/medicine-requests", icon: FileText },
+            { label: "Requests", to: "/medicine-requests", icon: FileText, badgeKey: "pendingRequests" },
         ],
     },
-    // {
-    //     title: "SYSTEM",
-    //     items: [{ label: "Settings", to: "/settings", icon: Settings }],
-    // },
 ];
 
 function isPathActive(pathname, to) {
-    // active for exact match OR nested routes
     return pathname === to || pathname.startsWith(to + "/");
+}
+
+function Badge({ value }) {
+    if (!value || value <= 0) return null;
+    const text = value > 99 ? "99+" : String(value);
+
+    return (
+        <span
+            style={{
+                marginLeft: "auto",
+                minWidth: 18,
+                height: 18,
+                padding: "0 6px",
+                borderRadius: 999,
+                background: "#ef4444",
+                color: "white",
+                fontSize: 12,
+                lineHeight: "18px",
+                textAlign: "center",
+                fontWeight: 700,
+            }}
+            aria-label={`${text} pending requests`}
+            title={`${text} pending requests`}
+        >
+            {text}
+        </span>
+    );
 }
 
 export default function Sidebar() {
     const { pathname } = useLocation();
+
+    // ✅ Pending requests count state
+    const [pendingCount, setPendingCount] = useState(0);
+
+    // ✅ Fetch pending count (poll every 30s)
+    useEffect(() => {
+        let alive = true;
+
+        const fetchCount = async () => {
+            try {
+                // OPTION A (recommended): count endpoint
+                const res = await fetch("/api/medicine-requests/pending-count", {
+                    credentials: "include",
+                    headers: { Accept: "application/json" },
+                });
+
+                if (!res.ok) return;
+                const data = await res.json();
+
+                // accept {count: number} OR {pending: number}
+                const count = Number(data.count ?? data.pending ?? 0);
+                if (alive) setPendingCount(Number.isFinite(count) ? count : 0);
+            } catch {
+                // ignore network errors
+            }
+        };
+
+        fetchCount();
+        const t = setInterval(fetchCount, 30000);
+
+        return () => {
+            alive = false;
+            clearInterval(t);
+        };
+    }, []);
 
     // auto-open dropdown if you're inside that section
     const initialOpen = useMemo(() => {
@@ -106,8 +158,11 @@ export default function Sidebar() {
     }, [pathname]);
 
     const [open, setOpen] = useState(initialOpen);
-
     const toggle = (key) => setOpen((p) => ({ ...p, [key]: !p[key] }));
+
+    const badges = {
+        pendingRequests: pendingCount,
+    };
 
     return (
         <aside className="mc-sidebar">
@@ -140,6 +195,9 @@ export default function Sidebar() {
                                                 border: "none",
                                                 background: "transparent",
                                                 textAlign: "left",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 10,
                                             }}
                                         >
                                             <Icon size={18} />
@@ -159,9 +217,7 @@ export default function Sidebar() {
                                                     <NavLink
                                                         key={c.to}
                                                         to={c.to}
-                                                        className={({ isActive }) =>
-                                                            `mc-subnav-item ${isActive ? "active" : ""}`
-                                                        }
+                                                        className={({ isActive }) => `mc-subnav-item ${isActive ? "active" : ""}`}
                                                     >
                                                         {c.label}
                                                     </NavLink>
@@ -172,15 +228,19 @@ export default function Sidebar() {
                                 );
                             }
 
-                            // ✅ Normal link
+                            // ✅ Normal link (supports badge)
+                            const badgeValue = item.badgeKey ? badges[item.badgeKey] : 0;
+
                             return (
                                 <NavLink
                                     key={item.to}
                                     to={item.to}
                                     className={({ isActive }) => `mc-nav-item ${isActive ? "active" : ""}`}
+                                    style={{ display: "flex", alignItems: "center", gap: 10 }}
                                 >
                                     <Icon size={18} />
                                     <span>{item.label}</span>
+                                    <Badge value={badgeValue} />
                                 </NavLink>
                             );
                         })}

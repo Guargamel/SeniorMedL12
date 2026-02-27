@@ -197,7 +197,7 @@ const Create = () => {
                         <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                             <div className="flex items-start justify-between gap-4">
                                 <div>
-                                    <div className="text-sm font-semibold text-gray-800">Receipt Photo (Optional)</div>
+                                    <div className="text-sm font-semibold text-gray-800">Receipt Photo (Mandatory)</div>
                                     <div className="text-xs text-gray-500 mt-1">
                                         Upload a clear image (JPG/PNG/WebP). Max size depends on server validation.
                                     </div>

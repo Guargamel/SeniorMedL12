@@ -128,6 +128,11 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/recent-distributions', [DashboardController::class, 'recentDistributions']);
         });
 
+        Route::get('/medicine-requests/pending-count', function () {
+            $count = \App\Models\MedicineRequest::where('status', 'pending')->count();
+            return response()->json(['count' => $count]);
+        });
+
         Route::get('/medicine-requests/all', [MedicineRequestController::class, 'index']);
 
         Route::prefix('notifications')->group(function () {
