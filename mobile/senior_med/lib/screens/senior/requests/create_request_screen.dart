@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../services/api_service.dart';
+import '../../../core/request_events.dart';
 
 class CreateRequestScreen extends StatefulWidget {
   final int? medicineId;
@@ -39,8 +40,12 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
     try {
       final res = await ApiService.instance.dio.get("/medicines");
       if (res.statusCode != 200) throw Exception("${res.statusCode}: ${res.data}");
+
       final data = res.data;
-      medicines = (data is Map && data["data"] is List) ? data["data"] as List : (data is List ? data : []);
+      medicines = (data is Map && data["data"] is List)
+          ? data["data"] as List
+          : (data is List ? data : []);
+
       if (mounted) setState(() {});
     } catch (e) {
       if (mounted) setState(() => error = e.toString());
@@ -59,11 +64,13 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
         setState(() => proofImage = img);
       }
     } catch (e) {
-      setState(() => error = "Failed to pick image: $e");
+      if (mounted) setState(() => error = "Failed to pick image: $e");
     }
   }
 
   Future<void> _submit() async {
+    if (!mounted) return;
+
     setState(() {
       loading = true;
       error = null;
@@ -74,11 +81,6 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
 
       final qty = int.tryParse(qtyCtrl.text.trim()) ?? 1;
 
-      // Backend expects:
-      // - medicine_id (int)
-      // - quantity (int)
-      // - reason (string, optional)
-      // - prescription_path (image file, optional)
       final form = FormData.fromMap({
         "medicine_id": medicineId,
         "quantity": qty,
@@ -101,10 +103,19 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
       }
 
       if (!mounted) return;
+
+      // ✅ notify all screens (including MyRequests tab) to refresh
+      RequestEvents.notifyCreated();
+
+      // ✅ return true to the previous screen (so MyRequests can _load too)
       Navigator.pop(context, true);
+
+      return; // ✅ prevents setState in finally after pop
     } catch (e) {
+      if (!mounted) return;
       setState(() => error = e.toString());
     } finally {
+      if (!mounted) return;
       setState(() => loading = false);
     }
   }
@@ -134,12 +145,12 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
               ),
               items: medicines.map((m) {
                 final mm = m as Map;
-                return DropdownMenuItem(
+                return DropdownMenuItem<int>(
                   value: (mm["id"] ?? 0) as int,
                   child: Text(mm["generic_name"]?.toString() ?? "Medicine"),
                 );
               }).toList(),
-              onChanged: (v) => setState(() => medicineId = v),
+              onChanged: loading ? null : (v) => setState(() => medicineId = v),
             ),
             const SizedBox(height: 12),
             TextField(
