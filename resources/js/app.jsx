@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 // Layouts
-import PlainLayout from "./Layouts/PlainLayout.jsx";
+import PlainLayout from "./Layouts/LoginRegisterLayout.jsx";
 import RequireAuthLayout from "./Layouts/RequireAuthLayout.jsx";
 
 // Auth
@@ -56,6 +56,8 @@ import BrowseMedicines from "./Seniors/BrowseMedicines.jsx";
 import Notifications from "./Notifications/Notifications.jsx";
 
 import Profile from "./Users/Profile.jsx";
+
+import "../css/app.css";
 
 // Main App Route Setup
 const container = document.getElementById("app");

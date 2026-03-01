@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import Layout from "./Layout";
+import Layout from "./HeaderLayout";
 import SeniorLayout from "./SeniorLayout";
 import { fetchCurrentUser, logout as apiLogout } from "../utils/auth";
 

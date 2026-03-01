@@ -2,14 +2,14 @@ import React, { useState, useEffect } from "react";
 import { safeArray, apiFetch } from "../utils/api";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
-import "../../css/style.css";
 
 const Index = () => {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
-    const [filter, setFilter] = useState('all'); // all, pending, approved, declined
-    const [pendingActions, setPendingActions] = useState({}); // Track pending actions for each request
+    const [filter, setFilter] = useState("all");
+    const [pendingActions, setPendingActions] = useState({});
+    const [previewUrl, setPreviewUrl] = useState(null); // Modal preview
 
     useEffect(() => {
         async function fetchData() {
@@ -30,23 +30,24 @@ const Index = () => {
         fetchData();
     }, []);
 
-    const handleStatusUpdate = async (id, status, reviewNotes = '') => {
-        setPendingActions((prev) => ({ ...prev, [id]: true })); // Start the loading state for this request
+    const handleStatusUpdate = async (id, status, reviewNotes = "") => {
+        setPendingActions(prev => ({ ...prev, [id]: true }));
+
         try {
             await apiFetch(`/api/medicine-requests/${id}/review`, {
                 method: "PUT",
                 body: JSON.stringify({ status, review_notes: reviewNotes })
             });
+
             toast.success(`Request ${status} successfully!`);
 
-            // Refresh requests
             const updatedRequests = await apiFetch("/api/medicine-requests");
             setRequests(updatedRequests);
         } catch (error) {
             console.error("Failed to update request:", error);
             toast.error("Failed to update request");
         } finally {
-            setPendingActions((prev) => ({ ...prev, [id]: false })); // End the loading state for this request
+            setPendingActions(prev => ({ ...prev, [id]: false }));
         }
     };
 
@@ -57,9 +58,9 @@ const Index = () => {
             await apiFetch(`/api/medicine-requests/${id}`, {
                 method: "DELETE"
             });
+
             toast.success("Request deleted successfully!");
 
-            // Refresh requests
             const updatedRequests = await apiFetch("/api/medicine-requests");
             setRequests(updatedRequests);
         } catch (error) {
@@ -83,13 +84,15 @@ const Index = () => {
     };
 
     const canReview = user?.roles?.some(role =>
-        role.name === 'super-admin' || role.name === 'staff'
+        role.name === "super-admin" || role.name === "staff"
     );
 
-    const isSeniorCitizen = user?.roles?.some(role => role.name === 'senior-citizen');
+    const isSeniorCitizen = user?.roles?.some(role =>
+        role.name === "senior-citizen"
+    );
 
     const filteredRequests = safeArray(requests).filter(req => {
-        if (filter === 'all') return true;
+        if (filter === "all") return true;
         return req.status === filter;
     });
 
@@ -104,14 +107,18 @@ const Index = () => {
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4">
             <div className="max-w-7xl mx-auto">
+
                 {/* Header */}
                 <div className="flex justify-between items-center mb-6">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900">Medicine Requests</h1>
                         <p className="text-gray-600 mt-1">
-                            {isSeniorCitizen ? "Manage your medicine requests" : "Review and manage medicine requests"}
+                            {isSeniorCitizen
+                                ? "Manage your medicine requests"
+                                : "Review and manage medicine requests"}
                         </p>
                     </div>
+
                     {isSeniorCitizen && (
                         <Link
                             to="/medicine-requests/create"
@@ -122,64 +129,48 @@ const Index = () => {
                     )}
                 </div>
 
-                {/* Filter Tabs */}
-                <div className="flex gap-3 mb-6">
-                    <button
-                        onClick={() => setFilter('all')}
-                        className={`px-4 py-2 rounded-lg font-medium transition-all ${filter === 'all'
-                            ? 'bg-blue-600 text-black'
-                            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-                            }`}
-                    >
-                        All ({requests.length})
-                    </button>
-                    <button
-                        onClick={() => setFilter('pending')}
-                        className={`px-4 py-2 rounded-lg font-medium transition-all ${filter === 'pending'
-                            ? 'bg-yellow-500 text-black'
-                            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-                            }`}
-                    >
-                        Pending ({safeArray(requests).filter(r => r.status === 'pending').length})
-                    </button>
-                    <button
-                        onClick={() => setFilter('approved')}
-                        className={`px-4 py-2 rounded-lg font-medium transition-all ${filter === 'approved'
-                            ? 'bg-green-500 text-black'
-                            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-                            }`}
-                    >
-                        Approved ({safeArray(requests).filter(r => r.status === 'approved').length})
-                    </button>
-                    <button
-                        onClick={() => setFilter('declined')}
-                        className={`px-4 py-2 rounded-lg font-medium transition-all ${filter === 'declined'
-                            ? 'bg-red-500 text-black'
-                            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-                            }`}
-                    >
-                        Declined ({safeArray(requests).filter(r => r.status === 'declined').length})
-                    </button>
+                {/* Filters */}
+                <div className="flex gap-3 mb-6 flex-wrap">
+                    {["all", "pending", "approved", "declined"].map(type => (
+                        <button
+                            key={type}
+                            onClick={() => setFilter(type)}
+                            className={`px-4 py-2 rounded-lg font-medium transition-all ${filter === type
+                                ? "bg-blue-600 text-white"
+                                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+                                }`}
+                        >
+                            {type.charAt(0).toUpperCase() + type.slice(1)} (
+                            {type === "all"
+                                ? requests.length
+                                : safeArray(requests).filter(r => r.status === type).length}
+                            )
+                        </button>
+                    ))}
                 </div>
 
-                {/* Requests List */}
+                {/* Requests */}
                 {filteredRequests.length === 0 ? (
                     <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
                         <p className="text-gray-500 text-lg">No requests found</p>
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {filteredRequests.map((request) => (
+                        {filteredRequests.map(request => (
                             <div
                                 key={request.id}
                                 className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"
                             >
                                 <div className="p-6">
-                                    <div className="flex items-start justify-between">
+
+                                    <div className="flex flex-col md:flex-row gap-6 md:justify-between">
+
+                                        {/* LEFT SIDE */}
                                         <div className="flex-1">
+
                                             <div className="flex items-center gap-3 mb-3">
                                                 <h3 className="text-xl font-semibold text-gray-900">
-                                                    {request.medicine?.generic_name || 'Unknown Medicine'}
+                                                    {request.medicine?.generic_name || "Unknown Medicine"}
                                                 </h3>
                                                 {getStatusBadge(request.status)}
                                             </div>
@@ -189,117 +180,157 @@ const Index = () => {
                                                     <div className="text-sm">
                                                         <span className="text-gray-600">Requested by:</span>
                                                         <span className="ml-2 font-medium text-gray-900">
-                                                            {request.user?.name || 'Unknown'}
+                                                            {request.user?.name || "Unknown"}
                                                         </span>
                                                     </div>
                                                 )}
+
                                                 <div className="text-sm">
                                                     <span className="text-gray-600">Quantity:</span>
                                                     <span className="ml-2 font-medium text-gray-900">
                                                         {request.quantity} units
                                                     </span>
                                                 </div>
+
                                                 <div className="text-sm">
                                                     <span className="text-gray-600">Requested on:</span>
                                                     <span className="ml-2 font-medium text-gray-900">
-                                                        {new Date(request.created_at).toLocaleDateString('en-US', {
-                                                            month: 'short',
-                                                            day: 'numeric',
-                                                            year: 'numeric'
-                                                        })}
+                                                        {new Date(request.created_at).toLocaleDateString()}
                                                     </span>
                                                 </div>
-                                                {request.reviewed_at && (
-                                                    <div className="text-sm">
-                                                        <span className="text-gray-600">Reviewed on:</span>
-                                                        <span className="ml-2 font-medium text-gray-900">
-                                                            {new Date(request.reviewed_at).toLocaleDateString('en-US', {
-                                                                month: 'short',
-                                                                day: 'numeric',
-                                                                year: 'numeric'
-                                                            })}
-                                                        </span>
-                                                    </div>
-                                                )}
                                             </div>
 
                                             {request.reason && (
                                                 <div className="mb-4">
                                                     <p className="text-sm text-gray-600">Reason:</p>
-                                                    <p className="text-sm text-gray-900 mt-1">{request.reason}</p>
+                                                    <p className="text-sm text-gray-900 mt-1">
+                                                        {request.reason}
+                                                    </p>
                                                 </div>
                                             )}
 
                                             {request.review_notes && (
                                                 <div className="bg-gray-50 p-3 rounded-lg">
-                                                    <p className="text-sm text-gray-600 font-medium">Review Notes:</p>
-                                                    <p className="text-sm text-gray-900 mt-1">{request.review_notes}</p>
+                                                    <p className="text-sm text-gray-600 font-medium">
+                                                        Review Notes:
+                                                    </p>
+                                                    <p className="text-sm text-gray-900 mt-1">
+                                                        {request.review_notes}
+                                                    </p>
                                                 </div>
                                             )}
                                         </div>
 
-                                        {/* Actions */}
-                                        <div className="ml-6 flex flex-col gap-2">
-                                            {canReview && request.status === 'pending' && (
-                                                <>
+                                        {/* RIGHT SIDE */}
+                                        <div className="flex md:flex-col gap-4 items-start md:items-end">
+
+                                            {/* Actions */}
+                                            <div className="flex flex-col gap-2">
+                                                {canReview && request.status === "pending" && (
+                                                    <>
+                                                        <button
+                                                            disabled={pendingActions[request.id]}
+                                                            onClick={() => {
+                                                                const notes = prompt("Add review notes (optional):");
+                                                                if (notes !== null)
+                                                                    handleStatusUpdate(request.id, "approved", notes);
+                                                            }}
+                                                            className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition disabled:opacity-60"
+                                                        >
+                                                            {pendingActions[request.id]
+                                                                ? "Approving..."
+                                                                : "Approve"}
+                                                        </button>
+
+                                                        <button
+                                                            disabled={pendingActions[request.id]}
+                                                            onClick={() => {
+                                                                const notes = prompt("Add review notes (optional):");
+                                                                if (notes !== null)
+                                                                    handleStatusUpdate(request.id, "declined", notes);
+                                                            }}
+                                                            className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition disabled:opacity-60"
+                                                        >
+                                                            {pendingActions[request.id]
+                                                                ? "Declining..."
+                                                                : "Decline"}
+                                                        </button>
+                                                    </>
+                                                )}
+
+                                                {isSeniorCitizen && request.status === "pending" && (
                                                     <button
-                                                        onClick={() => {
-                                                            const notes = prompt("Add review notes (optional):");
-                                                            if (notes !== null) {
-                                                                handleStatusUpdate(request.id, 'approved', notes);
-                                                            }
-                                                        }}
-                                                        className="px-4 py-2 bg-green-600 text-black text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                                                        onClick={() => handleDelete(request.id)}
+                                                        className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition"
                                                     >
-                                                        Approve
+                                                        Delete
                                                     </button>
+                                                )}
+                                            </div>
+
+                                            {/* Prescription Thumbnail */}
+                                            {request.prescription_url && (
+                                                <div className="text-right">
+                                                    <p className="text-xs text-gray-600 mb-2">
+                                                        Prescription
+                                                    </p>
+
                                                     <button
-                                                        onClick={() => {
-                                                            const notes = prompt("Add review notes (optional):");
-                                                            if (notes !== null) {
-                                                                handleStatusUpdate(request.id, 'declined', notes);
-                                                            }
-                                                        }}
-                                                        className="px-4 py-2 bg-red-600 text-black text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setPreviewUrl(request.prescription_url)
+                                                        }
                                                     >
-                                                        Decline
+                                                        <img
+                                                            src={request.prescription_url}
+                                                            alt="Prescription"
+                                                            className="w-32 h-32 object-cover rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition"
+                                                            loading="lazy"
+                                                        />
                                                     </button>
-                                                </>
-                                            )}
-                                            {isSeniorCitizen && request.status === 'pending' && (
-                                                <button
-                                                    onClick={() => handleDelete(request.id)}
-                                                    className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
-                                                >
-                                                    Delete
-                                                </button>
+
+                                                    <a
+                                                        href={request.prescription_url}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="block text-xs text-blue-600 hover:underline mt-2"
+                                                    >
+                                                        Open in new tab
+                                                    </a>
+                                                </div>
                                             )}
                                         </div>
-                                        {/* Prescription Image */}
-                                        {request.prescription_url && (
-                                            <div className="mb-4">
-                                                <p className="text-sm text-gray-600">Prescription:</p>
-
-                                                <a
-                                                    href={request.prescription_url}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="inline-block mt-2"
-                                                    title="Open full image"
-                                                >
-                                                    <img
-                                                        src={request.prescription_url}
-                                                        alt="Prescription"
-                                                        className="w-full max-w-sm rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition"
-                                                        loading="lazy"
-                                                    />
-                                                </a>
-                                            </div>
-                                        )}
                                     </div>
+
                                 </div>
                             </div>
                         ))}
+                    </div>
+                )}
+
+                {/* Modal Preview */}
+                {previewUrl && (
+                    <div
+                        className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+                        onClick={() => setPreviewUrl(null)}
+                    >
+                        <div
+                            className="bg-white rounded-xl max-w-3xl w-full p-4 relative"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <button
+                                onClick={() => setPreviewUrl(null)}
+                                className="absolute top-2 right-2 px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200"
+                            >
+                                ✕
+                            </button>
+
+                            <img
+                                src={previewUrl}
+                                alt="Prescription Preview"
+                                className="!w-full max-h-[75vh] object-contain rounded-lg border border-gray-200"
+                            />
+                        </div>
                     </div>
                 )}
             </div>

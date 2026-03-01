@@ -3,7 +3,7 @@ import React from "react";
 import { Outlet } from "react-router-dom";
 import Header from "./Includes/Header.jsx";
 import Sidebar from "./Includes/Sidebar.jsx";
-import { safeArray } from "../utils/api";
+import { safeArray } from "../utils/api.js";
 
 // Global styles for authenticated area (ensure sidebar/header styles load)
 import "bootstrap/dist/css/bootstrap.min.css";
