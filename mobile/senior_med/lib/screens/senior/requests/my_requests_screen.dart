@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../services/api_service.dart';     // ✅ correct path
 import '../../../core/request_events.dart';     // ✅ correct path
@@ -14,6 +15,7 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
   bool loading = true;
   String? error;
   List<dynamic> items = [];
+  Timer? _timer;
 
   @override
   void initState() {
@@ -22,6 +24,9 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
 
     // ✅ Auto refresh when a request is created anywhere in the app
     RequestEvents.tick.addListener(_onRequestCreated);
+
+    // Auto refresh every 60 seconds while this screen is open
+    _timer = Timer.periodic(const Duration(seconds: 60), (_) => _load());
   }
 
   void _onRequestCreated() {
@@ -32,6 +37,7 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
 
   @override
   void dispose() {
+    _timer?.cancel();
     RequestEvents.tick.removeListener(_onRequestCreated);
     super.dispose();
   }
@@ -133,11 +139,43 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
             final r = items[i] as Map;
             final med = r["medicine"] is Map ? r["medicine"] as Map : null;
 
+            final statusRaw = (r["status"] ?? "-").toString();
+            final status = statusRaw.toLowerCase();
+            final bool approved = status.contains('approved');
+            final bool rejected = status.contains('rejected') || status.contains('declined');
+            final Color statusColor = approved
+                ? Colors.green
+                : (rejected ? Colors.red : Colors.red);
+            final String statusLabel = approved ? 'APPROVED' : (rejected ? 'REJECTED' : 'UNAPPROVED');
+
             return Card(
               child: ListTile(
                 leading: const Icon(Icons.assignment_turned_in),
                 title: Text(med?["generic_name"]?.toString() ?? "Request #${r["id"]}"),
-                subtitle: Text("Status: ${r["status"] ?? "-"}"),
+                subtitle: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    const Text("Status: "),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: statusColor.withOpacity(0.45)),
+                      ),
+                      child: Text(
+                        statusLabel,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 trailing: Text(
                   r["created_at"]?.toString() ?? "",
                   style: const TextStyle(fontSize: 12),

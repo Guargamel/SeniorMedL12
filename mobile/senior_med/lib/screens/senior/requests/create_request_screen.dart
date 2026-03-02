@@ -177,7 +177,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text("Proof of receipt (image)", style: TextStyle(fontWeight: FontWeight.w700)),
+                    const Text("Proof of prescription (image)", style: TextStyle(fontWeight: FontWeight.w700)),
                     const SizedBox(height: 8),
                     if (preview != null)
                       ClipRRect(

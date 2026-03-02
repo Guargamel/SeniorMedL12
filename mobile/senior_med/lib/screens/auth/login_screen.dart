@@ -115,38 +115,20 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Server indicator + edit button (before login)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.cloud, size: 18),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _loadingUrl ? 'Server: loading…' : 'Server: $_baseUrl',
-                            style: const TextStyle(fontSize: 13),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        TextButton(
-                          onPressed: () async {
-                            await context.push('/server');
-                            // Refresh after coming back from settings.
-                            await _loadBaseUrl();
-                          },
-                          child: const Text('Edit'),
-                        ),
-                      ],
+                  // ✅ Cleaner UI: hide technical server URL, keep a clear settings button.
+                  Align(
+                    alignment: Alignment.center,
+                    child: TextButton.icon(
+                      onPressed: () async {
+                        await context.push('/server');
+                        await _loadBaseUrl();
+                      },
+                      icon: const Icon(Icons.settings),
+                      label: Text(_loadingUrl ? 'Configure settings…' : 'Configure settings'),
                     ),
                   ),
 
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 10),
                   TextField(
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,
@@ -185,6 +167,15 @@ class _LoginScreenState extends State<LoginScreen> {
                           : const Text("Login"),
                     ),
                   ),
+
+                  const SizedBox(height: 10),
+                  if (!_loadingUrl)
+                    Text(
+                      // Keep this subtle so it doesn't confuse seniors.
+                      "Server is configured",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                    ),
                 ],
               ),
             ),

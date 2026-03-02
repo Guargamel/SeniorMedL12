@@ -9,7 +9,7 @@ import "../../css/style.css";
 const Create = () => {
     const [loading, setLoading] = useState(false);
     const [medicines, setMedicines] = useState([]);
-    const [receiptFile, setReceiptFile] = useState(null);
+    const [prescriptionFile, setprescriptionFile] = useState(null);
 
     const navigate = useNavigate();
 
@@ -67,9 +67,9 @@ const Create = () => {
     }, [setValue]);
 
     const selectedReceiptName = useMemo(() => {
-        if (!receiptFile) return "";
-        return receiptFile.name;
-    }, [receiptFile]);
+        if (!prescriptionFile) return "";
+        return prescriptionFile.name;
+    }, [prescriptionFile]);
 
     const onSubmit = async (data) => {
         setLoading(true);
@@ -82,7 +82,7 @@ const Create = () => {
             fd.append("reason", data.reason ?? "");
 
             // ✅ File key name must match backend validation: receipt_image
-            if (receiptFile) fd.append("prescription_path", receiptFile);
+            if (prescriptionFile) fd.append("prescription_path", prescriptionFile);
 
             const response = await apiFetch("/api/medicine-requests", {
                 method: "POST",
@@ -193,7 +193,7 @@ const Create = () => {
                             />
                         </div>
 
-                        {/* Receipt Upload (Pretty) */}
+                        {/* Prescription Upload (Pretty) */}
                         <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                             <div className="flex items-start justify-between gap-4">
                                 <div>
@@ -203,10 +203,10 @@ const Create = () => {
                                     </div>
                                 </div>
 
-                                {receiptFile ? (
+                                {prescriptionFile ? (
                                     <button
                                         type="button"
-                                        onClick={() => setReceiptFile(null)}
+                                        onClick={() => setPrescriptionFile(null)}
                                         className="text-xs px-3 py-1.5 rounded-md bg-white border border-gray-300 hover:bg-gray-100"
                                     >
                                         Remove
@@ -222,10 +222,10 @@ const Create = () => {
                                         </div>
                                         <div className="flex-1">
                                             <div className="text-sm font-medium text-gray-800">
-                                                {receiptFile ? "Change receipt photo" : "Click to upload receipt photo"}
+                                                {prescriptionFile ? "Change receipt photo" : "Click to upload receipt photo"}
                                             </div>
                                             <div className="text-xs text-gray-500 mt-0.5">
-                                                {receiptFile ? `Selected: ${selectedReceiptName}` : "PNG, JPG, JPEG, WEBP"}
+                                                {prescriptionFile ? `Selected: ${selectedReceiptName}` : "PNG, JPG, JPEG, WEBP"}
                                             </div>
                                         </div>
                                     </div>
@@ -235,7 +235,7 @@ const Create = () => {
                                     type="file"
                                     className="hidden"
                                     accept="image/*"
-                                    onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+                                    onChange={(e) => setprescriptionFile(e.target.files?.[0] || null)}
                                 />
                             </label>
 
