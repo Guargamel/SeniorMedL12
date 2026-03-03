@@ -1,12 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { fetchCurrentUser, login as apiLogin } from "../utils/auth";
 
-/**
- * Public login page.
- * - Stays accessible (NOT protected)
- * - Only navigates to /dashboard after session is confirmed via /api/user
- */
 export default function Login() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -18,7 +13,6 @@ export default function Login() {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
 
-    // If already logged in, skip login page
     useEffect(() => {
         let alive = true;
         (async () => {
@@ -58,52 +52,80 @@ export default function Login() {
         }
     };
 
-    if (checking) return <div className="p-4">Loading...</div>;
+    if (checking) {
+        return (
+            <div className="min-h-screen grid place-items-center bg-slate-50">
+                <div className="flex items-center gap-3 text-slate-600">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700" />
+                    <span className="text-sm">Loading...</span>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div>
-            <h1>Senior Medicine Monitoring System</h1>
-            <p className="account-subtitle">Login</p>
-
-            {error ? <div className="alert alert-danger">{error}</div> : null}
-
-            <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                    <input
-                        className="form-control"
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        autoComplete="username"
-                        required
-                    />
+        <div className="w-full">
+            <div className="rounded-2xl bg-white shadow-xl ring-1 ring-slate-200 overflow-hidden">
+                <div className="px-6 py-6 border-b border-slate-200">
+                    <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+                        Senior Medicine Monitoring System
+                    </h1>
+                    <p className="mt-1 text-sm text-slate-600">Login</p>
                 </div>
 
-                <div className="form-group">
-                    <input
-                        className="form-control"
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        autoComplete="current-password"
-                        required
-                    />
+                <div className="px-6 py-6">
+                    {error ? (
+                        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                            {error}
+                        </div>
+                    ) : null}
+
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700">Email</label>
+                            <input
+                                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-100"
+                                type="email"
+                                placeholder="you@example.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                autoComplete="username"
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700">Password</label>
+                            <input
+                                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-100"
+                                type="password"
+                                placeholder="••••••••"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                autoComplete="current-password"
+                                required
+                            />
+                        </div>
+
+                        <button
+                            className="w-full rounded-xl bg-red-600 px-4 py-2.5 text-white font-semibold shadow-sm transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-60"
+                            type="submit"
+                            disabled={submitting}
+                        >
+                            {submitting ? "Signing in..." : "Login"}
+                        </button>
+                    </form>
+
+                    <div className="mt-6 text-center text-sm text-slate-600">
+                        Request an account from the{" "}
+                        <span className="font-semibold text-slate-800">barangay station</span>
+                    </div>
                 </div>
-
-                <div className="form-group mb-0">
-                    <button className="btn btn-danger btn-block" type="submit" disabled={submitting}>
-                        {submitting ? "Signing in..." : "Login"}
-                    </button>
-                </div>
-            </form>
-
-
-            <div className="text-center dont-have">
-                Request an account from the baranggay station
             </div>
 
+            <p className="mt-6 text-center text-xs text-slate-500">
+                © {new Date().getFullYear()} Senior Medicine Monitoring System
+            </p>
         </div>
     );
 }

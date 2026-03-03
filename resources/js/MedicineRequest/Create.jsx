@@ -66,7 +66,7 @@ const Create = () => {
         };
     }, [setValue]);
 
-    const selectedReceiptName = useMemo(() => {
+    const selectedprescriptionName = useMemo(() => {
         if (!prescriptionFile) return "";
         return prescriptionFile.name;
     }, [prescriptionFile]);
@@ -81,7 +81,7 @@ const Create = () => {
             fd.append("quantity", data.quantity ?? "");
             fd.append("reason", data.reason ?? "");
 
-            // ✅ File key name must match backend validation: receipt_image
+            // ✅ File key name must match backend validation: prescription_image
             if (prescriptionFile) fd.append("prescription_path", prescriptionFile);
 
             const response = await apiFetch("/api/medicine-requests", {
@@ -122,7 +122,7 @@ const Create = () => {
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900">Request Medicine</h2>
                             <p className="text-sm text-gray-500 mt-1">
-                                Fill out the form and (optional) upload a receipt photo.
+                                Fill out the form and (optional) upload a prescription photo.
                             </p>
                         </div>
                     </div>
@@ -197,7 +197,7 @@ const Create = () => {
                         <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                             <div className="flex items-start justify-between gap-4">
                                 <div>
-                                    <div className="text-sm font-semibold text-gray-800">Receipt Photo (Mandatory)</div>
+                                    <div className="text-sm font-semibold text-gray-800">prescription Photo (Mandatory)</div>
                                     <div className="text-xs text-gray-500 mt-1">
                                         Upload a clear image (JPG/PNG/WebP). Max size depends on server validation.
                                     </div>
@@ -222,10 +222,10 @@ const Create = () => {
                                         </div>
                                         <div className="flex-1">
                                             <div className="text-sm font-medium text-gray-800">
-                                                {prescriptionFile ? "Change receipt photo" : "Click to upload receipt photo"}
+                                                {prescriptionFile ? "Change prescription photo" : "Click to upload prescription photo"}
                                             </div>
                                             <div className="text-xs text-gray-500 mt-0.5">
-                                                {prescriptionFile ? `Selected: ${selectedReceiptName}` : "PNG, JPG, JPEG, WEBP"}
+                                                {prescriptionFile ? `Selected: ${selectedprescriptionName}` : "PNG, JPG, JPEG, WEBP"}
                                             </div>
                                         </div>
                                     </div>
@@ -239,8 +239,8 @@ const Create = () => {
                                 />
                             </label>
 
-                            {/* If you want backend validation error later, it will likely be receipt_image */}
-                            {/* Example: {errors.receipt_image && <div className="text-red-500 text-sm">{errors.receipt_image.message}</div>} */}
+                            {/* If you want backend validation error later, it will likely be prescription_image */}
+                            {/* Example: {errors.prescription_image && <div className="text-red-500 text-sm">{errors.prescription_image.message}</div>} */}
                         </div>
 
                         {/* Buttons */}
@@ -264,7 +264,7 @@ const Create = () => {
 
                         {/* Tiny helper */}
                         <div className="text-xs text-gray-500">
-                            Receipt upload is mandatory. If included, it will be stored on the server and the path saved in the database.
+                            Prescription upload is mandatory. If included, it will be stored on the server and the path saved in the database.
                         </div>
                     </form>
                 </div>
