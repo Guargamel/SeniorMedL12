@@ -48,8 +48,8 @@ import BatchIndex from "./Pages/Medicine_Batches/Index.jsx";
 import BatchEdit from "./Pages/Medicine_Batches/Edit.jsx";
 
 // Medicine Requests
-import RequestsIndex from "./MedicineRequest/Index.jsx";
-import RequestCreate from "./MedicineRequest/Create.jsx";
+import RequestsIndex from "./Layouts/MedicineRequest/Index.jsx";
+import RequestCreate from "./Layouts/MedicineRequest/Create.jsx";
 import BrowseMedicines from "./Seniors/BrowseMedicines.jsx";
 
 // Notifications

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { safeArray, apiFetch } from "../utils/api";
+import { safeArray, apiFetch, normalizeList } from "../../utils/api";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -18,7 +18,8 @@ const Index = () => {
                     apiFetch("/api/medicine-requests"),
                     apiFetch("/api/user")
                 ]);
-                setRequests(requestsData);
+                // Backend returns { data: [...] } (for mobile + web consistency)
+                setRequests(normalizeList(requestsData, ["data", "requests"]));
                 setUser(userData.user);
             } catch (error) {
                 console.error("Failed to load requests:", error);
@@ -42,7 +43,7 @@ const Index = () => {
             toast.success(`Request ${status} successfully!`);
 
             const updatedRequests = await apiFetch("/api/medicine-requests");
-            setRequests(updatedRequests);
+            setRequests(normalizeList(updatedRequests, ["data", "requests"]));
         } catch (error) {
             console.error("Failed to update request:", error);
             toast.error("Failed to update request");
@@ -62,7 +63,7 @@ const Index = () => {
             toast.success("Request deleted successfully!");
 
             const updatedRequests = await apiFetch("/api/medicine-requests");
-            setRequests(updatedRequests);
+            setRequests(normalizeList(updatedRequests, ["data", "requests"]));
         } catch (error) {
             console.error("Failed to delete request:", error);
             toast.error("Failed to delete request");
@@ -209,13 +210,13 @@ const Index = () => {
                                                 </div>
                                             )}
 
-                                            {request.review_notes && (
+                                            {(request.notes || request.review_notes) && (
                                                 <div className="bg-gray-50 p-3 rounded-lg">
                                                     <p className="text-sm text-gray-600 font-medium">
                                                         Review Notes:
                                                     </p>
                                                     <p className="text-sm text-gray-900 mt-1">
-                                                        {request.review_notes}
+                                                        {request.notes || request.review_notes}
                                                     </p>
                                                 </div>
                                             )}

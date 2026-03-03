@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
-import { apiFetch } from "../utils/api";
+import { apiFetch } from "../../utils/api";
 import Select from "react-select";
 import { toast } from "react-toastify";
-import "../../css/style.css";
+import "../../../css/style.css";
 
 const Create = () => {
     const [loading, setLoading] = useState(false);
     const [medicines, setMedicines] = useState([]);
-    const [prescriptionFile, setprescriptionFile] = useState(null);
+    const [prescriptionFile, setPrescriptionFile] = useState(null);
 
     const navigate = useNavigate();
 
@@ -235,7 +235,7 @@ const Create = () => {
                                     type="file"
                                     className="hidden"
                                     accept="image/*"
-                                    onChange={(e) => setprescriptionFile(e.target.files?.[0] || null)}
+                                    onChange={(e) => setPrescriptionFile(e.target.files?.[0] || null)}
                                 />
                             </label>
 

@@ -18,60 +18,12 @@ class MedicineRequest extends Model
         'prescription_path',
         'reviewed_by',
         'reviewed_at',
-        'review_notes'
+        'notes',        // ✅ admin reason (TEXT column)
     ];
 
     protected $casts = [
         'reviewed_at' => 'datetime',
     ];
-
-    /**
-     * Get the user who made the request (senior citizen)
-     */
-    public function user()
-    {
-        return $this->belongsTo(User::class, 'user_id');
-    }
-
-    /**
-     * Get the medicine being requested
-     */
-    public function medicine()
-    {
-        return $this->belongsTo(Medicine::class, 'medicine_id');
-    }
-
-    /**
-     * Get the reviewer (staff or super-admin)
-     */
-    public function reviewer()
-    {
-        return $this->belongsTo(User::class, 'reviewed_by');
-    }
-
-    /**
-     * Scope for pending requests
-     */
-    public function scopePending($query)
-    {
-        return $query->where('status', 'pending');
-    }
-
-    /**
-     * Scope for approved requests
-     */
-    public function scopeApproved($query)
-    {
-        return $query->where('status', 'approved');
-    }
-
-    /**
-     * Scope for declined requests
-     */
-    public function scopeDeclined($query)
-    {
-        return $query->where('status', 'declined');
-    }
 
     protected $appends = ['prescription_url'];
 
@@ -80,5 +32,35 @@ class MedicineRequest extends Model
         return $this->prescription_path
             ? asset('storage/' . $this->prescription_path)
             : null;
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function medicine()
+    {
+        return $this->belongsTo(Medicine::class, 'medicine_id');
+    }
+
+    public function reviewer()
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
+
+    public function scopeApproved($query)
+    {
+        return $query->where('status', 'approved');
+    }
+
+    public function scopeDeclined($query)
+    {
+        return $query->where('status', 'declined');
     }
 }
