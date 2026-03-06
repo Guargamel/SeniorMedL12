@@ -176,6 +176,16 @@ const Index = () => {
                                                 {getStatusBadge(request.status)}
                                             </div>
 
+                                            {request.status === "approved" && (
+                                                <div className="mt-3 flex items-start gap-3 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
+                                                    <span className="text-lg">💊</span>
+                                                    <p>
+                                                        Your request has been <strong>approved</strong>. Please visit the
+                                                        <strong> Barangay Health Station</strong> to claim your medicine.
+                                                    </p>
+                                                </div>
+                                            )}
+
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                                 {!isSeniorCitizen && (
                                                     <div className="text-sm">

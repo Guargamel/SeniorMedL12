@@ -29,7 +29,6 @@ class _MyRequestsScreenState extends State<MyRequestsScreen>
 
     _load();
     RequestEvents.tick.addListener(_onRequestCreated);
-
     _startTimer();
   }
 
@@ -47,10 +46,9 @@ class _MyRequestsScreenState extends State<MyRequestsScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Stop polling when app is not active (prevents cut-off/empty responses)
     if (state == AppLifecycleState.resumed) {
       _startTimer();
-      _load(); // refresh when returning
+      _load();
     } else {
       _stopTimer();
       _cancelToken?.cancel("App backgrounded");
@@ -69,7 +67,6 @@ class _MyRequestsScreenState extends State<MyRequestsScreen>
   String _shortTs(dynamic v) {
     final s = (v ?? "").toString();
     if (s.isEmpty) return "";
-    // Works for "2026-03-02T17:47:26.000000Z" or "2026-03-02 17:47:26"
     if (s.length >= 16) return s.substring(0, 16).replaceAll('T', ' ');
     return s;
   }
@@ -77,11 +74,9 @@ class _MyRequestsScreenState extends State<MyRequestsScreen>
   Future<void> _load() async {
     if (!mounted) return;
 
-    // prevent overlap
     if (_fetching) return;
     _fetching = true;
 
-    // cancel previous in-flight request
     _cancelToken?.cancel("New refresh");
     _cancelToken = CancelToken();
 
@@ -105,8 +100,6 @@ class _MyRequestsScreenState extends State<MyRequestsScreen>
       }
 
       final data = res.data;
-
-      // ✅ backend now returns { data: [...] }
       final list = (data is Map && data["data"] is List)
           ? data["data"] as List
           : (data is List ? data : const []);
@@ -127,8 +120,114 @@ class _MyRequestsScreenState extends State<MyRequestsScreen>
     }
   }
 
+  // UX: consistent status mapping
+  ({String label, Color color, IconData icon}) _statusMeta(String raw) {
+    final s = raw.toLowerCase();
+    if (s == "approved") {
+      return (label: "APPROVED", color: Colors.green, icon: Icons.check_circle);
+    }
+    if (s == "declined") {
+      return (label: "DECLINED", color: Colors.red, icon: Icons.cancel);
+    }
+    return (label: "PENDING", color: Colors.orange, icon: Icons.hourglass_top);
+  }
+
+  // UX: small helper widget for nice info boxes
+  Widget _infoBox({
+    required Color color,
+    required IconData icon,
+    required String text,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.35)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: color,
+                fontSize: 13,
+                height: 1.25,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _emptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.inbox_outlined, size: 54),
+            const SizedBox(height: 10),
+            const Text(
+              "No requests yet.",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              "Tap “New Request” to create one.",
+              style: TextStyle(color: Colors.grey.shade700),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 14),
+            ElevatedButton.icon(
+              onPressed: _load,
+              icon: const Icon(Icons.refresh),
+              label: const Text("Reload"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _errorState(String msg) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.wifi_off, size: 54, color: Colors.red),
+            const SizedBox(height: 10),
+            Text(
+              msg,
+              style: const TextStyle(color: Colors.red, fontSize: 13),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 14),
+            ElevatedButton.icon(
+              onPressed: _load,
+              icon: const Icon(Icons.refresh),
+              label: const Text("Try again"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final bool showList = !loading && error == null && items.isNotEmpty;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("My Requests"),
@@ -149,151 +248,206 @@ class _MyRequestsScreenState extends State<MyRequestsScreen>
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : error != null
-          ? Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                error!,
-                style: const TextStyle(color: Colors.red),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              ElevatedButton.icon(
-                onPressed: _load,
-                icon: const Icon(Icons.refresh),
-                label: const Text("Reload"),
-              ),
-            ],
-          ),
-        ),
-      )
-          : items.isEmpty
-          ? Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text("No requests yet."),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: _load,
-              icon: const Icon(Icons.refresh),
-              label: const Text("Reload"),
-            ),
-          ],
-        ),
-      )
-          : RefreshIndicator(
-        onRefresh: _load,
-        child: ListView.builder(
-          padding: const EdgeInsets.all(12),
-          itemCount: items.length,
-          itemBuilder: (_, i) {
-            final r = items[i] as Map;
-            final med =
-            r["medicine"] is Map ? r["medicine"] as Map : null;
+              ? _errorState(error!)
+              : items.isEmpty
+                  ? _emptyState()
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: items.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (_, i) {
+                          final r = (items[i] as Map);
+                          final med = r["medicine"] is Map
+                              ? r["medicine"] as Map
+                              : null;
 
-            final statusRaw = (r["status"] ?? "pending").toString();
-            final status = statusRaw.toLowerCase();
+                          final createdAt = _shortTs(r["created_at"]);
+                          final reviewedAt = _shortTs(r["reviewed_at"]);
 
-            final bool approved = status == "approved";
-            final bool declined = status == "declined";
-            final bool pending = status == "pending";
+                          final statusRaw =
+                              (r["status"] ?? "pending").toString();
+                          final meta = _statusMeta(statusRaw);
 
-            final Color statusColor = approved
-                ? Colors.green
-                : (declined ? Colors.red : Colors.orange);
+                          // notes may be notes/review_notes depending on backend
+                          final notes = ((r["notes"] ?? r["review_notes"] ?? "")
+                                  .toString())
+                              .trim();
 
-            final String statusLabel =
-            approved ? "APPROVED" : (declined ? "DECLINED" : "PENDING");
+                          final title = med?["generic_name"]?.toString().trim();
+                          final subtitle =
+                              med?["brand_name"]?.toString().trim();
 
-            final notes = (r["notes"] ?? "").toString().trim();
+                          final displayTitle =
+                              (title != null && title.isNotEmpty)
+                                  ? title
+                                  : "Request #${r["id"]}";
 
-            final createdAt = _shortTs(r["created_at"]);
-            final reviewedAt = _shortTs(r["reviewed_at"]);
+                          final displaySubtitle =
+                              (subtitle != null && subtitle.isNotEmpty)
+                                  ? subtitle
+                                  : (med?["dosage"]?.toString() ?? "").trim();
 
-            return Card(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.assignment_turned_in),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            med?["generic_name"]?.toString() ??
-                                "Request #${r["id"]}",
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
+                          return Card(
+                            elevation: 1,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          createdAt,
-                          style: const TextStyle(fontSize: 11),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Header row
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: meta.color.withOpacity(0.10),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color: meta.color.withOpacity(0.25),
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          meta.icon,
+                                          color: meta.color,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              displayTitle,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w800,
+                                                fontSize: 15,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            if (displaySubtitle.isNotEmpty) ...[
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                displaySubtitle,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey.shade700,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            createdAt,
+                                            style:
+                                                const TextStyle(fontSize: 11),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 10, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color:
+                                                  meta.color.withOpacity(0.12),
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
+                                              border: Border.all(
+                                                color: meta.color
+                                                    .withOpacity(0.45),
+                                              ),
+                                            ),
+                                            child: Text(
+                                              meta.label,
+                                              style: TextStyle(
+                                                color: meta.color,
+                                                fontWeight: FontWeight.w800,
+                                                fontSize: 12,
+                                                letterSpacing: 0.3,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
 
-                    Row(
-                      children: [
-                        const Text("Status: "),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: statusColor.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(999),
-                            border: Border.all(color: statusColor.withOpacity(0.45)),
-                          ),
-                          child: Text(
-                            statusLabel,
-                            style: TextStyle(
-                              color: statusColor,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                        if (!pending && reviewedAt.isNotEmpty) ...[
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              "Reviewed: $reviewedAt",
-                              style: const TextStyle(fontSize: 11),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          )
-                        ],
-                      ],
-                    ),
+                                  // Reviewed info (only if reviewed)
+                                  if (meta.label != "PENDING" &&
+                                      reviewedAt.isNotEmpty) ...[
+                                    const SizedBox(height: 10),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.event_available,
+                                            size: 18,
+                                            color: Colors.grey.shade700),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            "Reviewed: $reviewedAt",
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade700,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
 
-                    // ✅ Show reason so senior knows WHY
-                    if (!pending) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        notes.isNotEmpty ? "Reason: $notes" : "Reason: (no reason provided)",
-                        style: TextStyle(
-                          color: declined ? Colors.red : Colors.green,
-                          fontSize: 13,
-                        ),
+                                  const SizedBox(height: 12),
+
+                                  // ✅ Status messages (UX improvement)
+                                  if (statusRaw.toLowerCase() ==
+                                      "approved") ...[
+                                    _infoBox(
+                                      color: Colors.green,
+                                      icon: Icons.location_on,
+                                      text:
+                                          "Your request has been approved. Please visit the barangay for distribution.",
+                                    ),
+                                  ] else if (statusRaw.toLowerCase() ==
+                                      "declined") ...[
+                                    _infoBox(
+                                      color: Colors.red,
+                                      icon: Icons.info_outline,
+                                      text: notes.isNotEmpty
+                                          ? "Reason: $notes"
+                                          : "Reason: (no reason provided)",
+                                    ),
+                                  ] else ...[
+                                    _infoBox(
+                                      color: Colors.orange,
+                                      icon: Icons.schedule,
+                                      text:
+                                          "Your request is pending. Please wait for the barangay staff to review it.",
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                    ],
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ),
+                    ),
     );
   }
 }
