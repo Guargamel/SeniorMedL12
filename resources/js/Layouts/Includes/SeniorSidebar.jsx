@@ -27,7 +27,6 @@ const seniorMenu = [
     {
         title: "ACCOUNT",
         items: [
-            { label: "Notifications", to: "/notifications", icon: Bell },
             { label: "My Profile", to: "/profile", icon: User },
         ],
     },
