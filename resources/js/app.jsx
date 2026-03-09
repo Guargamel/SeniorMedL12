@@ -6,6 +6,9 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import PlainLayout from "./Layouts/LoginRegisterLayout.jsx";
 import RequireAuthLayout from "./Layouts/RequireAuthLayout.jsx";
 
+// Role guard
+import RequireRole from "./Components/RequireRole.jsx";
+
 // Auth
 import Login from "./Auth/Login.jsx";
 
@@ -78,51 +81,63 @@ createRoot(container).render(
 
             {/* Protected Routes */}
             <Route element={<RequireAuthLayout />}>
-                {/* Dashboard - Role-based */}
+                {/* Dashboard - Role-based (accessible to all authenticated users) */}
                 <Route path="/dashboard" element={<DashboardRouter />} />
 
-                {/* Users Routes */}
-                <Route path="/users" element={<UsersIndex />} />
-                <Route path="/users/create" element={<UsersCreate />} />
-                <Route path="/users/:id/edit" element={<UsersEdit />} />
+                {/* Profile - accessible to all authenticated users */}
+                <Route path="/profile" element={<Profile />} />
 
-                {/* Seniors Routes */}
-                <Route path="/seniors" element={<SeniorsIndex />} />
-                <Route path="/seniors/create" element={<SeniorCreate />} />
-                <Route path="/seniors/:id/edit" element={<SeniorEdit />} />
-
-                {/* Roles and Permissions Routes */}
-                <Route path="/roles" element={<RolesIndex />} />
-                <Route path="/roles/create" element={<RolesCreate />} />
-                <Route path="/roles/:id/edit" element={<RolesEdit />} />
-                <Route path="/permissions" element={<Permissions />} />
-
-                {/* Medicines Routes */}
-                <Route path="/medicines" element={<MedicinesIndex />} />
-                <Route path="/medicines/create" element={<MedicinesCreate />} />
-                <Route path="/medicines/:id/edit" element={<MedicinesEdit />} />
-                <Route path="/medicines/expired" element={<MedicinesExpired />} />
-                <Route path="/medicines/outstock" element={<MedicinesOutstock />} />
-                <Route path="/medicines/categories" element={<MedicinesCategories />} />
-
-                {/* Distribute Stock Route */}
-                <Route path="/distributions" element={<DistributeStock />} />
-
-                {/* Stock Management Routes */}
-                <Route path="/medicine-batches/index" element={<BatchIndex />} />
-                <Route path="/medicine-batches/create" element={<BatchCreate />} />
-                <Route path="/medicine-batches/:id/edit" element={<BatchEdit />} />
-
-                {/* Medicine Requests Routes */}
+                {/* Medicine Requests - accessible to all (seniors + staff + admin) */}
                 <Route path="/medicine-requests" element={<RequestsIndex />} />
                 <Route path="/medicine-requests/create" element={<RequestCreate />} />
                 <Route path="/browse-medicines" element={<BrowseMedicines />} />
 
-                {/* Notifications */}
-                <Route path="/notifications" element={<Notifications />} />
+                {/* ─── Staff + Admin Only Routes ─── */}
+                {/* senior-citizen role is BLOCKED from all routes below */}
+                <Route element={<RequireRole allowedRoles={["super-admin", "staff"]} />}>
 
-                {/* Profile Route */}
-                <Route path="/profile" element={<Profile />} /> {/* Add this line */}
+                    {/* Users (Staff Management) Routes */}
+                    <Route path="/users" element={<UsersIndex />} />
+                    <Route path="/users/create" element={<UsersCreate />} />
+                    <Route path="/users/:id/edit" element={<UsersEdit />} />
+
+                    {/* Seniors Management Routes */}
+                    <Route path="/seniors" element={<SeniorsIndex />} />
+                    <Route path="/seniors/create" element={<SeniorCreate />} />
+                    <Route path="/seniors/:id/edit" element={<SeniorEdit />} />
+
+                    {/* Medicines Routes */}
+                    <Route path="/medicines" element={<MedicinesIndex />} />
+                    <Route path="/medicines/create" element={<MedicinesCreate />} />
+                    <Route path="/medicines/:id/edit" element={<MedicinesEdit />} />
+                    <Route path="/medicines/expired" element={<MedicinesExpired />} />
+                    <Route path="/medicines/outstock" element={<MedicinesOutstock />} />
+                    <Route path="/medicines/categories" element={<MedicinesCategories />} />
+
+                    {/* Distribute Stock Route */}
+                    <Route path="/distributions" element={<DistributeStock />} />
+
+                    {/* Stock Management Routes */}
+                    <Route path="/medicine-batches/index" element={<BatchIndex />} />
+                    <Route path="/medicine-batches/create" element={<BatchCreate />} />
+                    <Route path="/medicine-batches/:id/edit" element={<BatchEdit />} />
+
+                    {/* Notifications */}
+                    <Route path="/notifications" element={<Notifications />} />
+
+                </Route>
+
+                {/* ─── Super Admin Only Routes ─── */}
+                <Route element={<RequireRole allowedRoles={["super-admin"]} />}>
+
+                    {/* Roles and Permissions Routes */}
+                    <Route path="/roles" element={<RolesIndex />} />
+                    <Route path="/roles/create" element={<RolesCreate />} />
+                    <Route path="/roles/:id/edit" element={<RolesEdit />} />
+                    <Route path="/permissions" element={<Permissions />} />
+
+                </Route>
+
             </Route>
 
             {/* 404 - Page not found */}

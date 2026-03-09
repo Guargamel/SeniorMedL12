@@ -1,59 +1,71 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { apiFetch } from "../utils/api";
+import { useUser } from "../Components/UserContext";
 
 export default function Profile() {
+    const ctx = useUser();
+    const userRoleNames = ctx?.userRoleNames ?? [];
+    const isSenior = userRoleNames.includes('senior-citizen');
+
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [errors, setErrors] = useState({});
     const [successMessage, setSuccessMessage] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [savingPassword, setSavingPassword] = useState(false);
 
-    // For editable fields
+    // Separate avatar preview state — only holds a File when user picks one
+    const [avatarFile, setAvatarFile] = useState(null);
+    const [avatarPreview, setAvatarPreview] = useState(null);
+    const fileInputRef = useRef(null);
+
     const [form, setForm] = useState({
         name: "",
         email: "",
+    });
+
+    const [passwordForm, setPasswordForm] = useState({
         currentPassword: "",
         newPassword: "",
         newPasswordConfirm: "",
-        avatar: null, // Avatar file (for upload)
     });
 
-    const [saving, setSaving] = useState(false);
-
     const set = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+    const setPass = (field, value) => setPasswordForm(prev => ({ ...prev, [field]: value }));
     const err = (field) => errors?.[field]?.[0] || '';
 
     // Fetch user data
     useEffect(() => {
         let alive = true;
-
         (async () => {
             setLoading(true);
-            setErrors({});
-
             try {
                 const data = await apiFetch('/api/user');
-
                 if (!alive) return;
-
-                setUser(data.user);
-                setForm(prev => ({
-                    ...prev,
-                    name: data.user.name || "",
-                    email: data.user.email || "",
-                    avatar: data.user.avatar || "", // Set avatar from the backend
-                }));
-            } catch (err) {
+                const u = data.user ?? data;
+                setUser(u);
+                setForm({ name: u.name || "", email: u.email || "" });
+            } catch (e) {
                 if (!alive) return;
                 setErrors({ general: ["Failed to load profile"] });
             } finally {
                 if (alive) setLoading(false);
             }
         })();
-
         return () => { alive = false; };
     }, []);
 
-    // Handle profile info update
+    // When user picks a new avatar file, create a local preview URL
+    const handleAvatarChange = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setAvatarFile(file);
+        // Revoke previous preview to avoid memory leak
+        if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+        setAvatarPreview(URL.createObjectURL(file));
+    };
+
+    // Profile info + optional avatar update
     const handleProfileUpdate = async (e) => {
         e.preventDefault();
         setSaving(true);
@@ -63,39 +75,42 @@ export default function Profile() {
         const formData = new FormData();
         formData.append('name', form.name);
         formData.append('email', form.email);
+        // Laravel can't receive PUT with multipart — spoof it
+        formData.append('_method', 'PUT');
 
-        if (form.avatar) {
-            formData.append('avatar', form.avatar); // Append avatar file
+        if (avatarFile) {
+            formData.append('avatar', avatarFile);
         }
 
         try {
+            // Use POST + _method=PUT for multipart compatibility
             const response = await apiFetch('/api/profile', {
-                method: 'PUT',
+                method: 'POST',
                 body: formData,
             });
 
-            setUser(response.user);
+            const updatedUser = response.user ?? response;
+            setUser(updatedUser);
+            setAvatarFile(null);  // clear pending file after save
             setSuccessMessage('Profile updated successfully!');
-
-            // Clear success message after 3 seconds
             setTimeout(() => setSuccessMessage(''), 3000);
-        } catch (err) {
-            setErrors(err?.data?.errors || { general: ["Failed to update profile"] });
+        } catch (e) {
+            setErrors(e?.data?.errors || { general: [e?.message || "Failed to update profile"] });
         } finally {
             setSaving(false);
         }
     };
 
-    // Handle password change
+    // Password change
     const handlePasswordChange = async (e) => {
         e.preventDefault();
 
-        if (form.newPassword !== form.newPasswordConfirm) {
+        if (passwordForm.newPassword !== passwordForm.newPasswordConfirm) {
             setErrors({ newPassword: ["Passwords do not match"] });
             return;
         }
 
-        setSaving(true);
+        setSavingPassword(true);
         setErrors({});
         setSuccessMessage('');
 
@@ -103,25 +118,19 @@ export default function Profile() {
             await apiFetch('/api/profile/password', {
                 method: 'PUT',
                 body: JSON.stringify({
-                    current_password: form.currentPassword,
-                    password: form.newPassword,
-                    password_confirmation: form.newPasswordConfirm,
+                    current_password: passwordForm.currentPassword,
+                    password: passwordForm.newPassword,
+                    password_confirmation: passwordForm.newPasswordConfirm,
                 }),
             });
 
-            setForm(prev => ({
-                ...prev,
-                currentPassword: "",
-                newPassword: "",
-                newPasswordConfirm: "",
-            }));
-
+            setPasswordForm({ currentPassword: "", newPassword: "", newPasswordConfirm: "" });
             setSuccessMessage('Password updated successfully!');
             setTimeout(() => setSuccessMessage(''), 3000);
-        } catch (err) {
-            setErrors(err?.data?.errors || { general: ["Failed to update password"] });
+        } catch (e) {
+            setErrors(e?.data?.errors || { general: [e?.message || "Failed to update password"] });
         } finally {
-            setSaving(false);
+            setSavingPassword(false);
         }
     };
 
@@ -144,8 +153,10 @@ export default function Profile() {
     const roleName = user?.roles?.[0]?.name || "user";
     const roleDisplay = roleName.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
 
-    // Avatar URL (using storage link for public access)
-    const avatarUrl = user?.avatar ? `http://127.0.0.1:8000/storage/${user.avatar}` : null;
+    // Use backend-provided avatar_url (absolute), then fallback to constructing from avatar path
+    const currentAvatarUrl = avatarPreview
+        || user?.avatar_url
+        || (user?.avatar ? `${window.location.origin}/storage/${user.avatar}` : null);
 
     return (
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
@@ -159,20 +170,27 @@ export default function Profile() {
                 </div>
             )}
 
-            {errors.general && (
+            {(errors.general || errors.email || errors.name || errors.avatar) && (
                 <div className="alert alert-danger" style={{ marginBottom: 20 }}>
-                    {errors.general[0]}
+                    {[
+                        ...(errors.general || []),
+                        ...(errors.email   ? [`Email: ${errors.email[0]}`]   : []),
+                        ...(errors.name    ? [`Name: ${errors.name[0]}`]     : []),
+                        ...(errors.avatar  ? [`Avatar: ${errors.avatar[0]}`] : []),
+                    ].map((msg, i) => <div key={i}>{msg}</div>)}
                 </div>
             )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                {/* Left Column - Profile Info */}
+
+                {/* Left — Account Info + Avatar */}
                 <div className="mc-card">
                     <div className="mc-card-header">
                         <h3 className="mc-card-title" style={{ fontSize: 16 }}>Account Information</h3>
                     </div>
                     <div className="mc-card-body">
-                        {/* User Avatar & Info */}
+
+                        {/* Avatar preview */}
                         <div style={{ textAlign: 'center', marginBottom: 24, paddingBottom: 24, borderBottom: '1px solid var(--mc-border)' }}>
                             <div style={{
                                 width: 80,
@@ -180,31 +198,21 @@ export default function Profile() {
                                 borderRadius: 20,
                                 background: '#1e6f4f',
                                 color: '#fff',
-                                display: 'grid',
-                                placeItems: 'center',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
                                 fontSize: 28,
                                 fontWeight: 800,
                                 margin: '0 auto 12px',
+                                overflow: 'hidden',
                             }}>
-                                {form.avatar ? (
+                                {currentAvatarUrl ? (
                                     <img
-                                        src={URL.createObjectURL(form.avatar)}
-                                        alt="Avatar Preview"
-                                        style={{ width: "100%", height: "100%", borderRadius: "50%" }}
-                                    />
-                                ) : avatarUrl ? (
-                                    <img
-                                        src={avatarUrl}
+                                        src={currentAvatarUrl}
                                         alt="Avatar"
-                                        style={{ width: "100%", height: "100%", borderRadius: "50%" }}
+                                        style={{ width: "100%", height: "100%", objectFit: 'cover' }}
                                     />
                                 ) : initials}
-
-                                <div style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>
-                                    avatar in DB: {String(user?.avatar)}
-                                    <br />
-                                    avatarUrl: {String(avatarUrl)}
-                                </div>
                             </div>
                             <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>
                                 {user?.name}
@@ -228,16 +236,26 @@ export default function Profile() {
                                 onChange={(v) => set('email', v)}
                                 error={err('email')}
                             />
-                            {/* Avatar Upload */}
+
+                            {/* Avatar upload — separate from required fields visually */}
                             <div style={{ marginTop: 20 }}>
-                                <label htmlFor="avatar" className="form-label">Change Avatar</label>
+                                <label className="form-label">
+                                    Change Avatar <span style={{ fontSize: 12, color: '#888', fontWeight: 400 }}>(optional)</span>
+                                </label>
                                 <input
+                                    ref={fileInputRef}
                                     type="file"
-                                    id="avatar"
                                     className="form-control"
-                                    onChange={(e) => set('avatar', e.target.files[0])}
+                                    accept="image/*"
+                                    onChange={handleAvatarChange}
                                 />
+                                {avatarFile && (
+                                    <div style={{ fontSize: 12, color: '#1e6f4f', marginTop: 4 }}>
+                                        ✓ New photo selected: {avatarFile.name}
+                                    </div>
+                                )}
                             </div>
+
                             <div style={{ marginTop: 20 }}>
                                 <button
                                     type="submit"
@@ -251,11 +269,53 @@ export default function Profile() {
                         </form>
                     </div>
                 </div>
+
+                {/* Right — Change Password */}
+                <div className="mc-card">
+                    <div className="mc-card-header">
+                        <h3 className="mc-card-title" style={{ fontSize: 16 }}>Change Password</h3>
+                    </div>
+                    <div className="mc-card-body">
+                        <form onSubmit={handlePasswordChange}>
+                            <Field
+                                label="Current Password"
+                                type="password"
+                                value={passwordForm.currentPassword}
+                                onChange={(v) => setPass('currentPassword', v)}
+                                error={err('current_password')}
+                            />
+                            <Field
+                                label="New Password"
+                                type="password"
+                                value={passwordForm.newPassword}
+                                onChange={(v) => setPass('newPassword', v)}
+                                error={err('newPassword')}
+                            />
+                            <Field
+                                label="Confirm New Password"
+                                type="password"
+                                value={passwordForm.newPasswordConfirm}
+                                onChange={(v) => setPass('newPasswordConfirm', v)}
+                                error={err('newPasswordConfirm')}
+                            />
+                            <div style={{ marginTop: 20 }}>
+                                <button
+                                    type="submit"
+                                    className="btn btn-success"
+                                    disabled={savingPassword}
+                                    style={{ width: '100%' }}
+                                >
+                                    {savingPassword ? 'Updating...' : 'Update Password'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
             </div>
         </div>
     );
 }
-
 
 function Field({ label, type = "text", value, onChange, error, disabled = false }) {
     return (

@@ -1,7 +1,20 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { logout as apiLogout } from "../utils/auth";
 
 const Unauthorized = () => {
+    const navigate = useNavigate();
+
+    const handleLogout = async () => {
+        try {
+            await apiLogout();
+        } catch (e) {
+            console.error("Logout error:", e);
+        } finally {
+            navigate("/login", { replace: true });
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
             <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
@@ -14,22 +27,22 @@ const Unauthorized = () => {
                 <h1 className="text-3xl font-bold text-gray-900 mb-4">Access Denied</h1>
 
                 <p className="text-gray-600 mb-6">
-                    You don't have permission to access this application. Please contact your administrator for assistance.
+                    You don't have permission to access this page. Please contact your administrator for assistance.
                 </p>
 
                 <div className="flex flex-col gap-3">
                     <Link
-                        to="/login"
+                        to="/dashboard"
                         className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                        Back to Login
+                        Go to Dashboard
                     </Link>
 
                     <button
-                        onClick={() => window.location.reload()}
-                        className="px-6 py-3 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors"
+                        onClick={handleLogout}
+                        className="px-6 py-3 bg-red-100 text-red-700 font-medium rounded-lg hover:bg-red-200 transition-colors"
                     >
-                        Refresh Page
+                        Logout
                     </button>
                 </div>
 
@@ -45,3 +58,4 @@ const Unauthorized = () => {
 };
 
 export default Unauthorized;
+

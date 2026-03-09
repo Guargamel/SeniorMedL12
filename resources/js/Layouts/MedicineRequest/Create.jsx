@@ -9,7 +9,7 @@ import "../../../css/style.css";
 const Create = () => {
     const [loading, setLoading] = useState(false);
     const [medicines, setMedicines] = useState([]);
-    const [prescriptionFile, setPrescriptionFile] = useState(null);
+    const [prescriptionFile, setprescriptionFile] = useState(null);
 
     const navigate = useNavigate();
 
@@ -235,7 +235,7 @@ const Create = () => {
                                     type="file"
                                     className="hidden"
                                     accept="image/*"
-                                    onChange={(e) => setPrescriptionFile(e.target.files?.[0] || null)}
+                                    onChange={(e) => setprescriptionFile(e.target.files?.[0] || null)}
                                 />
                             </label>
 

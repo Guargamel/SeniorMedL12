@@ -1,26 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { safeArray, apiFetch, normalizeList } from "../../utils/api";
+import { safeArray, apiFetch } from "../../utils/api";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useUser } from "../../Components/UserContext";
 
 const Index = () => {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [user, setUser] = useState(null);
     const [filter, setFilter] = useState("all");
     const [pendingActions, setPendingActions] = useState({});
     const [previewUrl, setPreviewUrl] = useState(null); // Modal preview
 
+    // Use shared UserContext — no extra API fetch needed
+    const ctx = useUser();
+    const userRoleNames = ctx?.userRoleNames ?? [];
+
     useEffect(() => {
         async function fetchData() {
             try {
-                const [requestsData, userData] = await Promise.all([
-                    apiFetch("/api/medicine-requests"),
-                    apiFetch("/api/user")
-                ]);
-                // Backend returns { data: [...] } (for mobile + web consistency)
-                setRequests(normalizeList(requestsData, ["data", "requests"]));
-                setUser(userData.user);
+                const requestsData = await apiFetch("/api/medicine-requests");
+                setRequests(requestsData?.data ?? requestsData);
             } catch (error) {
                 console.error("Failed to load requests:", error);
                 toast.error("Failed to load requests");
@@ -37,13 +36,13 @@ const Index = () => {
         try {
             await apiFetch(`/api/medicine-requests/${id}/review`, {
                 method: "PUT",
-                body: JSON.stringify({ status, review_notes: reviewNotes })
+                body: JSON.stringify({ status, notes: reviewNotes })
             });
 
             toast.success(`Request ${status} successfully!`);
 
             const updatedRequests = await apiFetch("/api/medicine-requests");
-            setRequests(normalizeList(updatedRequests, ["data", "requests"]));
+            setRequests(updatedRequests?.data ?? updatedRequests);
         } catch (error) {
             console.error("Failed to update request:", error);
             toast.error("Failed to update request");
@@ -63,7 +62,7 @@ const Index = () => {
             toast.success("Request deleted successfully!");
 
             const updatedRequests = await apiFetch("/api/medicine-requests");
-            setRequests(normalizeList(updatedRequests, ["data", "requests"]));
+            setRequests(updatedRequests?.data ?? updatedRequests);
         } catch (error) {
             console.error("Failed to delete request:", error);
             toast.error("Failed to delete request");
@@ -84,13 +83,8 @@ const Index = () => {
         );
     };
 
-    const canReview = user?.roles?.some(role =>
-        role.name === "super-admin" || role.name === "staff"
-    );
-
-    const isSeniorCitizen = user?.roles?.some(role =>
-        role.name === "senior-citizen"
-    );
+    const canReview = userRoleNames.some(r => r === "super-admin" || r === "staff");
+    const isSeniorCitizen = userRoleNames.includes("senior-citizen");
 
     const filteredRequests = safeArray(requests).filter(req => {
         if (filter === "all") return true;
@@ -176,16 +170,6 @@ const Index = () => {
                                                 {getStatusBadge(request.status)}
                                             </div>
 
-                                            {request.status === "approved" && (
-                                                <div className="mt-3 flex items-start gap-3 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
-                                                    <span className="text-lg">💊</span>
-                                                    <p>
-                                                        Your request has been <strong>approved</strong>. Please visit the
-                                                        <strong> Barangay Health Station</strong> to claim your medicine.
-                                                    </p>
-                                                </div>
-                                            )}
-
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                                 {!isSeniorCitizen && (
                                                     <div className="text-sm">
@@ -220,13 +204,13 @@ const Index = () => {
                                                 </div>
                                             )}
 
-                                            {(request.notes || request.review_notes) && (
+                                            {request.notes && (
                                                 <div className="bg-gray-50 p-3 rounded-lg">
                                                     <p className="text-sm text-gray-600 font-medium">
                                                         Review Notes:
                                                     </p>
                                                     <p className="text-sm text-gray-900 mt-1">
-                                                        {request.notes || request.review_notes}
+                                                        {request.notes}
                                                     </p>
                                                 </div>
                                             )}

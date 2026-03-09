@@ -19,7 +19,6 @@ use App\Http\Controllers\Api\{
     MedicineCategoryController,
     MedicineBatchController,
     MedicineRequestController,
-    NotificationController,
     AnalyticsController,
     ReportController,
     BloodTypeController
@@ -91,7 +90,8 @@ Route::middleware('auth:sanctum')->group(function () {
         'user' => $request->user()->load('roles')
     ]));
 
-    Route::put('/profile', [ProfileController::class, 'update']);
+    // PUT for JSON; POST for multipart/avatar upload (browsers can't PUT multipart)
+    Route::match(['put','post'], '/profile', [ProfileController::class, 'update']);
     Route::put('/profile/password', [ProfileController::class, 'updatePassword']);
 
     // Web SPA logout (session/cookie)
@@ -129,14 +129,6 @@ Route::middleware('auth:sanctum')->group(function () {
         });
 
         Route::get('/medicine-requests/all', [MedicineRequestController::class, 'index']);
-
-        Route::prefix('notifications')->group(function () {
-            Route::get('/', [NotificationController::class, 'index']);
-            Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
-            Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
-            Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead']);
-            Route::delete('/{id}', [NotificationController::class, 'destroy']);
-        });
 
         Route::prefix('analytics')->group(function () {
             Route::get('/dashboard', [AnalyticsController::class, 'dashboard']);

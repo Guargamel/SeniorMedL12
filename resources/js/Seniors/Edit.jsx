@@ -11,7 +11,13 @@ export default function SeniorEdit() {
     const [deleting, setDeleting] = useState(false);
     const [errors, setErrors] = useState({});
     const [bloodTypes, setBloodTypes] = useState([]);
-
+    const watchBirthdate = watch("birthdate");
+    const computedAge = form.birthdate
+        ? Math.floor(
+            (new Date() - new Date(form.birthdate)) /
+            (365.25 * 24 * 60 * 60 * 1000)
+        )
+        : "";
 
     const [form, setForm] = useState({
         name: "",
@@ -32,13 +38,6 @@ export default function SeniorEdit() {
         blood_pressure_diastolic: "",
         blood_type_id: "",
     });
-
-    const computedAge = form.birthdate
-        ? Math.floor(
-            (new Date() - new Date(form.birthdate)) /
-            (365.25 * 24 * 60 * 60 * 1000)
-        )
-        : "";
 
     const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
     const err = (k) => (errors?.[k]?.[0] ? errors[k][0] : "");
@@ -248,7 +247,7 @@ export default function SeniorEdit() {
                         </div>
 
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 10 }}>
-                            <Field label="Age" type="number" value={computedAge} disabled />
+                            <Field label="Age" type="number" value={computedAge} onChange={(v) => set("age", v)} error={err("age")} disabled={busy} />
                             <Field label="Height (cm)" type="number" value={form.height_cm} onChange={(v) => set("height_cm", v)} error={err("height_cm")} disabled={busy} />
                             <Field label="Weight (kg)" type="number" value={form.weight_kilos} onChange={(v) => set("weight_kilos", v)} error={err("weight_kilos")} disabled={busy} />
                         </div>

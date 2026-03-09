@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import Layout from "./HeaderLayout";
 import SeniorLayout from "./SeniorLayout";
 import { fetchCurrentUser, logout as apiLogout } from "../utils/auth";
+import { UserContext } from "../Components/UserContext";
 
 export default function RequireAuthLayout() {
     const [user, setUser] = useState(null);
@@ -18,25 +19,11 @@ export default function RequireAuthLayout() {
             setLoading(true);
             setErrors([]);
 
-            try {
-                const u = await fetchCurrentUser();
-                if (!alive) return;
+            const u = await fetchCurrentUser();
+            if (!alive) return;
 
-                setUser(u);
-            } catch (err) {
-                if (!alive) return;
-
-                // Redirect based on error status
-                if (err.status === 401) {
-                    setUser(null); // triggers Navigate to /login
-                } else if (err.status === 403) {
-                    navigate("/unauthorized", { replace: true });
-                } else {
-                    console.error("Unexpected error fetching user:", err);
-                }
-            } finally {
-                if (alive) setLoading(false);
-            }
+            setUser(u);
+            setLoading(false);
         })();
 
         return () => {
@@ -53,7 +40,6 @@ export default function RequireAuthLayout() {
         } catch (e) {
             console.error("Logout error:", e);
             setErrors([e?.message || "Logout failed"]);
-            // Force logout even if API fails
             setUser(null);
             navigate("/login", { replace: true });
         }
@@ -74,13 +60,16 @@ export default function RequireAuthLayout() {
         return <Navigate to="/login" replace state={{ from: location.pathname }} />;
     }
 
-    // Ensure roles are loaded before checking
-    const isSeniorCitizen = Array.isArray(user?.roles) && user.roles.some(role => role.name === 'senior-citizen');
-    const isAdminOrStaff = Array.isArray(user?.roles)
-        ? user.roles.some(role => [1, 2].includes(role.id) || ['super-admin', 'staff'].includes(role.name))
-        : [1, 2].includes(user?.role_id);
+    // Helper: get role names from Spatie roles array, with fallback to legacy role_id
+    const LEGACY_ROLE_MAP = { 1: 'staff', 2: 'super-admin', 3: 'staff', 4: 'senior-citizen' };
+    const userRoleNames = Array.isArray(user?.roles) && user.roles.length > 0
+        ? user.roles.map(r => r.name)
+        : (user?.role_id ? [LEGACY_ROLE_MAP[user.role_id]].filter(Boolean) : []);
 
-    // If user is neither admin/staff nor senior citizen, redirect to unauthorized
+    const isSeniorCitizen = userRoleNames.includes('senior-citizen');
+    const isAdminOrStaff = userRoleNames.some(r => ['super-admin', 'staff'].includes(r));
+
+    // If user has no recognized role at all, redirect to unauthorized
     if (!isAdminOrStaff && !isSeniorCitizen) {
         return <Navigate to="/unauthorized" replace />;
     }
@@ -88,5 +77,9 @@ export default function RequireAuthLayout() {
     // Use SeniorLayout for senior citizens, regular Layout for admin/staff
     const LayoutComponent = isAdminOrStaff ? Layout : SeniorLayout;
 
-    return <LayoutComponent user={user} errors={errors} handleLogout={handleLogout} />;
+    return (
+        <UserContext.Provider value={{ user, userRoleNames }}>
+            <LayoutComponent user={user} errors={errors} handleLogout={handleLogout} />
+        </UserContext.Provider>
+    );
 }
