@@ -120,7 +120,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Staff + Admin
-    Route::middleware('role:staff')->group(function () {
+    Route::middleware('role:super-admin|staff')->group(function () {
 
         Route::prefix('dashboard')->group(function () {
             Route::get('/summary', [DashboardController::class, 'summary']);
