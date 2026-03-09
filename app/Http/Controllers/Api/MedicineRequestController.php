@@ -166,14 +166,19 @@ class MedicineRequestController extends Controller
             $user = Auth::user();
             $mr = MedicineRequest::findOrFail($id);
 
-            if ($mr->user_id !== $user->id) {
-                return response()->json(['message' => 'Unauthorized'], 403);
+            $isAdminOrStaff = $user->hasAnyRole(['super-admin', 'staff']);
+
+            // Seniors can only delete their own pending requests
+            if (!$isAdminOrStaff) {
+                if ($mr->user_id !== $user->id) {
+                    return response()->json(['message' => 'Unauthorized'], 403);
+                }
+                if ($mr->status !== 'pending') {
+                    return response()->json(['message' => 'Cannot delete reviewed requests'], 400);
+                }
             }
 
-            if ($mr->status !== 'pending') {
-                return response()->json(['message' => 'Cannot delete reviewed requests'], 400);
-            }
-
+            // Always clean up prescription image from storage
             if ($mr->prescription_path && Storage::disk('public')->exists($mr->prescription_path)) {
                 Storage::disk('public')->delete($mr->prescription_path);
             }

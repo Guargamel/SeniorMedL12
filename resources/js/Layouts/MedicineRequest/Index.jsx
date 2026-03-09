@@ -261,6 +261,15 @@ const Index = () => {
                                                         Delete
                                                     </button>
                                                 )}
+
+                                                {canReview && (
+                                                    <button
+                                                        onClick={() => handleDelete(request.id)}
+                                                        className="px-4 py-2 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200 transition"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                )}
                                             </div>
 
                                             {/* Prescription Thumbnail */}

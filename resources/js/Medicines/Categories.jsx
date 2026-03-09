@@ -8,6 +8,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { apiFetch } from "../utils/api";
+import { useUser } from "../Components/UserContext";
 
 function safeArr(x) {
     if (Array.isArray(x)) return x;
@@ -16,6 +17,8 @@ function safeArr(x) {
 }
 
 export default function Categories() {
+    const ctx = useUser();
+    const canDelete = (ctx?.userRoleNames ?? []).some(r => ['super-admin', 'staff'].includes(r));
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [name, setName] = useState("");
@@ -116,9 +119,9 @@ export default function Categories() {
                                                 <td>{c.id}</td>
                                                 <td>{c.name ?? c.title ?? c.category_name}</td>
                                                 <td>
-                                                    <button className="btn btn-sm btn-outline-danger" onClick={() => onDelete(c.id)}>
+                                                    {canDelete && <button className="btn btn-sm btn-outline-danger" onClick={() => onDelete(c.id)}>
                                                         Delete
-                                                    </button>
+                                                    </button>}
                                                 </td>
                                             </tr>
                                         ))

@@ -138,6 +138,11 @@ class StaffController extends Controller
             return response()->json(['message' => 'Not a staff account'], 404);
         }
 
+        // Delete avatar from storage before deleting the user
+        if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+            Storage::disk('public')->delete($user->avatar);
+        }
+
         $user->delete();
         return response()->json(['message' => 'Staff deleted']);
     }

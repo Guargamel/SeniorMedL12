@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -47,9 +48,12 @@ class ProfileController extends Controller
         $user->name = $request->name;
         $user->email = $request->email;
 
-        // update avatar ONLY if a file was uploaded
+        // Delete old avatar and save new one when a file is uploaded
         if ($request->hasFile('avatar')) {
-            $path = $request->file('avatar')->store('avatars', 'public'); // avatars/xxxx.jpg
+            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+            $path = $request->file('avatar')->store('avatars', 'public');
             $user->avatar = $path;
         }
 

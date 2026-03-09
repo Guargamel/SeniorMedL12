@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\SeniorProfile;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
 
 class SeniorController extends Controller
@@ -132,8 +133,12 @@ class SeniorController extends Controller
     {
         $user = User::findOrFail($id);
 
-        // This will automatically delete the senior_profile
-        // IF your FK is ON DELETE CASCADE
+        // Delete avatar from storage before deleting the user
+        if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+            Storage::disk('public')->delete($user->avatar);
+        }
+
+        // This will automatically delete the senior_profile via FK ON DELETE CASCADE
         $user->delete();
 
         return response()->json([
