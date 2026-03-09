@@ -18,11 +18,25 @@ export default function RequireAuthLayout() {
             setLoading(true);
             setErrors([]);
 
-            const u = await fetchCurrentUser();
-            if (!alive) return;
+            try {
+                const u = await fetchCurrentUser();
+                if (!alive) return;
 
-            setUser(u);
-            setLoading(false);
+                setUser(u);
+            } catch (err) {
+                if (!alive) return;
+
+                // Redirect based on error status
+                if (err.status === 401) {
+                    setUser(null); // triggers Navigate to /login
+                } else if (err.status === 403) {
+                    navigate("/unauthorized", { replace: true });
+                } else {
+                    console.error("Unexpected error fetching user:", err);
+                }
+            } finally {
+                if (alive) setLoading(false);
+            }
         })();
 
         return () => {
