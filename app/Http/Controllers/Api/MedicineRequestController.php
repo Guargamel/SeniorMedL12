@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Services\FcmService;
 
 class MedicineRequestController extends Controller
 {
@@ -135,7 +136,7 @@ class MedicineRequestController extends Controller
                 'notes' => $reason, // ✅ store admin reason here
             ]);
 
-            $mr->load('medicine', 'user', 'reviewer');
+            $mr->load('medicine', 'user', 'reviewer'); // user loaded so fcm_token available for push
 
             try {
                 $this->notifySeniorCitizen($mr);
@@ -208,32 +209,58 @@ class MedicineRequestController extends Controller
     private function notifySeniorCitizen(MedicineRequest $mr)
     {
         if ($mr->status === 'approved') {
+            $title   = '✅ Request Approved – Claim Your Medicine';
             $message = 'Your request for ' . $mr->medicine->generic_name . ' has been APPROVED. '
-                . 'Please proceed to the Barangay Health Center to claim your medicine. '
+                . 'Please proceed to the Barangay Health Center. '
                 . 'Operating hours: Monday to Saturday, 8:00 AM – 5:00 PM. '
-                . 'Bring this notification and a valid ID. Thank you!';
+                . 'Bring a valid ID. Thank you!';
         } else {
-            $reason = $mr->notes ? ' Reason: ' . $mr->notes : '';
+            $title   = '❌ Request Declined';
+            $reason  = $mr->notes ? ' Reason: ' . $mr->notes : '';
             $message = 'Your request for ' . $mr->medicine->generic_name . ' has been declined.' . $reason;
         }
 
+        // 1. Save in-app notification (for the Notifications tab)
         Notification::create([
-            'user_id' => $mr->user_id,
-            'type' => 'request_' . $mr->status,
-            'title' => $mr->status === 'approved'
-                ? '✅ Request Approved – Pick Up Your Medicine'
-                : '❌ Request Declined',
-            'message' => $message,
-            'data' => json_encode([
-                'request_id' => $mr->id,
-                'medicine_name' => $mr->medicine->generic_name,
-                'status' => $mr->status,
-                'notes' => $mr->notes,
+            'user_id'          => $mr->user_id,
+            // Required by Laravel's built-in notifications table structure
+            'notifiable_type'  => User::class,
+            'notifiable_id'    => $mr->user_id,
+            'type'             => 'request_' . $mr->status,
+            'title'            => $title,
+            'message'          => $message,
+            'data'             => json_encode([
+                'request_id'      => $mr->id,
+                'medicine_name'   => $mr->medicine->generic_name,
+                'status'          => $mr->status,
+                'notes'           => $mr->notes,
                 'pickup_schedule' => $mr->status === 'approved'
                     ? 'Monday – Saturday, 8:00 AM to 5:00 PM'
                     : null,
             ]),
-            'read_at' => null
+            'read_at'          => null,
         ]);
+
+        // 2. Send FCM push notification to the senior's device
+        //    This fires even when the app is fully closed (true background push).
+        $fcmToken = $mr->user->fcm_token ?? null;
+        if ($fcmToken) {
+            try {
+                $fcm = new FcmService();
+                $fcm->sendToDevice(
+                    fcmToken: $fcmToken,
+                    title:    $title,
+                    body:     $message,
+                    data:     [
+                        'request_id'    => (string) $mr->id,
+                        'medicine_name' => $mr->medicine->generic_name,
+                        'status'        => $mr->status,
+                    ]
+                );
+            } catch (\Exception $e) {
+                // Non-fatal: in-app notification was already saved above
+                Log::warning('[FCM] Push delivery failed for user ' . $mr->user_id . ': ' . $e->getMessage());
+            }
+        }
     }
 }

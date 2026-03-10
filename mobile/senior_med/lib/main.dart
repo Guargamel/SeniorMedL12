@@ -1,12 +1,22 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+
 import 'services/api_service.dart';
+import 'services/push_notification_service.dart';
 import 'router/app_router.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load saved base URL into Dio before any API calls
+  // Load saved server URL before any API calls
   await ApiService.instance.loadBaseUrlFromStorage();
+
+  // Initialize Firebase (required before any Firebase service)
+  // google-services.json (Android) / GoogleService-Info.plist (iOS) must be present
+  await Firebase.initializeApp();
+
+  // Initialize FCM + local notifications
+  await PushNotificationService.instance.init();
 
   runApp(const SeniorMedApp());
 }
@@ -25,7 +35,7 @@ class SeniorMedApp extends StatelessWidget {
           brightness: Brightness.light,
         ),
         primaryColor: Colors.green,
-        // Fix 5: Larger default font sizes for senior citizens
+        // Larger fonts for senior citizens (Fix 5)
         textTheme: const TextTheme(
           bodyLarge:   TextStyle(fontSize: 18),
           bodyMedium:  TextStyle(fontSize: 16),

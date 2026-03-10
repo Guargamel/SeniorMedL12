@@ -1,5 +1,6 @@
 import '../models/user_model.dart';
 import 'api_service.dart';
+import 'push_notification_service.dart';
 
 class AuthService {
   final _api = ApiService.instance;
@@ -26,6 +27,10 @@ class AuthService {
     }
 
     await _api.setToken(token);
+
+    // Register FCM device token with the server so Laravel can send push
+    // notifications to this specific device when a request is reviewed.
+    await PushNotificationService.instance.registerToken();
 
     return token;
   }

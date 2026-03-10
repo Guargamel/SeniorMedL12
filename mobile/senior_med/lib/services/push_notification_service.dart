@@ -1,149 +1,174 @@
-import 'dart:async';
+import 'dart:convert';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
 import 'api_service.dart';
 
-/// PushNotificationService
-/// ─────────────────────────────────────────────────────────────────────
-/// Shows in-app banner notifications for approved/declined requests.
-/// Also tries to show a system notification via platform channel.
-///
-/// NO external notification package required — uses:
-///   • flutter_secure_storage (already in pubspec) for last-seen tracking
-///   • A platform MethodChannel for the native toast/notification
-///   • An overlay SnackBar / banner for foreground in-app notifications
-///
-/// For true background push, you would add firebase_messaging to pubspec.
-/// This implementation covers the foreground + polling case robustly.
+// ─────────────────────────────────────────────────────────────────────────────
+// TOP-LEVEL background message handler
+// MUST be a top-level function (not a class method) — FCM requirement.
+// Flutter runs this in a separate isolate when the app is terminated/background.
+// ─────────────────────────────────────────────────────────────────────────────
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Firebase must be initialized in the background isolate too
+  await Firebase.initializeApp();
+  // Show a local notification so it appears in the system tray
+  await PushNotificationService._showLocalNotification(
+    id:    message.hashCode,
+    title: message.notification?.title ?? message.data['title'] ?? 'SeniorMed',
+    body:  message.notification?.body  ?? message.data['body']  ?? '',
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PushNotificationService
+//
+// HOW IT WORKS END-TO-END:
+//   1. On login, Flutter gets the FCM device token and sends it to Laravel
+//      via POST /api/device-token
+//   2. When staff approves/declines a request, Laravel calls the FCM HTTP v1 API
+//      which sends a push to THAT specific device token
+//   3. FCM delivers the push to the phone — even when the app is fully closed
+//   4. flutter_local_notifications shows it in the Android/iOS notification tray
+//
+// SETUP REQUIRED (see SETUP_PUSH_NOTIFICATIONS.md in the zip):
+//   - Create a Firebase project, download google-services.json (Android) /
+//     GoogleService-Info.plist (iOS) and place them in the correct folders
+//   - Add the Firebase service account JSON key to Laravel .env
+// ─────────────────────────────────────────────────────────────────────────────
 class PushNotificationService {
   PushNotificationService._();
   static final PushNotificationService instance = PushNotificationService._();
 
-  static const _storage = FlutterSecureStorage();
-  static const _lastNotifKey = 'last_pushed_notification_id';
-  static const _channel = MethodChannel('com.seniormed.notifications');
+  static const _androidChannel = AndroidNotificationChannel(
+    'seniormed_requests',           // channel ID
+    'Medicine Request Updates',     // channel name shown in Settings
+    description: 'Notified when your medicine request is approved or declined.',
+    importance: Importance.max,
+    playSound: true,
+    enableVibration: true,
+  );
 
-  Timer? _timer;
+  static final _localPlugin = FlutterLocalNotificationsPlugin();
 
-  // Callback so UI can show a SnackBar / banner when foregrounded
-  void Function(String title, String body, bool approved)? onNotification;
+  bool _initialized = false;
 
-  /// Call once after login. Pass a [BuildContext] to show in-app banners.
-  void startPolling({BuildContext? context}) {
-    _timer?.cancel();
-    _pollNow(context: context);
-    _timer = Timer.periodic(const Duration(seconds: 30), (_) => _pollNow(context: context));
-  }
+  // ── Initialize ─────────────────────────────────────────────────────────────
+  Future<void> init() async {
+    if (_initialized) return;
+    _initialized = true;
 
-  void stopPolling() {
-    _timer?.cancel();
-    _timer = null;
-  }
+    // 1. Register background handler (must be set before Firebase.initializeApp)
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  Future<void> _pollNow({BuildContext? context}) async {
-    try {
-      final res = await ApiService.instance.dio.get('/notifications');
-      if (res.statusCode != 200) return;
-
-      final data = res.data;
-      final list = (data is Map && data['data'] is List)
-          ? data['data'] as List
-          : (data is List ? data : <dynamic>[]);
-
-      final lastIdRaw = await _storage.read(key: _lastNotifKey);
-      final lastId = int.tryParse(lastIdRaw ?? '') ?? 0;
-
-      int newLastId = lastId;
-      final toShow = <Map>[];
-
-      for (final item in list) {
-        if (item is! Map) continue;
-        final id = (item['id'] is int)
-            ? item['id'] as int
-            : int.tryParse(item['id']?.toString() ?? '') ?? 0;
-        if (id <= lastId) continue;
-
-        final type = (item['type'] ?? '').toString();
-        if (type.contains('approved') || type.contains('declined')) {
-          toShow.add(item as Map);
-        }
-        if (id > newLastId) newLastId = id;
-      }
-
-      if (newLastId > lastId) {
-        await _storage.write(key: _lastNotifKey, value: newLastId.toString());
-      }
-
-      for (final n in toShow) {
-        final title = (n['title'] ?? 'Medicine Request Update').toString();
-        final body  = (n['message'] ?? '').toString();
-        final isApproved = (n['type'] ?? '').toString().contains('approved');
-
-        // 1. Try native system notification via platform channel
-        await _showNative(title, body);
-
-        // 2. Show in-app overlay if context is available
-        if (context != null && context.mounted) {
-          _showInAppBanner(context, title, body, isApproved);
-        }
-
-        // 3. Call optional callback
-        onNotification?.call(title, body, isApproved);
-      }
-    } catch (_) {
-      // Silent — never disrupt app
-    }
-  }
-
-  Future<void> _showNative(String title, String body) async {
-    try {
-      await _channel.invokeMethod('showNotification', {
-        'title': title,
-        'body':  body,
-        'channelId': 'medicine_requests',
-        'channelName': 'Medicine Requests',
-      });
-    } catch (_) {
-      // Platform channel not wired up — in-app banner still shows
-    }
-  }
-
-  void _showInAppBanner(BuildContext context, String title, String body, bool approved) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        duration: const Duration(seconds: 6),
-        backgroundColor: approved ? Colors.green.shade700 : Colors.red.shade700,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        content: Row(
-          children: [
-            Icon(
-              approved ? Icons.check_circle : Icons.cancel,
-              color: Colors.white,
-              size: 28,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
-                  const SizedBox(height: 2),
-                  Text(body, style: const TextStyle(fontSize: 13, color: Colors.white70), maxLines: 3, overflow: TextOverflow.ellipsis),
-                ],
-              ),
-            ),
-          ],
+    // 2. Init local notifications plugin (for foreground + background display)
+    await _localPlugin.initialize(
+      const InitializationSettings(
+        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        iOS: DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
         ),
       ),
     );
+
+    // 3. Create the Android high-importance channel
+    await _localPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(_androidChannel);
+
+    // 4. Ask for permission (Android 13+ / iOS)
+    final messaging = FirebaseMessaging.instance;
+    await messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    // 5. Foreground: FCM by default doesn't show a heads-up on Android when
+    //    the app is open — we manually show a local notification instead.
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      final notification = message.notification;
+      if (notification != null) {
+        _showLocalNotification(
+          id:    message.hashCode,
+          title: notification.title ?? message.data['title'] ?? 'SeniorMed',
+          body:  notification.body  ?? message.data['body']  ?? '',
+        );
+      }
+    });
+
+    // 6. Tapped from background (app was in background, user taps notification)
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      // Navigate to My Requests — handled via navigatorKey if needed
+      debugPrint('[FCM] Notification tapped from background: ${message.data}');
+    });
   }
 
-  Future<void> resetLastSeen() async {
-    await _storage.delete(key: _lastNotifKey);
+  // ── Register FCM token with Laravel after login ─────────────────────────────
+  Future<void> registerToken() async {
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token == null || token.isEmpty) {
+        debugPrint('[FCM] No token returned from Firebase - check google-services.json');
+        return;
+      }
+      debugPrint('[FCM] Got device token: ${token.substring(0, 30)}...');
+      debugPrint('[FCM] Sending to: ${ApiService.instance.currentBaseUrl}/device-token');
+
+      final res = await ApiService.instance.dio.post(
+        '/device-token',
+        data: {'fcm_token': token},
+      );
+      debugPrint('[FCM] Server response: \${res.statusCode} \${res.data}');
+    } catch (e) {
+      // Non-fatal — app works without push if this fails
+      debugPrint('[FCM] Token registration failed: \$e');
+    }
+
+    // Refresh token if FCM rotates it
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+      try {
+        await ApiService.instance.dio.post(
+          '/device-token',
+          data: {'fcm_token': newToken},
+        );
+      } catch (_) {}
+    });
+  }
+
+  // ── Show a heads-up local notification ─────────────────────────────────────
+  static Future<void> _showLocalNotification({
+    required int id,
+    required String title,
+    required String body,
+  }) async {
+    await _localPlugin.show(
+      id,
+      title,
+      body,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _androidChannel.id,
+          _androidChannel.name,
+          channelDescription: _androidChannel.description,
+          importance: Importance.max,
+          priority: Priority.high,
+          ticker: 'Medicine Request Update',
+          icon: '@mipmap/ic_launcher',
+          styleInformation: BigTextStyleInformation(body),
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+    );
   }
 }

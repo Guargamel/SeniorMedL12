@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "727740955374",
+    "project_id": "seniormedl12",
+    "storage_bucket": "seniormedl12.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:727740955374:android:14d73c59e7e3d4159f51ff",
+        "android_client_info": {
+          "package_name": "com.example.senior_med"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQb-4ixoYuRekX2IdfcufXBCgRS27WCac"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

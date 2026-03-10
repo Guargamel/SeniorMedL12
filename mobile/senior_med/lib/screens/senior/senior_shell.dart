@@ -1,14 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../senior/browse/browse_medicines_screen.dart';
 import '../senior/requests/my_requests_screen.dart';
 import '../senior/notifications/senior_notifications_screen.dart';
 import '../common/profile_screen.dart';
-
-import 'dart:async';
 import '../../services/request_badge_service.dart';
 import '../../services/notification_badge_service.dart';
-import '../../services/push_notification_service.dart';
 
 class SeniorShell extends StatefulWidget {
   const SeniorShell({super.key});
@@ -19,7 +17,6 @@ class SeniorShell extends StatefulWidget {
 
 class _SeniorShellState extends State<SeniorShell> {
   int index = 0;
-
   int _requestBadge = 0;
   int _notifBadge   = 0;
   Timer? _timer;
@@ -53,19 +50,13 @@ class _SeniorShellState extends State<SeniorShell> {
   void initState() {
     super.initState();
     _refreshBadges();
-    // Start polling badges every 30 s
+    // Poll every 30 s to keep in-app badge counts fresh
     _timer = Timer.periodic(const Duration(seconds: 30), (_) => _refreshBadges());
-
-    // Fix 4: Start push notification polling after first frame (context available)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      PushNotificationService.instance.startPolling(context: context);
-    });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    PushNotificationService.instance.stopPolling();
     super.dispose();
   }
 
@@ -106,25 +97,18 @@ class _SeniorShellState extends State<SeniorShell> {
         selectedIndex: index,
         onDestinationSelected: (i) async {
           setState(() => index = i);
-
-          // When senior opens "My Requests", expire the request badge
           if (i == 1) {
             try {
               final res = await RequestBadgeService.getNewCount();
-              final latest = res.latestReviewedAt;
-              if (latest != null) {
-                await RequestBadgeService.setLastSeen(latest);
+              if (res.latestReviewedAt != null) {
+                await RequestBadgeService.setLastSeen(res.latestReviewedAt!);
               }
             } catch (_) {}
           }
-
           await _refreshBadges();
         },
         destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.search),
-            label: "Browse",
-          ),
+          const NavigationDestination(icon: Icon(Icons.search), label: "Browse"),
           NavigationDestination(
             icon: _navIconWithBadge(Icons.assignment_turned_in, _requestBadge),
             label: "My Requests",
@@ -133,10 +117,7 @@ class _SeniorShellState extends State<SeniorShell> {
             icon: _navIconWithBadge(Icons.notifications, _notifBadge),
             label: "Notifications",
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.person),
-            label: "Profile",
-          ),
+          const NavigationDestination(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
     );
