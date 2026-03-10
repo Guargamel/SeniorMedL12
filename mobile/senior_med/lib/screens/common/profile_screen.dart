@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dio/dio.dart';
@@ -95,27 +96,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       final formData = FormData.fromMap({
-        'name':    _nameCtrl.text.trim(),
-        'email':   _emailCtrl.text.trim(),
-        '_method': 'PUT',
+        'name':  _nameCtrl.text.trim(),
+        'email': _emailCtrl.text.trim(),
+        // No '_method': 'PUT' — API route accepts POST directly for multipart.
+        // _method spoofing only works for HTML web forms, not Dio multipart.
         if (_avatarFile != null)
           'avatar': await MultipartFile.fromFile(_avatarFile!.path, filename: _avatarFile!.name),
       });
 
       final res = await ApiService.instance.dio.post(
-        '/api/profile',
+        '/profile',
         data: formData,
-        options: Options(contentType: 'multipart/form-data'),
+        // Do NOT set contentType manually — Dio sets multipart boundary automatically
       );
 
       if (res.statusCode == 200 || res.statusCode == 201) {
-        final u = res.data['user'] ?? res.data;
-        setState(() {
-          _successMsg = 'Profile updated successfully!';
-          _avatarFile = null;
-        });
+        // Update user state immediately from the response (no extra reload needed)
+        final rawUser = res.data['user'] ?? res.data;
+        if (rawUser is Map<String, dynamic>) {
+          final updated = UserModel.fromJson(rawUser);
+          setState(() {
+            user              = updated;
+            _avatarFile       = null;
+            _avatarPreviewPath = null; // clear local preview; network fetch takes over
+            _successMsg       = 'Profile updated! / Na-update ang profile!';
+          });
+        } else {
+          setState(() {
+            _avatarFile       = null;
+            _avatarPreviewPath = null;
+            _successMsg       = 'Profile updated successfully!';
+          });
+        }
         TtsService.instance.speakTagalog("Matagumpay na na-update ang inyong profile.");
-        await _load();
       } else {
         throw Exception('${res.statusCode}: ${res.data}');
       }
@@ -149,7 +162,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       final res = await ApiService.instance.dio.put(
-        '/api/profile/password',
+        '/profile/password',
         data: {
           'current_password':      cur,
           'password':              newPass,
@@ -241,15 +254,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               child: CircleAvatar(
                                 radius: 56,
                                 backgroundColor: Colors.green.shade200,
+                                // Show local preview if user just picked a new image
                                 backgroundImage: _avatarPreviewPath != null
-                                    ? FileImage(File(_avatarPreviewPath!))
-                                    : (u?.avatarUrl != null
-                                        ? NetworkImage(u!.avatarUrl!) as ImageProvider
-                                        : null),
-                                child: (_avatarPreviewPath == null && (u?.avatarUrl == null))
-                                    ? Text(
-                                        u?.name.isNotEmpty == true ? u!.name[0].toUpperCase() : "?",
-                                        style: const TextStyle(fontSize: 40, color: Colors.white, fontWeight: FontWeight.bold),
+                                    ? FileImage(File(_avatarPreviewPath!)) as ImageProvider
+                                    : null,
+                                child: _avatarPreviewPath == null
+                                    ? _AvatarNetworkImage(
+                                        avatarUrl: u?.avatarUrl,
+                                        name: u?.name ?? '?',
                                       )
                                     : null,
                               ),
@@ -358,6 +370,102 @@ class _ProfileScreenState extends State<ProfileScreen> {
         border: const OutlineInputBorder(),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
+    );
+  }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper: loads the avatar from Laravel storage with the Bearer token attached.
+//
+// Why: Flutter's NetworkImage doesn't support custom headers, so a normal
+// NetworkImage(avatarUrl) on a non-public storage path would get a 401/403.
+// Even on a public disk the URL may be relative (e.g. "/storage/avatars/x.jpg")
+// which also fails on mobile. This widget uses Dio to fetch the bytes, then
+// displays them — giving us auth headers + absolute URL resolution for free.
+// ─────────────────────────────────────────────────────────────────────────────
+class _AvatarNetworkImage extends StatefulWidget {
+  final String? avatarUrl;
+  final String name;
+
+  const _AvatarNetworkImage({required this.avatarUrl, required this.name});
+
+  @override
+  State<_AvatarNetworkImage> createState() => _AvatarNetworkImageState();
+}
+
+class _AvatarNetworkImageState extends State<_AvatarNetworkImage> {
+  Uint8List? _bytes;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.avatarUrl != null && widget.avatarUrl!.isNotEmpty) {
+      _fetch(widget.avatarUrl!);
+    }
+  }
+
+  @override
+  void didUpdateWidget(_AvatarNetworkImage old) {
+    super.didUpdateWidget(old);
+    if (old.avatarUrl != widget.avatarUrl && widget.avatarUrl != null) {
+      _fetch(widget.avatarUrl!);
+    }
+  }
+
+  Future<void> _fetch(String rawUrl) async {
+    if (_loading) return;
+    setState(() { _loading = true; _bytes = null; });
+    try {
+      // Make the URL absolute: if it starts with http use as-is,
+      // otherwise prepend the server base URL.
+      // Storage URLs (/storage/...) are served from the server ROOT,
+      // not from /api. Strip any /api suffix from the base URL.
+      final String baseOrigin = ApiService.instance.currentBaseUrl
+          .replaceAll(RegExp(r'/api/?$'), '');
+      final String url = rawUrl.startsWith('http')
+          ? rawUrl
+          : '$baseOrigin$rawUrl';
+
+      final token = await ApiService.instance.getToken();
+      final res = await ApiService.instance.dio.get<List<int>>(
+        url,
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: token != null ? {'Authorization': 'Bearer $token'} : {},
+          // Don't throw on 4xx so we can fall back gracefully
+          validateStatus: (s) => s != null && s < 500,
+        ),
+      );
+      if (res.statusCode == 200 && res.data != null) {
+        if (mounted) setState(() => _bytes = Uint8List.fromList(res.data!));
+      }
+    } catch (_) {
+      // Fall through to initials fallback
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const SizedBox(
+        width: 36, height: 36,
+        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+      );
+    }
+    if (_bytes != null) {
+      return ClipOval(
+        child: Image.memory(_bytes!, width: 112, height: 112, fit: BoxFit.cover),
+      );
+    }
+    // Fallback: show initials
+    final initial = widget.name.isNotEmpty ? widget.name[0].toUpperCase() : '?';
+    return Text(
+      initial,
+      style: const TextStyle(fontSize: 40, color: Colors.white, fontWeight: FontWeight.bold),
     );
   }
 }

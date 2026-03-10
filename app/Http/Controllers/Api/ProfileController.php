@@ -44,12 +44,11 @@ class ProfileController extends Controller
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ]);
 
-        // update ONLY text fields
-        $user->name = $request->name;
+        $user->name  = $request->name;
         $user->email = $request->email;
 
-        // Delete old avatar and save new one when a file is uploaded
         if ($request->hasFile('avatar')) {
+            // Delete old avatar if it exists
             if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
                 Storage::disk('public')->delete($user->avatar);
             }
@@ -59,6 +58,8 @@ class ProfileController extends Controller
 
         $user->save();
 
+        // Always return full user with avatar_url so mobile can update its display
+        $user->refresh();
         return response()->json(['user' => $user->load('roles')]);
     }
 
