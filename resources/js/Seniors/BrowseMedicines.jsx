@@ -130,7 +130,7 @@ export default function BrowseMedicines() {
                                             let availability = "OK";
                                             const currentDate = new Date();
                                             const totalQuantity = m.batches.reduce((total, batch) => total + batch.quantity, 0);
-                                            const isExpired = m.batches.some(batch => new Date(batch.expiry_date) < currentDate);
+                                            const isExpired = m.batches.length > 0 && m.batches.every(batch => new Date(batch.expiry_date) < currentDate);
 
                                             if (totalQuantity === 0) availability = "Out of Stock";
                                             else if (isExpired) availability = "Expired";

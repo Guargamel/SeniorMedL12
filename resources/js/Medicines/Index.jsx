@@ -134,7 +134,7 @@ export default function Index() {
                                             }, 0);
 
                                             // Check if the medicine is expired
-                                            const isExpired = m.batches.some(batch => new Date(batch.expiry_date) < currentDate);
+                                            const isExpired = m.batches.length > 0 && m.batches.every(batch => new Date(batch.expiry_date) < currentDate);
 
                                             if (totalQuantity === 0) {
                                                 availability = "Out of Stock";

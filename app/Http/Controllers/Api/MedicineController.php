@@ -17,7 +17,7 @@ class MedicineController extends Controller
                 $medicine->quantity    = $medicine->batches->sum('quantity');
                 $earliestExpiry        = $medicine->batches->min('expiry_date');
                 $medicine->expiry_date = $earliestExpiry;
-                $medicine->is_expired  = $medicine->batches->some(fn($b) => $b->expiry_date < now());
+                $medicine->is_expired  = $medicine->batches->isNotEmpty() && $medicine->batches->every(fn($b) => $b->expiry_date < now());
                 $medicine->is_low_stock = $medicine->quantity < 10;
                 $medicine->is_ok       = !$medicine->is_expired && !$medicine->is_low_stock;
                 return $medicine;
