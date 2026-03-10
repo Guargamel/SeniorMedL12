@@ -45,7 +45,8 @@ class User extends Authenticatable
     {
         if (empty($this->avatar)) return null;
         // stored in /storage/... via public disk
-        return Storage::url('public/' . $this->avatar);
+        // Storage::url on public disk returns /storage/{path}
+        return url(Storage::url($this->avatar));
     }
 
     /**

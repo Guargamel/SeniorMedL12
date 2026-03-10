@@ -54,13 +54,12 @@ class MedicineRequestController extends Controller
             'medicine_id'        => ['required', 'integer', 'exists:medicines,id'],
             'quantity'           => ['required', 'integer', 'min:1'],
             'reason'             => ['nullable', 'string'],
-            'prescription_path'  => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'prescription_path'  => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+        ], [
+            'prescription_path.required' => 'A prescription image is required. Please upload a clear photo of your prescription.',
         ]);
 
-        $path = null;
-        if ($request->hasFile('prescription_path')) {
-            $path = $request->file('prescription_path')->store('prescriptions', 'public');
-        }
+        $path = $request->file('prescription_path')->store('prescriptions', 'public');
 
         $req = MedicineRequest::create([
             'user_id' => auth()->id(),
@@ -208,16 +207,31 @@ class MedicineRequestController extends Controller
 
     private function notifySeniorCitizen(MedicineRequest $mr)
     {
+        if ($mr->status === 'approved') {
+            $message = 'Your request for ' . $mr->medicine->generic_name . ' has been APPROVED. '
+                . 'Please proceed to the Barangay Health Center to claim your medicine. '
+                . 'Operating hours: Monday to Saturday, 8:00 AM – 5:00 PM. '
+                . 'Bring this notification and a valid ID. Thank you!';
+        } else {
+            $reason = $mr->notes ? ' Reason: ' . $mr->notes : '';
+            $message = 'Your request for ' . $mr->medicine->generic_name . ' has been declined.' . $reason;
+        }
+
         Notification::create([
             'user_id' => $mr->user_id,
             'type' => 'request_' . $mr->status,
-            'title' => 'Request ' . ucfirst($mr->status),
-            'message' => 'Your request for ' . $mr->medicine->generic_name . ' has been ' . $mr->status,
+            'title' => $mr->status === 'approved'
+                ? '✅ Request Approved – Pick Up Your Medicine'
+                : '❌ Request Declined',
+            'message' => $message,
             'data' => json_encode([
                 'request_id' => $mr->id,
                 'medicine_name' => $mr->medicine->generic_name,
                 'status' => $mr->status,
-                'notes' => $mr->notes, // ✅ include notes
+                'notes' => $mr->notes,
+                'pickup_schedule' => $mr->status === 'approved'
+                    ? 'Monday – Saturday, 8:00 AM to 5:00 PM'
+                    : null,
             ]),
             'read_at' => null
         ]);

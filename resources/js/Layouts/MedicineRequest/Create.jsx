@@ -72,6 +72,12 @@ const Create = () => {
     }, [prescriptionFile]);
 
     const onSubmit = async (data) => {
+        // Require prescription image before submitting
+        if (!prescriptionFile) {
+            toast.error("A prescription image is required. Please upload a photo of your prescription.");
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -122,7 +128,7 @@ const Create = () => {
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900">Request Medicine</h2>
                             <p className="text-sm text-gray-500 mt-1">
-                                Fill out the form and (optional) upload a prescription photo.
+                                Fill out the form and upload a prescription photo. A prescription image is required.
                             </p>
                         </div>
                     </div>
@@ -197,7 +203,7 @@ const Create = () => {
                         <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                             <div className="flex items-start justify-between gap-4">
                                 <div>
-                                    <div className="text-sm font-semibold text-gray-800">prescription Photo (Mandatory)</div>
+                                    <div className="text-sm font-semibold text-gray-800">Prescription Photo <span className="text-red-500">*</span> <span className="text-red-600 font-normal">(Required)</span></div>
                                     <div className="text-xs text-gray-500 mt-1">
                                         Upload a clear image (JPG/PNG/WebP). Max size depends on server validation.
                                     </div>

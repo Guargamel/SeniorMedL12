@@ -3,6 +3,7 @@ import { safeArray, apiFetch } from "../../utils/api";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useUser } from "../../Components/UserContext";
+import TTSButton from "../../Components/TTSButton";
 
 const Index = () => {
     const [requests, setRequests] = useState([]);
@@ -163,11 +164,14 @@ const Index = () => {
                                         {/* LEFT SIDE */}
                                         <div className="flex-1">
 
-                                            <div className="flex items-center gap-3 mb-3">
+                                            <div className="flex items-center gap-3 mb-3 flex-wrap">
                                                 <h3 className="text-xl font-semibold text-gray-900">
                                                     {request.medicine?.generic_name || "Unknown Medicine"}
                                                 </h3>
                                                 {getStatusBadge(request.status)}
+                                                <TTSButton
+                                                    text={`Gamot: ${request.medicine?.generic_name || "Hindi kilala"}. Katayuan: ${request.status === "approved" ? "Naaprubahan. Pumunta sa Barangay Health Center, Lunes hanggang Sabado, alas otso ng umaga hanggang alas singko ng hapon." : request.status === "declined" ? "Tinanggihan." : "Nakabinbin."} ${request.notes ? "Dahilan: " + request.notes : ""}`}
+                                                />
                                             </div>
 
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
