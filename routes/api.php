@@ -10,6 +10,7 @@ use App\Models\Supplier;
 
 use App\Http\Controllers\Api\{
     DeviceTokenController,
+    NotificationController,
     RoleController,
     StaffController,
     ProfileController,
@@ -89,6 +90,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [ProfileController::class, 'me']);
     // Register/update FCM device token for push notifications
     Route::post('/device-token', [DeviceTokenController::class, 'store']);
+
+    // Notifications for the logged-in user (senior citizen)
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::put('/notifications/{id}/read', [NotificationController::class, 'markRead']);
+    Route::put('/notifications/read-all', [NotificationController::class, 'markAllRead']);
     Route::get('/user', fn(Request $request) => response()->json([
         'user' => $request->user()->load('roles')
     ]));
