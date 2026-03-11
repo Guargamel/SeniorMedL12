@@ -10,7 +10,8 @@ class SeniorNotificationsScreen extends StatefulWidget {
   final VoidCallback? onSeenLatest;
 
   @override
-  State<SeniorNotificationsScreen> createState() => _SeniorNotificationsScreenState();
+  State<SeniorNotificationsScreen> createState() =>
+      _SeniorNotificationsScreenState();
 }
 
 class _SeniorNotificationsScreenState extends State<SeniorNotificationsScreen> {
@@ -25,11 +26,15 @@ class _SeniorNotificationsScreenState extends State<SeniorNotificationsScreen> {
   }
 
   Future<void> _load() async {
-    setState(() { loading = true; error = null; });
+    setState(() {
+      loading = true;
+      error = null;
+    });
 
     try {
       final res = await ApiService.instance.dio.get("/notifications");
-      if (res.statusCode != 200) throw Exception("${res.statusCode}: ${res.data}");
+      if (res.statusCode != 200)
+        throw Exception("${res.statusCode}: ${res.data}");
 
       final data = res.data;
       final list = (data is Map && data["data"] is List)
@@ -39,7 +44,9 @@ class _SeniorNotificationsScreenState extends State<SeniorNotificationsScreen> {
       int latestId = 0;
       for (final n in list) {
         if (n is Map) {
-          final id = (n['id'] is int) ? n['id'] as int : int.tryParse(n['id']?.toString() ?? '') ?? 0;
+          final id = (n['id'] is int)
+              ? n['id'] as int
+              : int.tryParse(n['id']?.toString() ?? '') ?? 0;
           if (id > latestId) latestId = id;
         }
       }
@@ -57,7 +64,7 @@ class _SeniorNotificationsScreenState extends State<SeniorNotificationsScreen> {
   }
 
   void _readNotifAloud(Map n) {
-    final title   = n["title"]?.toString() ?? "Abiso";
+    final title = n["title"]?.toString() ?? "Abiso";
     final message = n["message"]?.toString() ?? "";
     TtsService.instance.speakTagalog("$title. $message");
   }
@@ -101,22 +108,29 @@ class _SeniorNotificationsScreenState extends State<SeniorNotificationsScreen> {
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : error != null
-              ? Center(child: Text(error!, style: const TextStyle(color: Colors.red, fontSize: 16)))
+              ? Center(
+                  child: Text(error!,
+                      style: const TextStyle(color: Colors.red, fontSize: 16)))
               : items.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.notifications_off, size: 64, color: Colors.grey),
+                          const Icon(Icons.notifications_off,
+                              size: 64, color: Colors.grey),
                           const SizedBox(height: 12),
-                          const Text("Wala pang abiso.", style: TextStyle(fontSize: 18)),
+                          const Text("Wala pang abiso.",
+                              style: TextStyle(fontSize: 18)),
                           const SizedBox(height: 8),
-                          const Text("No notifications yet.", style: TextStyle(fontSize: 16, color: Colors.grey)),
+                          const Text("No notifications yet.",
+                              style:
+                                  TextStyle(fontSize: 16, color: Colors.grey)),
                           const SizedBox(height: 16),
                           ElevatedButton.icon(
                             onPressed: _load,
                             icon: const Icon(Icons.refresh),
-                            label: const Text("I-refresh", style: TextStyle(fontSize: 16)),
+                            label: const Text("I-refresh",
+                                style: TextStyle(fontSize: 16)),
                           ),
                         ],
                       ),
@@ -128,14 +142,16 @@ class _SeniorNotificationsScreenState extends State<SeniorNotificationsScreen> {
                         itemCount: items.length,
                         itemBuilder: (_, i) {
                           final n = items[i] as Map;
-                          final isRead = (n["read_at"] != null) || (n["is_read"] == true);
+                          final isRead =
+                              (n["read_at"] != null) || (n["is_read"] == true);
                           final color = _notifColor(n);
 
                           return Card(
                             margin: const EdgeInsets.symmetric(vertical: 6),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: color.withOpacity(0.4), width: 1.5),
+                              side: BorderSide(
+                                  color: color.withOpacity(0.4), width: 1.5),
                             ),
                             color: isRead ? null : color.withOpacity(0.07),
                             child: Padding(
@@ -147,32 +163,36 @@ class _SeniorNotificationsScreenState extends State<SeniorNotificationsScreen> {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           n["title"]?.toString() ?? "Abiso",
                                           style: TextStyle(
                                             fontSize: 18,
-                                            fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+                                            fontWeight: isRead
+                                                ? FontWeight.normal
+                                                : FontWeight.bold,
                                             color: color,
                                           ),
                                         ),
                                         const SizedBox(height: 6),
-                                        Text(
-                                          n["message"]?.toString() ?? "",
-                                          style: const TextStyle(fontSize: 16),
-                                        ),
+                                        _buildMessageWithNote(
+                                            n["message"]?.toString() ?? "",
+                                            n["type"]?.toString() ?? ""),
                                         const SizedBox(height: 6),
                                         Text(
                                           n["created_at"]?.toString() ?? "",
-                                          style: const TextStyle(fontSize: 13, color: Colors.grey),
+                                          style: const TextStyle(
+                                              fontSize: 13, color: Colors.grey),
                                         ),
                                       ],
                                     ),
                                   ),
                                   // Audio button per notification
                                   IconButton(
-                                    icon: const Icon(Icons.volume_up, color: Colors.blue, size: 26),
+                                    icon: const Icon(Icons.volume_up,
+                                        color: Colors.blue, size: 26),
                                     tooltip: "Pakinggan / Listen",
                                     onPressed: () => _readNotifAloud(n),
                                   ),
@@ -183,6 +203,62 @@ class _SeniorNotificationsScreenState extends State<SeniorNotificationsScreen> {
                         },
                       ),
                     ),
+    );
+  }
+
+  Widget _buildMessageWithNote(String message, String type) {
+    // Split note from main message
+    // Approved notes start with " Note:", declined with " Reason:"
+    String mainMessage = message;
+    String? note;
+
+    if (message.contains(' Note: ')) {
+      final parts = message.split(' Note: ');
+      mainMessage = parts[0];
+      note = parts[1];
+    } else if (message.contains(' Reason: ')) {
+      final parts = message.split(' Reason: ');
+      mainMessage = parts[0];
+      note = parts[1];
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          mainMessage,
+          style: const TextStyle(fontSize: 16),
+        ),
+        if (note != null) ...[
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.red.shade300),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.info_outline, color: Colors.red, size: 18),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    type.contains('approved') ? 'Note: $note' : 'Reason: $note',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Colors.red,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
