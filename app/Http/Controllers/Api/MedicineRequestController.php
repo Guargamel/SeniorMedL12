@@ -207,60 +207,68 @@ class MedicineRequestController extends Controller
     }
 
     private function notifySeniorCitizen(MedicineRequest $mr)
-    {
-        if ($mr->status === 'approved') {
-            $title   = '✅ Request Approved – Claim Your Medicine';
-            $message = 'Your request for ' . $mr->medicine->generic_name . ' has been APPROVED. '
-                . 'Please proceed to the Barangay Health Center. '
-                . 'Operating hours: Monday to Saturday, 8:00 AM – 5:00 PM. '
-                . 'Bring a valid ID. Thank you!';
-        } else {
-            $title   = '❌ Request Declined';
-            $reason  = $mr->notes ? ' Reason: ' . $mr->notes : '';
-            $message = 'Your request for ' . $mr->medicine->generic_name . ' has been declined.' . $reason;
-        }
+{
+    $adminNotes = $mr->notes ? trim($mr->notes) : null;
 
-        // 1. Save in-app notification (for the Notifications tab)
-        Notification::create([
-            'user_id'          => $mr->user_id,
-            // Required by Laravel's built-in notifications table structure
-            'notifiable_type'  => User::class,
-            'notifiable_id'    => $mr->user_id,
-            'type'             => 'request_' . $mr->status,
-            'title'            => $title,
-            'message'          => $message,
-            'data'             => json_encode([
-                'request_id'      => $mr->id,
-                'medicine_name'   => $mr->medicine->generic_name,
-                'status'          => $mr->status,
-                'notes'           => $mr->notes,
-                'pickup_schedule' => $mr->status === 'approved'
-                    ? 'Monday – Saturday, 8:00 AM to 5:00 PM'
-                    : null,
-            ]),
-            'read_at'          => null,
-        ]);
+    if ($mr->status === 'approved') {
+        $title   = '✅ Request Approved – Claim Your Medicine';
+        $message = 'Your request for ' . $mr->medicine->generic_name . ' has been APPROVED. '
+            . 'Please proceed to the Barangay Health Center. '
+            . 'Operating hours: Monday to Saturday, 8:00 AM – 5:00 PM. '
+            . 'Bring a valid ID.';
 
-        // 2. Send FCM push notification to the senior's device
-        //    This fires even when the app is fully closed (true background push).
-        $fcmToken = $mr->user->fcm_token ?? null;
-        if ($fcmToken) {
-            try {
-                $fcm = new FcmService();
-                $fcm->sendToDevice(
-                    fcmToken: $fcmToken,
-                    title:    $title,
-                    body:     $message,
-                    data:     [
-                        'request_id'    => (string) $mr->id,
-                        'medicine_name' => $mr->medicine->generic_name,
-                        'status'        => $mr->status,
-                    ]
-                );
-            } catch (\Exception $e) {
-                // Non-fatal: in-app notification was already saved above
-                Log::warning('[FCM] Push delivery failed for user ' . $mr->user_id . ': ' . $e->getMessage());
-            }
+        // Append admin notes if provided (e.g. holiday closures, special instructions)
+        if ($adminNotes) {
+            $message .= ' Note: ' . $adminNotes;
         }
+    } else {
+        $title   = '❌ Request Declined';
+        $message = 'Your request for ' . $mr->medicine->generic_name . ' has been declined.';
+
+        if ($adminNotes) {
+            $message .= ' Reason: ' . $adminNotes;
+        }
+    }
+
+    // 1. Save in-app notification (for the Notifications tab)
+    Notification::create([
+        'user_id'          => $mr->user_id,
+        'notifiable_type'  => User::class,
+        'notifiable_id'    => $mr->user_id,
+        'type'             => 'request_' . $mr->status,
+        'title'            => $title,
+        'message'          => $message,
+        'data'             => json_encode([
+            'request_id'      => $mr->id,
+            'medicine_name'   => $mr->medicine->generic_name,
+            'status'          => $mr->status,
+            'notes'           => $adminNotes,
+            'pickup_schedule' => $mr->status === 'approved'
+                ? 'Monday – Saturday, 8:00 AM to 5:00 PM'
+                : null,
+        ]),
+        'read_at'          => null,
+    ]);
+
+    // 2. Send FCM push notification
+    $fcmToken = $mr->user->fcm_token ?? null;
+    if ($fcmToken) {
+        try {
+            $fcm = new FcmService();
+            $fcm->sendToDevice(
+                fcmToken: $fcmToken,
+                title:    $title,
+                body:     $message,
+                data:     [
+                    'request_id'    => (string) $mr->id,
+                    'medicine_name' => $mr->medicine->generic_name,
+                    'status'        => $mr->status,
+                ]
+            );
+        } catch (\Exception $e) {
+            Log::warning('[FCM] Push delivery failed for user ' . $mr->user_id . ': ' . $e->getMessage());
+        }
+    }
+
     }
 }
