@@ -14,15 +14,23 @@ class SeniorNotificationsScreen extends StatefulWidget {
       _SeniorNotificationsScreenState();
 }
 
-class _SeniorNotificationsScreenState extends State<SeniorNotificationsScreen> {
+class _SeniorNotificationsScreenState
+    extends State<SeniorNotificationsScreen> {
   bool loading = true;
   String? error;
   List<dynamic> items = [];
+  int? _speakingIndex; // tracks which card is currently being read aloud
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    TtsService.instance.stop();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -63,11 +71,89 @@ class _SeniorNotificationsScreenState extends State<SeniorNotificationsScreen> {
     }
   }
 
-  void _readNotifAloud(Map n) {
-    final title = n["title"]?.toString() ?? "Abiso";
+  // ─── TTS helpers ──────────────────────────────────────────────────────────
+
+  /// Builds a natural spoken sentence from a notification map.
+  /// Reads: title → main message → note/reason (if any).
+  String _buildSpokenText(Map n) {
+    final title   = n["title"]?.toString() ?? "Abiso";
     final message = n["message"]?.toString() ?? "";
-    TtsService.instance.speakTagalog("$title. $message");
+    final type    = (n["type"] ?? "").toString();
+
+    String mainMessage = message;
+    String? note;
+
+    if (message.contains(' Note: ')) {
+      final parts = message.split(' Note: ');
+      mainMessage = parts[0];
+      note = 'Tandaan: ${parts[1]}';
+    } else if (message.contains(' Reason: ')) {
+      final parts = message.split(' Reason: ');
+      mainMessage = parts[0];
+      note = 'Dahilan: ${parts[1]}';
+    }
+
+    // Strip emoji from title for cleaner TTS
+    final spokenTitle = title
+        .replaceAll('✅', '')
+        .replaceAll('❌', '')
+        .replaceAll('–', '-')
+        .trim();
+
+    final buffer = StringBuffer();
+    buffer.write('$spokenTitle. ');
+    buffer.write('$mainMessage ');
+    if (note != null) {
+      buffer.write('$note');
+    }
+
+    return buffer.toString().trim();
   }
+
+  Future<void> _readNotifAloud(Map n, int index) async {
+    // If already speaking this card — stop
+    if (_speakingIndex == index) {
+      await TtsService.instance.stop();
+      if (mounted) setState(() => _speakingIndex = null);
+      return;
+    }
+
+    // Stop any ongoing speech first
+    await TtsService.instance.stop();
+
+    setState(() => _speakingIndex = index);
+    final text = _buildSpokenText(n);
+    await TtsService.instance.speakTagalog(text);
+
+    // Reset speaking indicator when done
+    if (mounted) setState(() => _speakingIndex = null);
+  }
+
+  Future<void> _readAllAloud() async {
+    if (items.isEmpty) {
+      await TtsService.instance.speakTagalog('Wala pang abiso.');
+      return;
+    }
+
+    await TtsService.instance.stop();
+
+    // Build one long string: count intro + each notification
+    final buffer = StringBuffer();
+    buffer.write('Mayroon kang ${items.length} na abiso. ');
+
+    for (int i = 0; i < items.length; i++) {
+      final n = items[i] as Map;
+      buffer.write('Abiso ${i + 1}. ');
+      buffer.write(_buildSpokenText(n));
+      buffer.write('. ');
+    }
+
+    setState(() => _speakingIndex = -1); // -1 = reading all
+    await TtsService.instance.speakTagalog(buffer.toString());
+    if (mounted) setState(() => _speakingIndex = null);
+  }
+
+  // ─── UI helpers ───────────────────────────────────────────────────────────
 
   Color _notifColor(Map n) {
     final type = (n["type"] ?? "").toString();
@@ -83,132 +169,7 @@ class _SeniorNotificationsScreenState extends State<SeniorNotificationsScreen> {
     return Icons.notifications;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Mga Abiso / Notifications"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.volume_up),
-            tooltip: "Pakinggan ang lahat",
-            onPressed: () {
-              if (items.isEmpty) {
-                TtsService.instance.speakTagalog("Wala pang abiso.");
-              } else {
-                TtsService.instance.speakTagalog(
-                  "Mayroon kang ${items.length} na abiso. Pindutin ang mikropono sa tabi ng bawat abiso para marinig ito.",
-                );
-              }
-            },
-          ),
-          IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
-        ],
-      ),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : error != null
-              ? Center(
-                  child: Text(error!,
-                      style: const TextStyle(color: Colors.red, fontSize: 16)))
-              : items.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.notifications_off,
-                              size: 64, color: Colors.grey),
-                          const SizedBox(height: 12),
-                          const Text("Wala pang abiso.",
-                              style: TextStyle(fontSize: 18)),
-                          const SizedBox(height: 8),
-                          const Text("No notifications yet.",
-                              style:
-                                  TextStyle(fontSize: 16, color: Colors.grey)),
-                          const SizedBox(height: 16),
-                          ElevatedButton.icon(
-                            onPressed: _load,
-                            icon: const Icon(Icons.refresh),
-                            label: const Text("I-refresh",
-                                style: TextStyle(fontSize: 16)),
-                          ),
-                        ],
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _load,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(12),
-                        itemCount: items.length,
-                        itemBuilder: (_, i) {
-                          final n = items[i] as Map;
-                          final isRead =
-                              (n["read_at"] != null) || (n["is_read"] == true);
-                          final color = _notifColor(n);
-
-                          return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 6),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(
-                                  color: color.withOpacity(0.4), width: 1.5),
-                            ),
-                            color: isRead ? null : color.withOpacity(0.07),
-                            child: Padding(
-                              padding: const EdgeInsets.all(14),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Icon(_notifIcon(n), color: color, size: 32),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          n["title"]?.toString() ?? "Abiso",
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: isRead
-                                                ? FontWeight.normal
-                                                : FontWeight.bold,
-                                            color: color,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        _buildMessageWithNote(
-                                            n["message"]?.toString() ?? "",
-                                            n["type"]?.toString() ?? ""),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          n["created_at"]?.toString() ?? "",
-                                          style: const TextStyle(
-                                              fontSize: 13, color: Colors.grey),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  // Audio button per notification
-                                  IconButton(
-                                    icon: const Icon(Icons.volume_up,
-                                        color: Colors.blue, size: 26),
-                                    tooltip: "Pakinggan / Listen",
-                                    onPressed: () => _readNotifAloud(n),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-    );
-  }
-
   Widget _buildMessageWithNote(String message, String type) {
-    // Split note from main message
-    // Approved notes start with " Note:", declined with " Reason:"
     String mainMessage = message;
     String? note;
 
@@ -225,10 +186,7 @@ class _SeniorNotificationsScreenState extends State<SeniorNotificationsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          mainMessage,
-          style: const TextStyle(fontSize: 16),
-        ),
+        Text(mainMessage, style: const TextStyle(fontSize: 16)),
         if (note != null) ...[
           const SizedBox(height: 8),
           Container(
@@ -259,6 +217,154 @@ class _SeniorNotificationsScreenState extends State<SeniorNotificationsScreen> {
           ),
         ],
       ],
+    );
+  }
+
+  // ─── Build ────────────────────────────────────────────────────────────────
+
+  @override
+  Widget build(BuildContext context) {
+    final isReadingAll = _speakingIndex == -1;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Mga Abiso / Notifications"),
+        actions: [
+          // "Read all" button — shows stop icon while reading all
+          IconButton(
+            icon: Icon(isReadingAll ? Icons.stop_circle : Icons.volume_up),
+            tooltip: isReadingAll ? "Ihinto" : "Pakinggan ang lahat",
+            onPressed: isReadingAll
+                ? () async {
+                    await TtsService.instance.stop();
+                    if (mounted) setState(() => _speakingIndex = null);
+                  }
+                : _readAllAloud,
+          ),
+          IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
+        ],
+      ),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : error != null
+              ? Center(
+                  child: Text(error!,
+                      style:
+                          const TextStyle(color: Colors.red, fontSize: 16)))
+              : items.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.notifications_off,
+                              size: 64, color: Colors.grey),
+                          const SizedBox(height: 12),
+                          const Text("Wala pang abiso.",
+                              style: TextStyle(fontSize: 18)),
+                          const SizedBox(height: 8),
+                          const Text("No notifications yet.",
+                              style: TextStyle(
+                                  fontSize: 16, color: Colors.grey)),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: _load,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text("I-refresh",
+                                style: TextStyle(fontSize: 16)),
+                          ),
+                        ],
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: items.length,
+                        itemBuilder: (_, i) {
+                          final n = items[i] as Map;
+                          final isRead =
+                              (n["read_at"] != null) || (n["is_read"] == true);
+                          final color = _notifColor(n);
+                          final isSpeaking = _speakingIndex == i;
+
+                          return Card(
+                            margin:
+                                const EdgeInsets.symmetric(vertical: 6),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(
+                                  color: isSpeaking
+                                      ? Colors.blue
+                                      : color.withOpacity(0.4),
+                                  width: isSpeaking ? 2.5 : 1.5),
+                            ),
+                            color: isSpeaking
+                                ? Colors.blue.shade50
+                                : (isRead
+                                    ? null
+                                    : color.withOpacity(0.07)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: Row(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Icon(_notifIcon(n),
+                                      color: color, size: 32),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          n["title"]?.toString() ?? "Abiso",
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: isRead
+                                                ? FontWeight.normal
+                                                : FontWeight.bold,
+                                            color: color,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        _buildMessageWithNote(
+                                            n["message"]?.toString() ?? "",
+                                            n["type"]?.toString() ?? ""),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          n["created_at"]?.toString() ?? "",
+                                          style: const TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.grey),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  // Per-card TTS button — toggles speak/stop
+                                  IconButton(
+                                    icon: Icon(
+                                      isSpeaking
+                                          ? Icons.stop_circle
+                                          : Icons.volume_up,
+                                      color: isSpeaking
+                                          ? Colors.blue
+                                          : Colors.blue,
+                                      size: 28,
+                                    ),
+                                    tooltip: isSpeaking
+                                        ? "Ihinto / Stop"
+                                        : "Pakinggan / Listen",
+                                    onPressed: () =>
+                                        _readNotifAloud(n, i),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
     );
   }
 }
