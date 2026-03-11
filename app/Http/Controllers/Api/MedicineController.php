@@ -10,31 +10,46 @@ use Illuminate\Support\Facades\Storage;
 class MedicineController extends Controller
 {
     public function index()
-    {
-        $medicines = Medicine::with('batches')
-            ->get()
-            ->map(function ($medicine) {
-                $medicine->quantity    = $medicine->batches->sum('quantity');
-                $earliestExpiry        = $medicine->batches->min('expiry_date');
-                $medicine->expiry_date = $earliestExpiry;
-                $medicine->is_expired  = $medicine->batches->isNotEmpty() && $medicine->batches->every(fn($b) => $b->expiry_date < now());
-                $medicine->is_low_stock = $medicine->quantity < 10;
-                $medicine->is_ok       = !$medicine->is_expired && !$medicine->is_low_stock;
-                return $medicine;
-            });
+{
+    $now = now();
 
-        return response()->json($medicines);
-    }
+    $medicines = Medicine::with('batches')
+        ->get()
+        ->map(function ($medicine) use ($now) {
+
+            $validBatches   = $medicine->batches->filter(
+                fn($b) => $b->expiry_date >= $now && $b->quantity > 0
+            );
+            $expiredBatches = $medicine->batches->filter(
+                fn($b) => $b->expiry_date < $now
+            );
+
+            $medicine->quantity        = $validBatches->sum('quantity');
+            $medicine->expiry_date     = $validBatches->min('expiry_date');
+            $medicine->is_expired      = $medicine->batches->isNotEmpty()
+                && $expiredBatches->count() === $medicine->batches->count();
+            $medicine->is_low_stock    = $medicine->quantity > 0 && $medicine->quantity < 10;
+            $medicine->is_out_of_stock = $medicine->quantity === 0;
+            $medicine->is_ok           = !$medicine->is_expired
+                && !$medicine->is_low_stock
+                && !$medicine->is_out_of_stock;
+
+            return $medicine;
+        });
+
+    return response()->json($medicines);
+}
 
     public function show($id)
-    {
-        $item = Medicine::query()
-            ->with('category:id,name')
-            ->withSum('batches as quantity', 'quantity')
-            ->findOrFail($id);
+{
+    $item = Medicine::with(['category:id,name', 'batches'])->findOrFail($id);
 
-        return response()->json($item);
-    }
+    $item->quantity = $item->batches
+        ->filter(fn($b) => $b->expiry_date >= now() && $b->quantity > 0)
+        ->sum('quantity');
+
+    return response()->json($item);
+}
 
     public function store(Request $request)
     {

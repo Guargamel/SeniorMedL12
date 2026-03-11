@@ -10,8 +10,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="970f9465-bc16-4589-a08c-8966861b8458" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../../SeniorMedL12.zip" beforeDir="false" afterPath="$PROJECT_DIR$/../../SeniorMedL12.zip" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../routes/api.php" beforeDir="false" afterPath="$PROJECT_DIR$/../../routes/api.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../app/Http/Controllers/Api/MedicineController.php" beforeDir="false" afterPath="$PROJECT_DIR$/../../app/Http/Controllers/Api/MedicineController.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../app/Http/Controllers/Api/MedicineRequestController.php" beforeDir="false" afterPath="$PROJECT_DIR$/../../app/Http/Controllers/Api/MedicineRequestController.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../seniormedl12-firebase-adminsdk-fbsvc-b02e6c5045.json" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -65,7 +66,7 @@
     "cidr.known.project.marker": "true",
     "git-widget-placeholder": "major-rework",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/Magellan/Desktop/1UM/SeniorMedL12/mobile/senior_med",
+    "last_opened_file_path": "C:/Github/SeniorMedL12/mobile/senior_med",
     "settings.editor.selected.configurable": "preferences.lookFeel"
   }
 }]]></component>
